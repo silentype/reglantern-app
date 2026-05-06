@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import MultiFileUpload1 from './components/MultiFileUploadPanel';
 import { SideNavigation } from './components/SideNavigation';
 import TaskTableDynamic, { Task } from './components/TaskTableDynamic';
@@ -36,18 +37,95 @@ interface Project {
   assignedTo?: Array<{ initials: string; name: string }>;
 }
 
+// URL <-> sidebar nav item mappings. URL is the source of truth for navigation.
+const NAV_ITEM_TO_URL: Record<string, string> = {
+  'My Tasks': '/tasks/my-tasks',
+  'Site Visit Protocol Checklist': '/checklists/site-visit-protocol',
+  'Ryan White Part C/D': '/checklists/ryan-white-c-d',
+  'FTCA Site Visit Protocol': '/checklists/ftca-site-visit-protocol',
+  'Project Builder': '/admin/project-builder',
+  'Compliance Review': '/admin/compliance-review',
+};
+
+const URL_TO_NAV_ITEM: Record<string, string> = {
+  'my-tasks': 'My Tasks',
+  'site-visit-protocol': 'Site Visit Protocol Checklist',
+  'ryan-white-c-d': 'Ryan White Part C/D',
+  'ftca-site-visit-protocol': 'FTCA Site Visit Protocol',
+  'project-builder': 'Project Builder',
+  'compliance-review': 'Compliance Review',
+};
+
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Derive view state from URL. URL pattern:
+  //   /tasks/my-tasks               -> tasks page, no panel
+  //   /tasks/my-tasks/new           -> tasks + new-task panel
+  //   /tasks/my-tasks/:taskId       -> tasks + task detail panel
+  //   /checklists/:slug             -> checklists page
+  //   /admin/project-builder        -> admin project list
+  //   /admin/project-builder/:pid             -> project detail
+  //   /admin/project-builder/:pid/new         -> new task in project
+  //   /admin/project-builder/:pid/:taskId     -> task detail in project
+  //   /admin/compliance-review                -> compliance review
+  const segments = location.pathname.split('/').filter(Boolean);
+  const sectionSeg = segments[0];
+  const itemSeg = segments[1];
+  const restSegs = segments.slice(2);
+
+  const currentPage: 'tasks' | 'checklists' | 'admin' =
+    sectionSeg === 'admin' ? 'admin' :
+    sectionSeg === 'checklists' ? 'checklists' :
+    'tasks';
+
+  const selectedNavItem = URL_TO_NAV_ITEM[itemSeg ?? ''] ?? (
+    currentPage === 'tasks' ? 'My Tasks' :
+    currentPage === 'admin' ? 'Project Builder' :
+    'Site Visit Protocol Checklist'
+  );
+
+  const isCreatingNewTask = restSegs[restSegs.length - 1] === 'new';
+
+  let selectedTaskId: number | null = null;
+  let selectedProjectId: number | null = null;
+
+  if (currentPage === 'tasks' && itemSeg === 'my-tasks') {
+    if (restSegs[0] && restSegs[0] !== 'new') {
+      const id = Number(restSegs[0]);
+      if (Number.isInteger(id)) selectedTaskId = id;
+    }
+  } else if (currentPage === 'admin' && itemSeg === 'project-builder') {
+    if (restSegs[0] && restSegs[0] !== 'new') {
+      const pid = Number(restSegs[0]);
+      if (Number.isInteger(pid)) selectedProjectId = pid;
+      if (restSegs[1] && restSegs[1] !== 'new') {
+        const tid = Number(restSegs[1]);
+        if (Number.isInteger(tid)) selectedTaskId = tid;
+      }
+    }
+  }
+
+  const sidePanelOpen = isCreatingNewTask || selectedTaskId !== null;
+
+  // Redirect bare / and bare section URLs to canonical defaults
+  useEffect(() => {
+    if (location.pathname === '/') {
+      navigate('/tasks/my-tasks', { replace: true });
+    } else if (location.pathname === '/tasks') {
+      navigate('/tasks/my-tasks', { replace: true });
+    } else if (location.pathname === '/checklists') {
+      navigate('/checklists/site-visit-protocol', { replace: true });
+    } else if (location.pathname === '/admin') {
+      navigate('/admin/project-builder', { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  // UI-only state (intentionally not in URL — user preference / transient)
   const [showDeveloperHub, setShowDeveloperHub] = useState(false);
-  const [sidePanelOpen, setSidePanelOpen] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-  const [selectedTaskTitle, setSelectedTaskTitle] = useState<string>('');
   const [sideNavOpen, setSideNavOpen] = useState(true);
-  const [currentPage, setCurrentPage] = useState<'tasks' | 'checklists' | 'admin'>('tasks');
-  const [selectedNavItem, setSelectedNavItem] = useState('My Tasks');
-  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
-  const [isCreatingNewTask, setIsCreatingNewTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [projects, setProjects] = useState<Project[]>([
     {
       id: 1,
@@ -103,12 +181,9 @@ export default function App() {
   ]);
 
   const handleAddNewTask = useCallback(() => {
-    setIsCreatingNewTask(true);
     setNewTaskTitle('');
-    setSelectedTaskId(null);
-    setSelectedTaskTitle('');
-    setSidePanelOpen(true);
-  }, []);
+    navigate('/tasks/my-tasks/new');
+  }, [navigate]);
 
   const handleSaveNewTask = useCallback((taskData: {
     title: string;
@@ -169,15 +244,9 @@ export default function App() {
         })
       );
 
-      // Close the panel and reset states
-      setSidePanelOpen(false);
-      setTimeout(() => {
-        setIsCreatingNewTask(false);
-        setNewTaskTitle('');
-        setSelectedTaskId(null);
-        setSelectedTaskTitle('');
-        setSelectedProjectId(null);
-      }, 300);
+      // Close the panel by navigating back to project detail
+      setNewTaskTitle('');
+      navigate(`/admin/project-builder/${selectedProjectId}`);
 
       toast('Task added to project');
       return;
@@ -226,48 +295,35 @@ export default function App() {
       return updatedTasks;
     });
 
-    // Close the panel and reset states
-    setSidePanelOpen(false);
-    setTimeout(() => {
-      setIsCreatingNewTask(false);
-      setNewTaskTitle('');
-      setSelectedTaskId(null);
-      setSelectedTaskTitle('');
-    }, 300);
+    // Close the panel by navigating back to the tasks list
+    setNewTaskTitle('');
+    navigate('/tasks/my-tasks');
 
     // Show success toast
     toast('Task created successfully');
-  }, [selectedProjectId]);
+  }, [selectedProjectId, navigate]);
 
   const handleDeleteTask = useCallback((taskId: number) => {
     setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
     toast.success('Task deleted successfully');
     // Close panel if the deleted task is currently selected
     if (selectedTaskId === taskId) {
-      setSidePanelOpen(false);
-      setTimeout(() => {
-        setSelectedTaskId(null);
-        setSelectedTaskTitle('');
-      }, 300);
+      navigate('/tasks/my-tasks');
     }
-  }, [selectedTaskId]);
+  }, [selectedTaskId, navigate]);
 
-  const handleTaskClick = useCallback((taskId: number, taskTitle: string) => {
-    setSelectedTaskId(taskId);
-    setSelectedTaskTitle(taskTitle);
-    setSidePanelOpen(true);
-  }, []);
+  const handleTaskClick = useCallback((taskId: number, _taskTitle: string) => {
+    navigate(`/tasks/my-tasks/${taskId}`);
+  }, [navigate]);
 
   const handleClosePanel = useCallback(() => {
-    setSidePanelOpen(false);
-    setTimeout(() => {
-      setSelectedTaskId(null);
-      setSelectedTaskTitle('');
-      setIsCreatingNewTask(false);
-      setNewTaskTitle('');
-      setSelectedProjectId(null);
-    }, 300);
-  }, []);
+    setNewTaskTitle('');
+    if (currentPage === 'admin' && itemSeg === 'project-builder' && selectedProjectId !== null) {
+      navigate(`/admin/project-builder/${selectedProjectId}`);
+    } else {
+      navigate('/tasks/my-tasks');
+    }
+  }, [navigate, currentPage, itemSeg, selectedProjectId]);
 
   const handleToggleTaskComplete = useCallback((taskId: number) => {
     setTasks(prevTasks =>
@@ -396,9 +452,15 @@ export default function App() {
   }, []);
 
   const handleNavChange = useCallback((page: 'tasks' | 'checklists' | 'admin') => {
-    setCurrentPage(page);
-    setSelectedNavItem(page === 'tasks' ? 'My Tasks' : page === 'admin' ? 'Project Builder' : 'Site Visit Protocol Checklist');
-  }, []);
+    if (page === 'tasks') navigate('/tasks/my-tasks');
+    else if (page === 'admin') navigate('/admin/project-builder');
+    else navigate('/checklists/site-visit-protocol');
+  }, [navigate]);
+
+  const handleSideNavItemSelect = useCallback((item: string) => {
+    const url = NAV_ITEM_TO_URL[item];
+    if (url) navigate(url);
+  }, [navigate]);
 
   // Memoize current task to avoid recalculation on every render
   const currentTask = useMemo(() => {
@@ -524,7 +586,7 @@ export default function App() {
         <SideNavigation
           pageType={currentPage}
           selectedItem={selectedNavItem}
-          onItemSelect={setSelectedNavItem}
+          onItemSelect={handleSideNavItemSelect}
           isOpen={sideNavOpen}
           onToggle={toggleSideNav}
         />
@@ -554,15 +616,11 @@ export default function App() {
               projects={projects}
               setProjects={setProjects}
               onAddTaskToProject={(projectId) => {
-                setSelectedProjectId(projectId);
-                handleAddNewTask();
+                setNewTaskTitle('');
+                navigate(`/admin/project-builder/${projectId}/new`);
               }}
-              onOpenProjectTask={(projectId, taskId, taskTitle) => {
-                setSelectedProjectId(projectId);
-                setSelectedTaskId(taskId);
-                setSelectedTaskTitle(taskTitle);
-                setIsCreatingNewTask(false);
-                setSidePanelOpen(true);
+              onOpenProjectTask={(projectId, taskId) => {
+                navigate(`/admin/project-builder/${projectId}/${taskId}`);
               }}
             />
           )}
