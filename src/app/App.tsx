@@ -126,6 +126,9 @@ export default function App() {
   const [showDeveloperHub, setShowDeveloperHub] = useState(false);
   const [sideNavOpen, setSideNavOpen] = useState(true);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  // Data state
+  const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
   const [projects, setProjects] = useState<Project[]>([
     {
       id: 1,
