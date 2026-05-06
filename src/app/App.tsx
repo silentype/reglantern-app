@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import MultiFileUpload1 from './components/MultiFileUploadPanel';
 import { SideNavigation } from './components/SideNavigation';
 import TaskTableDynamic, { Task } from './components/TaskTableDynamic';
@@ -3586,12 +3586,70 @@ function AdminPage({
 }
 
 function ComplianceReviewPage() {
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'clinical' | 'fiscal' | 'governance'>('all');
-  const [selectedChapter, setSelectedChapter] = useState(1);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Parse path: /admin/compliance-review[/chapter-:n[/q-:m]]
+  // Question is 1-based in the URL, 0-based internally.
+  const segments = location.pathname.split('/').filter(Boolean);
+  const chapterMatch = segments[2]?.match(/^chapter-(\d+)$/);
+  const questionMatch = segments[3]?.match(/^q-(\d+)$/);
+  const selectedChapter = chapterMatch ? Math.max(1, Number(chapterMatch[1])) : 1;
+  const currentQuestionIndex = questionMatch
+    ? Math.max(0, Number(questionMatch[1]) - 1)
+    : 0;
+
+  const categoryParam = searchParams.get('category');
+  const selectedCategory: 'all' | 'clinical' | 'fiscal' | 'governance' =
+    categoryParam === 'clinical' || categoryParam === 'fiscal' || categoryParam === 'governance'
+      ? categoryParam
+      : 'all';
+
+  const taskParam = searchParams.get('task');
+  const taskFromUrl = taskParam ? Number(taskParam) : NaN;
+  const selectedTaskId: number | null = Number.isInteger(taskFromUrl) ? taskFromUrl : null;
+  const taskPanelOpen = selectedTaskId !== null;
+
+  const buildPath = useCallback((chapter: number, questionIndex: number) => {
+    const userQ = Math.max(1, questionIndex + 1);
+    return `/admin/compliance-review/chapter-${chapter}/q-${userQ}${location.search}`;
+  }, [location.search]);
+
+  const setSelectedChapter = useCallback((chapter: number) => {
+    navigate(buildPath(chapter, 0));
+  }, [navigate, buildPath]);
+
+  const setCurrentQuestionIndex = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      const next = typeof updater === 'function' ? updater(currentQuestionIndex) : updater;
+      navigate(buildPath(selectedChapter, next));
+    },
+    [navigate, buildPath, currentQuestionIndex, selectedChapter]
+  );
+
+  const setSelectedCategory = useCallback((category: 'all' | 'clinical' | 'fiscal' | 'governance') => {
+    const next = new URLSearchParams(searchParams);
+    if (category === 'all') next.delete('category');
+    else next.set('category', category);
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  const setSelectedTaskId = useCallback((taskId: number | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (taskId === null) next.delete('task');
+    else next.set('task', String(taskId));
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  // Setting taskPanelOpen alone is meaningless now (panel state is derived from
+  // ?task=...). Closing == clearing the param; opening always happens via
+  // setSelectedTaskId.
+  const setTaskPanelOpen = useCallback((open: boolean) => {
+    if (!open) setSelectedTaskId(null);
+  }, [setSelectedTaskId]);
+
   const [answers, setAnswers] = useState<Record<string, { answer: 'yes' | 'no' | null; explanation: string }>>({});
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
-  const [taskPanelOpen, setTaskPanelOpen] = useState(false);
   const [statusFilters, setStatusFilters] = useState<{
     overdue: boolean;
     assigned: boolean;
@@ -4086,8 +4144,8 @@ function ComplianceReviewPage() {
   };
 
   const handleChapterChange = (chapterId: number) => {
+    // setSelectedChapter already resets question to q-1 in the URL.
     setSelectedChapter(chapterId);
-    setCurrentQuestionIndex(0);
   };
 
   // Calculate completion stats
@@ -4110,10 +4168,8 @@ function ComplianceReviewPage() {
   };
 
   const handleCloseTaskPanel = () => {
-    setTaskPanelOpen(false);
-    setTimeout(() => {
-      setSelectedTaskId(null);
-    }, 300);
+    // Clearing ?task=... closes the panel; CSS handles the slide-out animation.
+    setSelectedTaskId(null);
   };
 
   const handleUpdateTaskFiles = useCallback((taskId: number, files: Task['files']) => {
