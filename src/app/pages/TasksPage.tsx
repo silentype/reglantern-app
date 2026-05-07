@@ -46,6 +46,7 @@ import {
 import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
 import searchFilterSvgPaths from '../../imports/svg-oo9u3g75ma';
 import filterSvgPaths from '../../imports/svg-vp1nlfqwh3';
+import { Avatar } from '../components/design-system/Avatar';
 
 export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; }) {
   const [statusFilter, setStatusFilter] = useState<string[]>(['all']);
@@ -328,9 +329,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
       return user ? (
         <div className="flex items-center gap-2">
           <span>Assigned to</span>
-          <div className="bg-[#fc6] rounded-full w-6 h-6 flex items-center justify-center">
-            <span className="text-xs font-medium text-[#18181b]">{user.initials}</span>
-          </div>
+          <Avatar initials={user.initials} name={user.name} size="sm" />
           <span>{user.name}</span>
         </div>
       ) : 'All Assigned';
@@ -660,9 +659,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
                                         )}
                                       </div>
                                       <div className="flex items-center gap-2">
-                                        <div className="bg-[#fc6] rounded-full w-6 h-6 flex items-center justify-center">
-                                          <span className="font-medium text-[#18181b] text-[9px]">{user.initials}</span>
-                                        </div>
+                                        <Avatar initials={user.initials} name={user.name} size="sm" />
                                         <span>{user.name}</span>
                                       </div>
                                     </CommandItem>
@@ -680,9 +677,11 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
                               const user = availableUsers.find(u => u.name === name);
                               return user ? (
                                 <div key={name} className="bg-[#f5f5f5] px-3 py-1.5 rounded text-sm flex items-center gap-1.5">
-                                  <div className="bg-[#fc6] rounded-full w-5 h-5 flex items-center justify-center">
-                                    <span className="text-xs font-medium text-[#18181b]">{user.initials}</span>
-                                  </div>
+                                  <Avatar
+                                    initials={user.initials}
+                                    name={user.name}
+                                    className="size-5 text-[10px]"
+                                  />
                                   <span>{user.name}</span>
                                   <button
                                     onClick={() => toggleAssignedToFilter(name)}
@@ -1124,11 +1123,11 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
                         <span className="text-[#18181b]">All</span>
                       ) : assignedToFilter.length === 1 ? (
                         <>
-                          <div className="bg-[#fc6] rounded-full w-4 h-4 flex items-center justify-center">
-                            <span className="text-[8px] font-medium text-[#18181b]">
-                              {availableUsers.find(u => u.name === assignedToFilter[0])?.initials}
-                            </span>
-                          </div>
+                          <Avatar
+                            initials={availableUsers.find((u) => u.name === assignedToFilter[0])?.initials ?? '?'}
+                            name={assignedToFilter[0]}
+                            className="size-4 text-[8px]"
+                          />
                           <span className="text-[#18181b]">{assignedToFilter[0]}</span>
                         </>
                       ) : (
@@ -1179,9 +1178,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
                                 )}
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="bg-[#fc6] rounded-full w-6 h-6 flex items-center justify-center">
-                                  <span className="font-medium text-[#18181b] text-[9px]">{user.initials}</span>
-                                </div>
+                                <Avatar initials={user.initials} name={user.name} size="sm" />
                                 <span>{user.name}</span>
                               </div>
                             </CommandItem>

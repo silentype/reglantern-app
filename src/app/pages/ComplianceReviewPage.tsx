@@ -22,6 +22,7 @@ import { type Task } from '../components/TaskTableDynamic';
 import { FilterChip } from '../components/design-system/FilterChip';
 import { StatusBadge } from '../components/design-system/StatusBadge';
 import { Pagination } from '../components/design-system/Pagination';
+import { Avatar } from '../components/design-system/Avatar';
 
 export function ComplianceReviewPage() {
   const navigate = useNavigate();
@@ -941,11 +942,11 @@ export function ComplianceReviewPage() {
                         <StatusBadge status={task.status ?? 'Not Started'} />
                         {task.assignedTo && (
                           <div className="flex items-center gap-1.5">
-                            <div className="bg-[#fc6] rounded-full w-5 h-5 flex items-center justify-center">
-                              <span className="text-[10px] font-medium text-[#18181b]">
-                                {task.assignedTo.initials}
-                              </span>
-                            </div>
+                            <Avatar
+                              initials={task.assignedTo.initials}
+                              name={task.assignedTo.name}
+                              className="size-5 text-[10px]"
+                            />
                             <span className="text-[12px] text-[#71717a]">{task.assignedTo.name}</span>
                           </div>
                         )}

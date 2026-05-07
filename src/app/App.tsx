@@ -14,6 +14,7 @@ import { SideNavigation } from './components/SideNavigation';
 import { type Task } from './components/TaskTableDynamic';
 
 import { TopNavButton } from './components/design-system/TopNavButton';
+import { Avatar } from './components/design-system/Avatar';
 
 import { INITIAL_TASKS } from './data/initialTasks';
 
@@ -539,9 +540,8 @@ export default function App() {
 
           {/* Profile Button */}
           <div className="flex items-center gap-2">
-            <div className="bg-[#fc6] w-10 h-10 rounded-full flex items-center justify-center">
-              <span className="text-[#373f51] font-bold text-base">TF</span>
-            </div>
+            {/* Profile avatar -- always brand yellow as identity, not deterministic palette. */}
+            <Avatar initials="TF" name="Tim Freeman" size="lg" color="#fc6" className="font-bold" />
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transform rotate-90">
               <path d="M6.47 4L5.53 4.94L8.58333 8L5.53 11.06L6.47 12L10.47 8L6.47 4Z" fill="#fc6"/>
             </svg>

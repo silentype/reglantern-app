@@ -8,6 +8,7 @@ import { format, parse, differenceInCalendarDays, addDays, addMonths, addYears }
 import { MoreHorizontal, ChevronDown, Calendar as CalendarIcon, ChevronsUpDown, ChevronUp, User, Building2, AlertCircle, GripVertical, Check } from "lucide-react";
 import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { Avatar } from "./design-system/Avatar";
 import { AVAILABLE_USERS, HEALTH_CENTERS, QUICK_DATE_OPTIONS } from "../constants";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -151,11 +152,7 @@ AttentionBadge.displayName = 'AttentionBadge';
 
 const UserAvatar = memo(({ user }: { user: { initials: string; name: string } }) => (
   <div className="flex items-center gap-2">
-    <div className="bg-[#fc6] flex items-center justify-center overflow-clip rounded-full size-[24px]">
-      <span className="font-['Inter:Medium',sans-serif] font-medium text-[#18181b] text-[12px]">
-        {user.initials}
-      </span>
-    </div>
+    <Avatar initials={user.initials} name={user.name} size="sm" />
     <span className="font-['Geist:Regular',sans-serif] font-normal text-[#18181b] text-[13px]">
       {user.name}
     </span>

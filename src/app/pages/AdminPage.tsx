@@ -49,6 +49,7 @@ import { SaveIndicator } from '../components/SaveIndicator';
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 
 import { Button } from '../components/design-system/Button';
+import { Avatar } from '../components/design-system/Avatar';
 
 import {
   AVAILABLE_USERS,
@@ -500,9 +501,7 @@ export function AdminPage({
                                     <Check className="w-3 h-3 text-[#18181b]" />
                                   )}
                                 </div>
-                                <div className="bg-[#fc6] rounded-full w-6 h-6 flex items-center justify-center">
-                                  <span className="text-[11px] font-medium text-[#18181b]">{user.initials}</span>
-                                </div>
+                                <Avatar initials={user.initials} name={user.name} size="sm" />
                                 <span className="text-[14px]">{user.name}</span>
                               </CommandItem>
                             ))}
@@ -753,9 +752,7 @@ export function AdminPage({
                                 )}
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="bg-[#fc6] rounded-full w-6 h-6 flex items-center justify-center">
-                                  <span className="font-medium text-[#18181b] text-[9px]">{user.initials}</span>
-                                </div>
+                                <Avatar initials={user.initials} name={user.name} size="sm" />
                                 <span>{user.name}</span>
                               </div>
                             </CommandItem>
@@ -1174,9 +1171,7 @@ export function AdminPage({
                                         <Check className="w-3 h-3 text-[#18181b]" />
                                       )}
                                     </div>
-                                    <div className="bg-[#fc6] rounded-full w-6 h-6 flex items-center justify-center">
-                                      <span className="text-[11px] font-medium text-[#18181b]">{user.initials}</span>
-                                    </div>
+                                    <Avatar initials={user.initials} name={user.name} size="sm" />
                                     <span className="text-[14px]">{user.name}</span>
                                   </CommandItem>
                                 ))}

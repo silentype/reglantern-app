@@ -16,6 +16,7 @@ import { SaveIndicator } from './SaveIndicator';
 import { DueDatePicker } from './DueDatePicker';
 import { Tab, TabStrip } from './design-system/Tab';
 import { Button } from './design-system/Button';
+import { Avatar } from './design-system/Avatar';
 import { AVAILABLE_USERS, STATUS_OPTIONS } from '../constants';
 import { getTaskDescription, getDisplayValueForDate } from '../utils/helpers';
 
@@ -1372,9 +1373,7 @@ export default function MultiFileUploadPanel({
                     <button className="flex-1 max-w-[240px] bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[#f9fafb] transition-colors">
                       {assignedTo ? (
                         <div className="flex items-center gap-2">
-                          <div className="bg-[#fc6] w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-[#18181b]">
-                            {assignedTo.initials}
-                          </div>
+                          <Avatar initials={assignedTo.initials} name={assignedTo.name} size="sm" />
                           <span className="text-sm text-[#18181b]">{assignedTo.name}</span>
                         </div>
                       ) : (
@@ -1404,9 +1403,7 @@ export default function MultiFileUploadPanel({
                                 }`}
                               />
                               <div className="flex items-center gap-2">
-                                <div className="bg-[#fc6] w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-[#18181b]">
-                                  {user.initials}
-                                </div>
+                                <Avatar initials={user.initials} name={user.name} size="sm" />
                                 <span className="text-sm">{user.name}</span>
                               </div>
                             </CommandItem>
@@ -1451,9 +1448,7 @@ export default function MultiFileUploadPanel({
                                     }`}
                                   />
                                   <div className="flex items-center gap-2">
-                                    <div className="bg-[#fc6] w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-[#18181b]">
-                                      {user.initials}
-                                    </div>
+                                    <Avatar initials={user.initials} name={user.name} size="sm" />
                                     <span className="text-sm">{user.name}</span>
                                   </div>
                                 </CommandItem>
@@ -1472,11 +1467,11 @@ export default function MultiFileUploadPanel({
                           key={collab.name}
                           className="bg-[#f5f5f5] px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-[#e5e7eb] transition-colors"
                         >
-                          <div className="bg-[#fc6] w-5 h-5 rounded-full flex items-center justify-center">
-                            <span className="text-xs font-medium text-[#18181b]">
-                              {collab.initials}
-                            </span>
-                          </div>
+                          <Avatar
+                            initials={collab.initials}
+                            name={collab.name}
+                            className="size-5 text-[10px]"
+                          />
                           <span className="text-sm text-[#18181b]">{collab.name}</span>
                           <button
                             onClick={(e) => {
@@ -1516,9 +1511,11 @@ export default function MultiFileUploadPanel({
                 <UserPlus size={20} className="text-[#09090b]" />
                 <span className="text-sm text-[#09090b] w-[104px]">Created by</span>
                 <div className="bg-[#f5f5f5] rounded-lg flex items-center gap-2 px-[12px] py-[4px]">
-                  <div className="bg-[#fc6] w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium text-[#18181b]">
-                    {initialCreatedBy?.initials || 'RL'}
-                  </div>
+                  <Avatar
+                    initials={initialCreatedBy?.initials || 'RL'}
+                    name={initialCreatedBy?.name || 'Reglantern RL'}
+                    size="sm"
+                  />
                   <span className="text-sm text-[#09090b]">{initialCreatedBy?.name || 'Reglantern RL'}</span>
                 </div>
               </div>
@@ -1549,9 +1546,12 @@ export default function MultiFileUploadPanel({
                   {comments.map(comment => (
                     <div key={comment.id} className="bg-[#f5f5f5] p-4 rounded-lg">
                       <div className="flex items-start gap-3">
-                        <div className="bg-[#fc6] w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-[#18181b] shrink-0">
-                          {comment.user.initials}
-                        </div>
+                        <Avatar
+                          initials={comment.user.initials}
+                          name={comment.user.name}
+                          size="md"
+                          className="shrink-0"
+                        />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium text-[#18181b]">{comment.user.name}</span>
