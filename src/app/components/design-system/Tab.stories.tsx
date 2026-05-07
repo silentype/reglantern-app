@@ -8,12 +8,12 @@ const meta: Meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Single: Story = {
+export const Pair: Story = {
   render: () => (
-    <div className="flex items-center gap-6 border-b border-[#e4e4e7] w-[480px]">
+    <TabStrip className="w-[480px]">
       <Tab active>Details</Tab>
       <Tab>Comments</Tab>
-    </div>
+    </TabStrip>
   ),
 };
 
@@ -43,4 +43,14 @@ export const PanelTabStrip: Story = {
     };
     return <Demo />;
   },
+};
+
+export const NonStretchingTabs: Story = {
+  render: () => (
+    <TabStrip className="w-[480px] inline-flex">
+      <Tab active flex={false}>Day</Tab>
+      <Tab flex={false}>Week</Tab>
+      <Tab flex={false}>Month</Tab>
+    </TabStrip>
+  ),
 };

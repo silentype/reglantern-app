@@ -3,25 +3,29 @@ import { clsx } from 'clsx';
 
 export interface TabProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
   active?: boolean;
+  /** When true, the tab fills available space inside its strip. Default true. */
+  flex?: boolean;
   children: ReactNode;
 }
 
 export const Tab = forwardRef<HTMLButtonElement, TabProps>(
-  ({ active = false, children, className, ...props }, ref) => (
+  ({ active = false, flex = true, children, className, ...props }, ref) => (
     <button
       ref={ref}
       type="button"
       role="tab"
       aria-selected={active}
       className={clsx(
-        'relative px-1 pb-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-2 rounded-sm',
-        active ? 'text-[#18181b]' : 'text-[#71717a] hover:text-[#18181b]',
+        'px-3 py-1.5 text-sm font-medium rounded transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
+        flex && 'flex-1',
+        active
+          ? 'bg-white text-[#09090b] shadow-sm'
+          : 'bg-transparent text-[#6b7280] hover:text-[#09090b]',
         className
       )}
       {...props}
     >
       {children}
-      {active && <span aria-hidden className="absolute -bottom-px left-0 right-0 h-0.5 bg-[#fc6]" />}
     </button>
   )
 );
@@ -34,11 +38,16 @@ export interface TabStripProps {
   tablist?: boolean;
 }
 
+/**
+ * Segmented-control tab strip — light grey background, single active tab
+ * shows white surface + subtle shadow. Matches the side-panel pattern
+ * (Details / Comments / Activity / Guidance).
+ */
 export function TabStrip({ children, className, tablist = true }: TabStripProps) {
   return (
     <div
       role={tablist ? 'tablist' : undefined}
-      className={clsx('flex items-center gap-6 border-b border-[#e4e4e7]', className)}
+      className={clsx('bg-[#f4f4f5] p-1 rounded-md flex gap-0', className)}
     >
       {children}
     </div>

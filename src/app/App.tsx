@@ -26,6 +26,9 @@ import { INITIAL_TASKS } from './data/initialTasks';
 import { parseDueDateFilter, displayDueDateFilter } from './utils/helpers';
 import filterSvgPaths from '../imports/svg-vp1nlfqwh3';
 import searchFilterSvgPaths from '../imports/svg-oo9u3g75ma';
+import { Button } from './components/design-system/Button';
+import { FilterChip } from './components/design-system/FilterChip';
+import { StatusBadge } from './components/design-system/StatusBadge';
 
 interface Project {
   id: number;
@@ -2712,19 +2715,12 @@ function AdminPage({
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <SaveIndicator status={tableSaveStatus} />
-              <button
-                onClick={() => onAddTaskToProject(selectedProject.id)}
-                className="bg-[#fc6] flex gap-[8px] h-[40px] items-center px-[16px] py-[8px] rounded-[6px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] hover:bg-[#ffcc77] transition-colors"
-              >
-                <span className="font-['Geist:Medium',sans-serif] font-medium text-[#18181b] leading-[20px] whitespace-nowrap text-[14px]">
-                  Add Task
-                </span>
-                <div className="size-[16px]">
-                  <svg className="w-full h-full" fill="none" viewBox="0 0 10.6667 10.6667">
-                    <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="#18181b" fillRule="evenodd" />
-                  </svg>
-                </div>
-              </button>
+              <Button onClick={() => onAddTaskToProject(selectedProject.id)}>
+                Add Task
+                <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
+                  <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="#18181b" fillRule="evenodd" />
+                </svg>
+              </Button>
             </div>
           </div>
 
@@ -2839,7 +2835,7 @@ function AdminPage({
               </div>
 
               {selectedUsersForAssignment.length > 0 && (
-                <button
+                <Button
                   onClick={() => {
                     // Add selected users to the project's assignedTo list
                     const newAssignees = selectedUsersForAssignment.map(userName => {
@@ -2883,10 +2879,10 @@ function AdminPage({
                     // Show toast after resetting
                     toast.success(`Project assigned to ${newAssignees.length} user${newAssignees.length > 1 ? 's' : ''}`);
                   }}
-                  className="bg-[#fc6] h-[40px] px-[20px] py-[8px] rounded-[6px] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#ffcc77] transition-colors shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] shrink-0"
+                  className="shrink-0"
                 >
                   Send
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -3304,19 +3300,12 @@ function AdminPage({
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <SaveIndicator status={tableSaveStatus} />
-            <button
-              onClick={() => setShowNewProjectForm(true)}
-              className="bg-[#fc6] flex gap-[8px] h-[40px] items-center px-[16px] py-[8px] rounded-[6px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] hover:bg-[#ffcc77] transition-colors"
-            >
-              <span className="font-['Geist:Medium',sans-serif] font-medium text-[#18181b] leading-[20px] whitespace-nowrap text-[14px]">
-                Create New Project
-              </span>
-              <div className="size-[16px]">
-                <svg className="w-full h-full" fill="none" viewBox="0 0 10.6667 10.6667">
-                  <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="#18181b" fillRule="evenodd" />
-                </svg>
-              </div>
-            </button>
+            <Button onClick={() => setShowNewProjectForm(true)}>
+              Create New Project
+              <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
+                <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="#18181b" fillRule="evenodd" />
+              </svg>
+            </Button>
           </div>
         </div>
       </div>
@@ -3361,21 +3350,16 @@ function AdminPage({
                 </Select>
               </div>
               <div className="flex gap-2 justify-end pt-2">
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => {
                     setShowNewProjectForm(false);
                     setNewProject({ name: '', description: '', category: '' });
                   }}
-                  className="bg-white h-[40px] px-[16px] py-[8px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#f9fafb] transition-colors"
                 >
                   Cancel
-                </button>
-                <button
-                  onClick={handleCreateProject}
-                  className="bg-[#fc6] h-[40px] px-[16px] py-[8px] rounded-[6px] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#ffcc77] transition-colors shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)]"
-                >
-                  Create Project
-                </button>
+                </Button>
+                <Button onClick={handleCreateProject}>Create Project</Button>
               </div>
             </div>
           </div>
@@ -3524,7 +3508,9 @@ function AdminPage({
                           <X className="w-3.5 h-3.5" />
                         </button>
 
-                        <button
+                        <Button
+                          size="sm"
+                          className="shrink-0"
                           onClick={(e) => {
                             e.stopPropagation();
                             // Add selected users to the project's assignedTo list
@@ -3556,10 +3542,9 @@ function AdminPage({
                             // Show toast after resetting
                             toast.success(`Project assigned to ${newAssignees.length} user${newAssignees.length > 1 ? 's' : ''}`);
                           }}
-                          className="bg-[#fc6] h-[36px] px-[16px] py-[6px] rounded-[6px] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[12px] hover:bg-[#ffcc77] transition-colors shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] shrink-0"
                         >
                           Send
-                        </button>
+                        </Button>
                       </>
                     )}
                   </div>
@@ -4226,70 +4211,18 @@ function ComplianceReviewPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Category Filters */}
-            <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-3 py-1.5 rounded-full font-medium text-[12px] transition-colors ${
-                selectedCategory === 'all' ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e4e4e7]'
-              }`}
-            >
-              All Chapters
-            </button>
-            <button
-              onClick={() => setSelectedCategory('clinical')}
-              className={`px-3 py-1.5 rounded-full font-medium text-[12px] transition-colors ${
-                selectedCategory === 'clinical' ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e4e4e7]'
-              }`}
-            >
-              Clinical
-            </button>
-            <button
-              onClick={() => setSelectedCategory('fiscal')}
-              className={`px-3 py-1.5 rounded-full font-medium text-[12px] transition-colors ${
-                selectedCategory === 'fiscal' ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e4e4e7]'
-              }`}
-            >
-              Fiscal
-            </button>
-            <button
-              onClick={() => setSelectedCategory('governance')}
-              className={`px-3 py-1.5 rounded-full font-medium text-[12px] transition-colors ${
-                selectedCategory === 'governance' ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e4e4e7]'
-              }`}
-            >
-              Governance
-            </button>
+            <FilterChip active={selectedCategory === 'all'} onClick={() => setSelectedCategory('all')}>All Chapters</FilterChip>
+            <FilterChip active={selectedCategory === 'clinical'} onClick={() => setSelectedCategory('clinical')}>Clinical</FilterChip>
+            <FilterChip active={selectedCategory === 'fiscal'} onClick={() => setSelectedCategory('fiscal')}>Fiscal</FilterChip>
+            <FilterChip active={selectedCategory === 'governance'} onClick={() => setSelectedCategory('governance')}>Governance</FilterChip>
 
             {/* Divider */}
             <div className="h-6 w-px bg-[#e4e4e7]"></div>
 
             {/* Status Filters */}
-            <button
-              onClick={() => toggleStatusFilter('overdue')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-medium text-[12px] transition-colors ${
-                statusFilters.overdue ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e4e4e7]'
-              }`}
-            >
-              <CalendarIcon className="w-3.5 h-3.5" />
-              Overdue
-            </button>
-            <button
-              onClick={() => toggleStatusFilter('assigned')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-medium text-[12px] transition-colors ${
-                statusFilters.assigned ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e4e4e7]'
-              }`}
-            >
-              <User className="w-3.5 h-3.5" />
-              Assigned ({assignedTasksCount})
-            </button>
-            <button
-              onClick={() => toggleStatusFilter('needsAttention')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-medium text-[12px] transition-colors ${
-                statusFilters.needsAttention ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e4e4e7]'
-              }`}
-            >
-              <AlertCircle className="w-3.5 h-3.5" />
-              Needs Attention
-            </button>
+            <FilterChip active={statusFilters.overdue} onClick={() => toggleStatusFilter('overdue')} icon={<CalendarIcon className="w-3.5 h-3.5" />}>Overdue</FilterChip>
+            <FilterChip active={statusFilters.assigned} onClick={() => toggleStatusFilter('assigned')} icon={<User className="w-3.5 h-3.5" />} count={assignedTasksCount}>Assigned</FilterChip>
+            <FilterChip active={statusFilters.needsAttention} onClick={() => toggleStatusFilter('needsAttention')} icon={<AlertCircle className="w-3.5 h-3.5" />}>Needs Attention</FilterChip>
 
             {/* Clear All */}
             {hasActiveFilters && (
@@ -4426,13 +4359,12 @@ function ComplianceReviewPage() {
                   {currentQuestionIndex + 1}/{totalQuestions}
                 </div>
 
-                <button
+                <Button
                   onClick={handleNext}
                   disabled={currentQuestionIndex === totalQuestions - 1}
-                  className="bg-[#fc6] h-[40px] px-[16px] py-[8px] rounded-[6px] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#ffcc77] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)]"
                 >
                   NEXT
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -4480,13 +4412,7 @@ function ComplianceReviewPage() {
 
                     {/* Status and Assigned To */}
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={`px-2 py-1 rounded-[6px] text-[12px] font-medium ${
-                        task.status === 'Complete' ? 'bg-green-100 text-green-700' :
-                        task.status === 'In Progress' ? 'bg-[#fef3c7] text-[#92400e]' :
-                        'bg-[#f4f4f5] text-[#71717a]'
-                      }`}>
-                        {task.status}
-                      </span>
+                      <StatusBadge status={task.status ?? 'Not Started'} />
                       {task.assignedTo && (
                         <div className="flex items-center gap-1.5">
                           <div className="bg-[#fc6] rounded-full w-5 h-5 flex items-center justify-center">

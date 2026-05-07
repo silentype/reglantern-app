@@ -10,7 +10,9 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  primary: 'bg-[#fc6] text-[#373f51] hover:bg-[#ffcc77] active:bg-[#ffbf66]',
+  // Match the canonical "Add a Task" button on the Tasks page: yellow surface,
+  // dark-zinc text, subtle 1px shadow.
+  primary: 'bg-[#fc6] text-[#18181b] shadow-sm hover:bg-[#ffcc77] active:bg-[#ffbf66]',
   secondary: 'bg-white text-[#18181b] border border-[#e4e4e7] hover:bg-[#f9fafb]',
   ghost: 'bg-transparent text-[#18181b] hover:bg-[#e4e4e7]',
   danger: 'bg-[#dc2626] text-white hover:bg-[#b91c1c]',

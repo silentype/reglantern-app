@@ -9,12 +9,13 @@ import { useSearchParams } from 'react-router';
 import { X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
-import { Button } from './ui/button';
 import svgPaths from '../../imports/svg-4rlgkpgv7k';
 import svgPathsSubtask from '../../imports/svg-3gmpygqd7l';
 import svgPathsUpload from '../../imports/svg-cqqadqx4y2';
 import { SaveIndicator } from './SaveIndicator';
 import { DueDatePicker } from './DueDatePicker';
+import { Tab, TabStrip } from './design-system/Tab';
+import { Button } from './design-system/Button';
 import { AVAILABLE_USERS, STATUS_OPTIONS } from '../constants';
 import { getTaskDescription, getDisplayValueForDate } from '../utils/helpers';
 
@@ -571,12 +572,7 @@ export default function MultiFileUploadPanel({
               <p className="text-sm text-[#71717a]">{file.category} • {(file.size / 1000000).toFixed(1)}MB</p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleDownload(file)}
-                className="bg-[#fc6] px-4 py-2 rounded-md text-sm font-medium text-[#18181b] hover:bg-[#ffcc77] transition-colors"
-              >
-                Download
-              </button>
+              <Button onClick={() => handleDownload(file)}>Download</Button>
               <button
                 onClick={onClose}
                 className="p-2 hover:bg-[#f4f4f5] rounded-lg transition-colors"
@@ -919,13 +915,7 @@ export default function MultiFileUploadPanel({
       <div className="px-6 py-6 border-b border-[#e5e7eb] flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isCreatingNew && (
-            <button
-              onClick={handleSaveAndClose}
-              disabled={!editableTitle.trim()}
-              className="bg-[#fc6] px-4 py-2 rounded-md text-sm font-medium text-[#18181b] hover:bg-[#ffcc77] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#fc6]"
-            >
-              Add Task
-            </button>
+            <Button onClick={handleSaveAndClose} disabled={!editableTitle.trim()}>Add Task</Button>
           )}
           
           <Popover open={statusOpen} onOpenChange={setStatusOpen}>
@@ -1351,12 +1341,12 @@ export default function MultiFileUploadPanel({
 
         {/* Tabs and Details */}
         <div className="px-6 pt-4 pb-8 bg-white border-t-2 border-[#E4E4E7]">
-          <div className="bg-[#f4f4f5] p-1 rounded-md flex gap-0 mb-6">
-            <TabButton label="Details" active={activeTab === 'details'} onClick={() => setActiveTab('details')} />
-            <TabButton label="Comments" active={activeTab === 'comments'} onClick={() => setActiveTab('comments')} />
-            <TabButton label="Activity" active={activeTab === 'activity'} onClick={() => setActiveTab('activity')} />
-            <TabButton label="Guidance" active={activeTab === 'guidance'} onClick={() => setActiveTab('guidance')} />
-          </div>
+          <TabStrip className="mb-6">
+            <Tab active={activeTab === 'details'} onClick={() => setActiveTab('details')}>Details</Tab>
+            <Tab active={activeTab === 'comments'} onClick={() => setActiveTab('comments')}>Comments</Tab>
+            <Tab active={activeTab === 'activity'} onClick={() => setActiveTab('activity')}>Activity</Tab>
+            <Tab active={activeTab === 'guidance'} onClick={() => setActiveTab('guidance')}>Guidance</Tab>
+          </TabStrip>
 
           {activeTab === 'details' && (
             <div className="space-y-4">
@@ -1547,13 +1537,7 @@ export default function MultiFileUploadPanel({
               />
 
               <div className="flex justify-end">
-                <button
-                  onClick={handleAddComment}
-                  disabled={!commentText.trim()}
-                  className="bg-[#fc6] px-4 py-2 rounded-md text-sm font-medium text-[#18181b] hover:bg-[#ffcc77] transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#fc6]"
-                >
-                  Post Comment
-                </button>
+                <Button onClick={handleAddComment} disabled={!commentText.trim()}>Post Comment</Button>
               </div>
 
               {comments.length === 0 ? (
@@ -1628,17 +1612,4 @@ export default function MultiFileUploadPanel({
   );
 }
 
-function TabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-1 px-3 py-1.5 text-sm font-medium rounded transition-all ${
-        active 
-          ? 'bg-white text-[#09090b] shadow-sm' 
-          : 'bg-transparent text-[#6b7280] hover:text-[#09090b]'
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+// (Local TabButton helper replaced by Tab / TabStrip from design-system/Tab.)

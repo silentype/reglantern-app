@@ -5,11 +5,16 @@ export interface FilterChipProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   active?: boolean;
   /** Optional count rendered as `(N)` after the label. */
   count?: number;
-  /** Optional leading icon (typically a lucide-react icon at size 14-16). */
+  /** Optional leading icon (typically a lucide-react icon at size 12-14). */
   icon?: ReactNode;
   children: ReactNode;
 }
 
+/**
+ * Compact rounded-pill filter button. Active state is the brand yellow,
+ * inactive is a soft grey fill — matches the canonical filter row used on
+ * Tasks and Compliance Review pages.
+ */
 export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(
   ({ active = false, count, icon, children, className, ...props }, ref) => (
     <button
@@ -17,10 +22,10 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(
       type="button"
       aria-pressed={active}
       className={clsx(
-        'inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-2',
+        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
         active
-          ? 'bg-[#fc6] text-[#373f51] hover:bg-[#ffcc77]'
-          : 'bg-white text-[#18181b] border border-[#e4e4e7] hover:bg-[#f9fafb]',
+          ? 'bg-[#fc6] text-[#18181b] hover:bg-[#ffcc77]'
+          : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]',
         className
       )}
       {...props}
