@@ -5,6 +5,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
@@ -122,11 +123,25 @@ export default function MultiFileUploadPanel({
   initialSubtasks?: Subtask[];
   initialView?: 'task' | 'subtask';
 }) {
-  const [view, setView] = useState<'task' | 'subtask'>(initialView);
-  const [activeSubtask, setActiveSubtask] = useState<Subtask | null>(
-    initialView === 'subtask' && initialSubtasks.length > 0 ? initialSubtasks[0] : null
-  );
-  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'activity' | 'guidance'>('details');
+  // Panel sub-state lives in URL search params so each view is paste-able:
+  //   ?subtask=:subtaskId  -> drilled into subtask upload page (omit -> task overview)
+  //   ?tab=comments|activity|guidance  -> which task-overview tab (omit -> details)
+  // initialView prop is kept on the interface but no longer drives state -- URL wins.
+  void initialView;
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const tabParam = searchParams.get('tab');
+  const activeTab: 'details' | 'comments' | 'activity' | 'guidance' =
+    tabParam === 'comments' || tabParam === 'activity' || tabParam === 'guidance'
+      ? tabParam
+      : 'details';
+
+  const setActiveTab = (tab: 'details' | 'comments' | 'activity' | 'guidance') => {
+    const params = new URLSearchParams(searchParams);
+    if (tab === 'details') params.delete('tab');
+    else params.set('tab', tab);
+    setSearchParams(params);
+  };
   
   // Form state
   const [editableTitle, setEditableTitle] = useState<string>(taskTitle);
@@ -136,6 +151,32 @@ export default function MultiFileUploadPanel({
   const [assignedTo, setAssignedTo] = useState<UserType | undefined>(initialAssignedTo);
   const [collaborators, setCollaborators] = useState<UserType[]>(initialCollaborators);
   const [subtasks, setSubtasks] = useState<Subtask[]>(initialSubtasks);
+
+  // Active subtask + view derive from ?subtask=:id (looked up in current subtasks).
+  // If the id is absent or stale the panel falls back to the task overview.
+  const subtaskParam = searchParams.get('subtask');
+  const activeSubtask: Subtask | null = subtaskParam
+    ? (subtasks.find(s => s.id === subtaskParam) ?? null)
+    : null;
+  const view: 'task' | 'subtask' = activeSubtask !== null ? 'subtask' : 'task';
+
+  const setActiveSubtask = (subtask: Subtask | null) => {
+    const params = new URLSearchParams(searchParams);
+    if (subtask) params.set('subtask', subtask.id);
+    else params.delete('subtask');
+    setSearchParams(params);
+  };
+
+  // setView is kept for call-site compatibility. Going to 'task' clears the
+  // ?subtask= param; going to 'subtask' is a no-op because the actual transition
+  // requires a subtask id, which setActiveSubtask supplies.
+  const setView = (next: 'task' | 'subtask') => {
+    if (next === 'task') {
+      const params = new URLSearchParams(searchParams);
+      params.delete('subtask');
+      setSearchParams(params);
+    }
+  };
   
   // File upload state for system tasks without subtasks
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
