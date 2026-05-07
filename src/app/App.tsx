@@ -29,6 +29,8 @@ import searchFilterSvgPaths from '../imports/svg-oo9u3g75ma';
 import { Button } from './components/design-system/Button';
 import { FilterChip } from './components/design-system/FilterChip';
 import { StatusBadge } from './components/design-system/StatusBadge';
+import { TopNavButton } from './components/design-system/TopNavButton';
+import { Pagination } from './components/design-system/Pagination';
 
 interface Project {
   id: number;
@@ -547,13 +549,13 @@ export default function App() {
 
           {/* Navigation Menu */}
           <nav className="flex items-center gap-6">
-            <NavButton label="Home" active={false} onClick={() => {}} />
-            <NavButton label="Tasks" active={currentPage === 'tasks'} onClick={() => handleNavChange('tasks')} />
-            <NavButton label="Tools" active={currentPage === 'checklists'} onClick={() => handleNavChange('checklists')} />
-            <NavButton label="Resources" active={false} onClick={() => {}} />
-            <NavButton label="Documents" active={false} onClick={() => {}} />
-            <NavButton label="Settings" active={false} onClick={() => {}} />
-            <NavButton label="Admin" active={currentPage === 'admin'} onClick={() => handleNavChange('admin')} />
+            <TopNavButton onClick={() => {}}>Home</TopNavButton>
+            <TopNavButton active={currentPage === 'tasks'} onClick={() => handleNavChange('tasks')}>Tasks</TopNavButton>
+            <TopNavButton active={currentPage === 'checklists'} onClick={() => handleNavChange('checklists')}>Tools</TopNavButton>
+            <TopNavButton onClick={() => {}}>Resources</TopNavButton>
+            <TopNavButton onClick={() => {}}>Documents</TopNavButton>
+            <TopNavButton onClick={() => {}}>Settings</TopNavButton>
+            <TopNavButton active={currentPage === 'admin'} onClick={() => handleNavChange('admin')}>Admin</TopNavButton>
           </nav>
         </div>
 
@@ -688,18 +690,7 @@ export default function App() {
   );
 }
 
-function NavButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-        active ? 'text-white' : 'text-[#9ca3af] hover:text-white'
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+// (Local NavButton helper replaced by TopNavButton from design-system/TopNavButton.)
 
 function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; }) {
   const [statusFilter, setStatusFilter] = useState<string[]>(['all']);
@@ -4346,26 +4337,13 @@ function ComplianceReviewPage() {
               </div>
 
               {/* Navigation */}
-              <div className="flex items-center justify-between pt-6 border-t border-[#e4e4e7]">
-                <button
-                  onClick={handleBack}
-                  disabled={currentQuestionIndex === 0}
-                  className="bg-white h-[40px] px-[16px] py-[8px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#f9fafb] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  BACK
-                </button>
-
-                <div className="text-[14px] font-medium text-[#71717a]">
-                  {currentQuestionIndex + 1}/{totalQuestions}
-                </div>
-
-                <Button
-                  onClick={handleNext}
-                  disabled={currentQuestionIndex === totalQuestions - 1}
-                >
-                  NEXT
-                </Button>
-              </div>
+              <Pagination
+                current={currentQuestionIndex + 1}
+                total={totalQuestions}
+                onPrev={handleBack}
+                onNext={handleNext}
+                className="pt-6 border-t border-[#e4e4e7]"
+              />
             </div>
           )}
         </div>
