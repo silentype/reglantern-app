@@ -2373,9 +2373,9 @@ function AdminPage({
   onAddTaskToProject: (projectId: number) => void;
   onOpenProjectTask: (projectId: number, taskId: number, taskTitle: string) => void;
 }) {
-  if (selectedNavItem === 'Compliance Review') {
-    return <ComplianceReviewPage />;
-  }
+  // All hooks must be called unconditionally before any early return.
+  // (The selectedNavItem === 'Compliance Review' branch is handled below;
+  // splitting AdminPage into ProjectBuilder + ComplianceReview is Phase 5.)
   const [showNewProjectForm, setShowNewProjectForm] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -2400,6 +2400,7 @@ function AdminPage({
   const [assignUserOpen, setAssignUserOpen] = useState(false);
   const [selectedUsersForAssignment, setSelectedUsersForAssignment] = useState<string[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
+
 
   const categories = ['Compliance', 'Documentation', 'Training', 'Quality Assurance', 'Operational'];
 
@@ -2656,6 +2657,11 @@ function AdminPage({
     toast.success('Project created successfully');
   };
 
+
+  // All hooks above this line; conditional rendering below.
+  if (selectedNavItem === 'Compliance Review') {
+    return <ComplianceReviewPage />;
+  }
 
   if (selectedProject) {
     return (
