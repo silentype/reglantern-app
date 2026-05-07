@@ -14,13 +14,12 @@ import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover
 import { Calendar } from './components/ui/calendar';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './components/ui/command';
 import { format, parse, isValid, addDays, addWeeks, addMonths, addYears } from 'date-fns';
-import { X, CheckCircle, Calendar as CalendarIcon, ChevronsUpDown, Check, Search, User, Building2, AlertCircle, ChevronDown, Palette, BookOpen } from 'lucide-react';
+import { X, CheckCircle, Calendar as CalendarIcon, ChevronsUpDown, Check, Search, User, Building2, AlertCircle, ChevronDown, Palette } from 'lucide-react';
 import reglanternLogo from 'figma:asset/5c768d7f259dcbb31703dfef4853e9bbf108c1dc.png';
 import { Toaster, toast } from 'sonner';
 import { SaveIndicator } from './components/SaveIndicator';
 import { DueDatePicker } from './components/DueDatePicker';
 import { TasksHeader } from './components/TasksHeader';
-import DeveloperHub from './DeveloperHub';
 import { AUTOSAVE_DELAY, SAVE_INDICATOR_DURATION, AVAILABLE_USERS, HEALTH_CENTERS, DATE_FILTER_PRESETS } from './constants';
 import { INITIAL_TASKS } from './data/initialTasks';
 import { parseDueDateFilter, displayDueDateFilter } from './utils/helpers';
@@ -128,7 +127,6 @@ export default function App() {
   }, [location.pathname, navigate]);
 
   // UI-only state (intentionally not in URL — user preference / transient)
-  const [showDeveloperHub, setShowDeveloperHub] = useState(false);
   const [sideNavOpen, setSideNavOpen] = useState(true);
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
@@ -511,11 +509,6 @@ export default function App() {
     return [...tasks, ...projectTasks];
   }, [tasks, projects]);
 
-  // Show DeveloperHub if requested
-  if (showDeveloperHub) {
-    return <DeveloperHub onClose={() => setShowDeveloperHub(false)} />;
-  }
-
   return (
     <div className="h-screen bg-[#f9fafb] flex flex-col">
       <Toaster 
@@ -561,18 +554,6 @@ export default function App() {
 
         {/* Right side: Logo + Profile */}
         <div className="flex items-center gap-4">
-          {/* Developer Hub Button - Hidden for now */}
-          {false && (
-            <button
-              onClick={() => setShowDeveloperHub(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#fc6] hover:bg-[#404950] transition-colors"
-              title="Open Developer Hub"
-            >
-              <BookOpen className="h-4 w-4 text-[#fc6]" />
-              <span className="text-[#fc6] text-sm font-medium">Developer Hub</span>
-            </button>
-          )}
-
           {/* RegLantern Logo */}
           <img src={reglanternLogo} alt="RegLantern Logo" className="h-[30px] w-auto" />
 
