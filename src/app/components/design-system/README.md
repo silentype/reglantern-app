@@ -12,14 +12,19 @@ npm run storybook   # http://localhost:6006
 
 | Component | What it is |
 |---|---|
-| `Button` | Primary (yellow) / secondary / ghost / danger. Sizes `sm` `md` `lg`. |
+| `Button` | Primary (yellow) / secondary / ghost / danger. Sizes `sm` `md` `lg`. Matches the canonical "Add a Task" styling. |
 | `Pill` | Generic colored badge — neutral / yellow / green / blue / red / purple. |
 | `StatusBadge` | `Pill` with a fixed mapping for task statuses (In Progress, Complete, Blocked, Not Started). |
-| `Avatar` | Initials in a colored circle. Deterministic palette per initials, sizes `sm` `md` `lg`. |
+| `Avatar` | Initials in a colored circle. Deterministic pastel palette per initials, sizes `sm` `md` `lg`. |
 | `AvatarStack` | Stack of `Avatar`s with overlap and `+N` overflow. |
-| `FilterChip` | Round filter pill with optional icon + count. Active = brand yellow. |
+| `FilterChip` | Compact rounded filter pill with optional icon + count. Active = brand yellow, inactive = soft grey fill. |
 | `SearchInput` | Text input with leading magnifying-glass icon, sizes `sm` `md`. |
-| `Tab` / `TabStrip` | Horizontal tab strip pattern used in the side panel. |
+| `Tab` / `TabStrip` | Segmented-control tab strip used in the side panel (Details / Comments / Activity / Guidance). |
+| `Card` (+ `CardHeader` / `CardBody` / `CardFooter`) | White surface with `border` + `rounded-[6px]`, optional `interactive` hover and `elevated` shadow. Matches project cards and chapter cards. |
+| `Breadcrumb` | Inline trail with `ChevronRight` separators. Last segment is the current page. |
+| `YesNoCard` | Big radio-button cards used on Compliance Review questions. Yellow accent when selected. |
+| `EmptyState` | Centered "no items yet" placeholder with optional icon + description + action. |
+| `PageHeader` | Title + optional description + right-aligned action slot. Optional eyebrow slot for breadcrumbs. |
 
 Plus a **Design Tokens** story (colors, typography, spacing, radii) that mirrors
 `src/styles/theme.css`.
@@ -59,6 +64,37 @@ initials avatars, rounded filter chips with optional icon + count, an
 underline-style tab strip. Every primitive above is extracted from one of
 those screens. As we build more pages they should consume these instead of
 re-implementing inline JSX.
+
+## Linking stories to Figma frames
+
+Storybook is wired up with `@storybook/addon-designs`. By default every story
+shows the source Figma file in a new "Design" tab in the Storybook UI:
+[Reglantern Prototype v1](https://www.figma.com/design/3gLzMcY5wvpszg6nLOKxUn/Reglantern-Prototype-v1).
+The fallback URL lives in `.storybook/preview.tsx`.
+
+To deep-link a specific story to a specific frame:
+
+1. In Figma desktop, right-click the frame and choose **Copy/Paste as → Copy
+   link to selection**. The URL ends in `?node-id=<id>`.
+2. In the story file, add a `parameters` field:
+
+```ts
+export const Primary: Story = {
+  args: { variant: 'primary' },
+  parameters: {
+    design: {
+      type: 'figma',
+      url: 'https://www.figma.com/design/3gLzMcY5wvpszg6nLOKxUn/Reglantern-Prototype-v1?node-id=123-456',
+    },
+  },
+};
+```
+
+Per-story `parameters.design` overrides the global default. The Design tab
+will show the embedded Figma frame; if the designer changes the frame in Figma,
+the embed in Storybook updates automatically (it's a live iframe, not a
+snapshot). The React code still has to be updated by hand (or via the Figma
+Dev Mode MCP server — see top-level `CLAUDE.md`).
 
 ## Where this lives in the build
 

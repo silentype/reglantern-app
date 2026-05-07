@@ -2,6 +2,14 @@ import React from 'react';
 import { MemoryRouter } from 'react-router';
 import '../src/styles/index.css';
 
+// Source-of-truth Figma file. Every story shows this in the "Design" tab by
+// default. Individual stories can override with a deep link to a specific
+// frame by adding `parameters: { design: { type: 'figma', url: '...?node-id=X' } }`.
+// Grab a frame URL by right-clicking the frame in Figma -> Copy/paste as ->
+// Copy link to selection.
+const FIGMA_FILE_URL =
+  'https://www.figma.com/design/3gLzMcY5wvpszg6nLOKxUn/Reglantern-Prototype-v1';
+
 /** @type { import('@storybook/react-vite').Preview } */
 const preview = {
   parameters: {
@@ -21,6 +29,10 @@ const preview = {
       ],
     },
     a11y: { test: 'todo' },
+    design: {
+      type: 'figma',
+      url: FIGMA_FILE_URL,
+    },
   },
   decorators: [
     (Story) => (
