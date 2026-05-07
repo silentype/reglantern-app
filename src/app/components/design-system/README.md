@@ -25,6 +25,12 @@ npm run storybook   # http://localhost:6006
 | `YesNoCard` | Big radio-button cards used on Compliance Review questions. Yellow accent when selected. |
 | `EmptyState` | Centered "no items yet" placeholder with optional icon + description + action. |
 | `PageHeader` | Title + optional description + right-aligned action slot. Optional eyebrow slot for breadcrumbs. |
+| `TopNavButton` | Inline link-style button used inside the dark `#32383e` top bar. Active = white, inactive = muted. |
+| `DateChip` | Calendar-icon + label inline trigger used as a date-picker entry-point. Optional `highlighted` variant. |
+| `Pagination` | Three-column row: BACK · "n/total" · NEXT. Used at the bottom of Compliance Review questions. |
+| `FileRow` | Uploaded file row — icon + filename + size + Preview / Download / Delete actions. |
+| `FileUploadDropzone` | Drag-and-drop file area with browse-fallback button. Idle / dragging / disabled states. |
+| `CommentItem` | Comment row — Avatar + name + timestamp + body + optional actions slot. |
 
 Plus a **Design Tokens** story (colors, typography, spacing, radii) that mirrors
 `src/styles/theme.css`.
