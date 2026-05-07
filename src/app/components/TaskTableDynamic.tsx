@@ -20,7 +20,9 @@ export type SortDirection = 'asc' | 'desc' | null;
 export interface ColumnConfig {
   id: SortColumn;
   label: string;
-  icon?: React.ComponentType<{ size: number; className?: string }> | null;
+  // Loose typing because lucide-react icons are ForwardRefExoticComponent<LucideProps>,
+  // which doesn't fit a tighter ComponentType<{ size, className }> due to ref forwarding.
+  icon?: React.ComponentType<any> | null;
   width: number;
   minWidth: number;
 }
@@ -55,6 +57,7 @@ export interface Task {
       progress?: number;
       isUploading?: boolean;
     }>;
+    notApplicable?: boolean;
   }>;
 }
 
@@ -162,7 +165,7 @@ UserAvatar.displayName = 'UserAvatar';
 
 const SortButton = memo(({ label, icon: Icon, sortColumn, currentColumn, sortDirection, onSort }: {
   label: string;
-  icon?: React.ComponentType<{ size: number; className?: string }>;
+  icon?: React.ComponentType<any> | null;
   sortColumn: SortColumn;
   currentColumn: SortColumn;
   sortDirection: SortDirection;
@@ -389,7 +392,7 @@ const TaskRow = memo(function TaskRow({
     handleToggleTaskComplete(task.id);
   }, [task.completed, task.id, canBeCompleted, blockCompletionReason, handleToggleTaskComplete]);
 
-  const handleQuickDateSelect = useCallback((option: typeof QUICK_DATE_OPTIONS[0]) => {
+  const handleQuickDateSelect = useCallback((option: typeof QUICK_DATE_OPTIONS[number]) => {
     const newDate = addDays(new Date(), option.days);
     const formatted = format(newDate, 'MM/dd/yyyy');
     onUpdateTask(task.id, { dueDate: formatted });
