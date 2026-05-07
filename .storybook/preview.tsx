@@ -2,13 +2,15 @@ import React from 'react';
 import { MemoryRouter } from 'react-router';
 import '../src/styles/index.css';
 
-// Source-of-truth Figma file. Every story shows this in the "Design" tab by
-// default. Individual stories can override with a deep link to a specific
-// frame by adding `parameters: { design: { type: 'figma', url: '...?node-id=X' } }`.
+// Source-of-truth Figma file: the Reglantern shadcn-style design kit (the
+// file the design-system primitives are authored in). Every story shows
+// this in the "Design" tab by default; individual stories override with a
+// deep link to a specific frame by adding
+//   parameters: { design: { type: 'figma', url: '...?node-id=X' } }
 // Grab a frame URL by right-clicking the frame in Figma -> Copy/paste as ->
-// Copy link to selection.
+// Copy link to selection. Strip the trailing &t=... session token before pasting.
 const FIGMA_FILE_URL =
-  'https://www.figma.com/design/3gLzMcY5wvpszg6nLOKxUn/Reglantern-Prototype-v1';
+  'https://www.figma.com/design/nTGtK5YYRFtaX07IsucNqw/Reglantern-Shadcn-Figma-kit?node-id=55570-574';
 
 /** @type { import('@storybook/react-vite').Preview } */
 const preview = {

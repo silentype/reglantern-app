@@ -69,8 +69,9 @@ re-implementing inline JSX.
 
 Storybook is wired up with `@storybook/addon-designs`. By default every story
 shows the source Figma file in a new "Design" tab in the Storybook UI:
-[Reglantern Prototype v1](https://www.figma.com/design/3gLzMcY5wvpszg6nLOKxUn/Reglantern-Prototype-v1).
-The fallback URL lives in `.storybook/preview.tsx`.
+[Reglantern Shadcn Figma kit](https://www.figma.com/design/nTGtK5YYRFtaX07IsucNqw/Reglantern-Shadcn-Figma-kit?node-id=55570-574)
+— the file the design-system primitives are authored in. The fallback URL
+lives in `.storybook/preview.tsx`.
 
 To deep-link a specific story to a specific frame:
 
@@ -84,7 +85,7 @@ export const Primary: Story = {
   parameters: {
     design: {
       type: 'figma',
-      url: 'https://www.figma.com/design/3gLzMcY5wvpszg6nLOKxUn/Reglantern-Prototype-v1?node-id=123-456',
+      url: 'https://www.figma.com/design/nTGtK5YYRFtaX07IsucNqw/Reglantern-Shadcn-Figma-kit?node-id=123-456',
     },
   },
 };
