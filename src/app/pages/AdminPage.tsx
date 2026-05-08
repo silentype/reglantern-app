@@ -68,7 +68,12 @@ export interface Project {
   category: string;
   createdAt: string;
   tasks: Task[];
-  assignedTo?: Array<{ initials: string; name: string }>;
+  /**
+   * Health centers this project is assigned to. When non-empty, the project's
+   * tasks bubble up into the main "My Tasks" list (see App.tsx's
+   * allTasksIncludingProjects merge).
+   */
+  assignedHealthCenters?: string[];
 }
 
 export function AdminPage({
@@ -96,8 +101,8 @@ export function AdminPage({
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tableSaveStatus, setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [projectCardAssignOpen, setProjectCardAssignOpen] = useState<number | null>(null);
-  const [projectCardSelectedUsers, setProjectCardSelectedUsers] = useState<string[]>([]);
-  const [projectCardUserSearch, setProjectCardUserSearch] = useState('');
+  const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
+  const [projectCardCenterSearch, setProjectCardCenterSearch] = useState('');
 
   // Filter states for project tasks
   const [statusFilter, setStatusFilter] = useState<string[]>(['all']);
@@ -112,10 +117,6 @@ export function AdminPage({
   const [healthCenterOpen, setHealthCenterOpen] = useState(false);
   const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
   const [columnVisibilityOpen, setColumnVisibilityOpen] = useState(false);
-  const [assignUserOpen, setAssignUserOpen] = useState(false);
-  const [selectedUsersForAssignment, setSelectedUsersForAssignment] = useState<string[]>([]);
-  const [userSearchQuery, setUserSearchQuery] = useState('');
-
 
   const categories = ['Compliance', 'Documentation', 'Training', 'Quality Assurance', 'Operational'];
 
@@ -417,166 +418,6 @@ export function AdminPage({
             </div>
           </div>
 
-          {/* Assign Project Section */}
-          <div className="px-[24px] py-4 border-b border-[#e4e4e7] bg-[#fafafa]">
-            <div className="flex items-center gap-3">
-              <div className="flex-1 flex items-center gap-2">
-                <Popover open={assignUserOpen} onOpenChange={setAssignUserOpen}>
-                  <PopoverTrigger asChild>
-                    <button className="flex-1 max-w-[400px] flex items-center justify-between gap-2 px-3 py-2 bg-white border border-[#e4e4e7] rounded-[6px] text-[14px] hover:border-[#d4d4d8] transition-colors h-[40px]">
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <User className="w-4 h-4 text-[#71717a] shrink-0" />
-                        <span className="text-[#71717a] truncate">
-                          {selectedUsersForAssignment.length === 0
-                            ? 'Select user to assign project...'
-                            : selectedUsersForAssignment.length === 1
-                            ? selectedUsersForAssignment[0]
-                            : `${selectedUsersForAssignment.length} users selected`}
-                        </span>
-                      </div>
-                      <ChevronsUpDown className="w-4 h-4 text-[#71717a] shrink-0" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0" align="start">
-                    <Command>
-                      <div className="flex items-center border-b px-3">
-                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                        <input
-                          placeholder="Search users..."
-                          value={userSearchQuery}
-                          onChange={(e) => setUserSearchQuery(e.target.value)}
-                          className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#71717a]"
-                        />
-                      </div>
-                      <CommandList>
-                        <CommandEmpty>No users found.</CommandEmpty>
-                        <CommandGroup>
-                          {/* All Users option */}
-                          <CommandItem
-                            onSelect={() => {
-                              if (selectedUsersForAssignment.length === availableUsers.length) {
-                                setSelectedUsersForAssignment([]);
-                              } else {
-                                setSelectedUsersForAssignment(availableUsers.map(u => u.name));
-                              }
-                            }}
-                            className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                          >
-                            <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                              selectedUsersForAssignment.length === availableUsers.length
-                                ? 'bg-[#fc6] border-[#fc6]'
-                                : 'border-[#d4d4d8]'
-                            }`}>
-                              {selectedUsersForAssignment.length === availableUsers.length && (
-                                <Check className="w-3 h-3 text-[#18181b]" />
-                              )}
-                            </div>
-                            <span className="font-medium text-[14px]">All Users</span>
-                          </CommandItem>
-
-                          {/* Individual users */}
-                          {availableUsers
-                            .filter(user =>
-                              userSearchQuery === '' ||
-                              user.name.toLowerCase().includes(userSearchQuery.toLowerCase())
-                            )
-                            .map((user) => (
-                              <CommandItem
-                                key={user.name}
-                                onSelect={() => {
-                                  setSelectedUsersForAssignment(prev =>
-                                    prev.includes(user.name)
-                                      ? prev.filter(name => name !== user.name)
-                                      : [...prev, user.name]
-                                  );
-                                }}
-                                className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                              >
-                                <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                                  selectedUsersForAssignment.includes(user.name)
-                                    ? 'bg-[#fc6] border-[#fc6]'
-                                    : 'border-[#d4d4d8]'
-                                }`}>
-                                  {selectedUsersForAssignment.includes(user.name) && (
-                                    <Check className="w-3 h-3 text-[#18181b]" />
-                                  )}
-                                </div>
-                                <Avatar initials={user.initials} name={user.name} size="sm" />
-                                <span className="text-[14px]">{user.name}</span>
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {selectedUsersForAssignment.length > 0 && (
-                  <button
-                    onClick={() => {
-                      setSelectedUsersForAssignment([]);
-                      setUserSearchQuery('');
-                    }}
-                    className="h-[40px] w-[40px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
-                    title="Clear selection"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-
-              {selectedUsersForAssignment.length > 0 && (
-                <Button
-                  onClick={() => {
-                    // Add selected users to the project's assignedTo list
-                    const newAssignees = selectedUsersForAssignment.map(userName => {
-                      const user = availableUsers.find(u => u.name === userName);
-                      return user ? { initials: user.initials, name: user.name } : null;
-                    }).filter(Boolean) as Array<{ initials: string; name: string }>;
-
-                    setProjects(prev => prev.map(p => {
-                      if (p.id === selectedProject.id) {
-                        const currentAssignees = p.assignedTo || [];
-                        // Filter out duplicates
-                        const uniqueNewAssignees = newAssignees.filter(
-                          newUser => !currentAssignees.some(existing => existing.name === newUser.name)
-                        );
-                        return {
-                          ...p,
-                          assignedTo: [...currentAssignees, ...uniqueNewAssignees]
-                        };
-                      }
-                      return p;
-                    }));
-
-                    // Update selectedProject state as well
-                    setSelectedProject(prev => {
-                      if (!prev) return null;
-                      const currentAssignees = prev.assignedTo || [];
-                      const uniqueNewAssignees = newAssignees.filter(
-                        newUser => !currentAssignees.some(existing => existing.name === newUser.name)
-                      );
-                      return {
-                        ...prev,
-                        assignedTo: [...currentAssignees, ...uniqueNewAssignees]
-                      };
-                    });
-
-                    // Reset UI first
-                    setSelectedUsersForAssignment([]);
-                    setUserSearchQuery('');
-                    setAssignUserOpen(false);
-
-                    // Show toast after resetting
-                    toast.success(`Project assigned to ${newAssignees.length} user${newAssignees.length > 1 ? 's' : ''}`);
-                  }}
-                  className="shrink-0"
-                >
-                  Send
-                </Button>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Tasks Table Section */}
@@ -1057,192 +898,193 @@ export function AdminPage({
         {/* Projects Grid */}
         {projects.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project) => (
-              <div
-                key={project.id}
-                className="p-5 border border-[#e4e4e7] rounded-[6px] bg-white hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <h3
-                    onClick={() => setSelectedProject(project)}
-                    className="font-semibold text-[#18181b] text-[16px] leading-[24px] flex-1 pr-2 cursor-pointer hover:text-[#fc6] transition-colors"
-                  >
-                    {project.name}
-                  </h3>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] text-[12px] font-medium bg-[#f4f4f5] text-[#18181b] shrink-0">
-                    {project.category}
-                  </span>
-                </div>
-                <p
-                  onClick={() => setSelectedProject(project)}
-                  className="text-[14px] text-[#71717a] mb-4 line-clamp-2 leading-[20px] cursor-pointer"
+            {projects.map((project) => {
+              const openProject = () => setSelectedProject(project);
+              return (
+                <div
+                  key={project.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={openProject}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openProject();
+                    }
+                  }}
+                  className="p-5 border border-[#e4e4e7] rounded-[6px] bg-white cursor-pointer hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-all text-left"
                 >
-                  {project.description}
-                </p>
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="font-semibold text-[#18181b] text-[16px] leading-[24px] flex-1 pr-2">
+                      {project.name}
+                    </h3>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] text-[12px] font-medium bg-[#f4f4f5] text-[#18181b] shrink-0">
+                      {project.category}
+                    </span>
+                  </div>
+                  <p className="text-[14px] text-[#71717a] mb-4 line-clamp-2 leading-[20px]">
+                    {project.description}
+                  </p>
 
-                {/* Assignment Section */}
-                <div className="mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <Popover
-                      open={projectCardAssignOpen === project.id}
-                      onOpenChange={(open) => {
-                        setProjectCardAssignOpen(open ? project.id : null);
-                      }}
-                    >
-                      <PopoverTrigger asChild>
-                        <button
+                  {/* Currently assigned health centers (if any) */}
+                  {project.assignedHealthCenters && project.assignedHealthCenters.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-1.5">
+                      {project.assignedHealthCenters.map((center) => (
+                        <span
+                          key={center}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] bg-[#fef3c7] text-[#92400e] text-[12px] font-medium"
+                        >
+                          <Building2 className="w-3 h-3" />
+                          {center}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Assign to Health Center */}
+                  <div className="mb-3">
+                    <div className="flex items-center gap-1.5">
+                      <Popover
+                        open={projectCardAssignOpen === project.id}
+                        onOpenChange={(open) => {
+                          setProjectCardAssignOpen(open ? project.id : null);
+                          if (!open) {
+                            setProjectCardSelectedCenters([]);
+                            setProjectCardCenterSearch('');
+                          }
+                        }}
+                      >
+                        <PopoverTrigger asChild>
+                          <button
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-white border border-[#e4e4e7] rounded-[6px] text-[12px] hover:border-[#d4d4d8] transition-colors h-[36px]"
+                          >
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <Building2 className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
+                              <span className="text-[#71717a] truncate">
+                                {projectCardSelectedCenters.length === 0
+                                  ? 'Assign to health center...'
+                                  : projectCardSelectedCenters.length === 1
+                                  ? projectCardSelectedCenters[0]
+                                  : `${projectCardSelectedCenters.length} health centers selected`}
+                              </span>
+                            </div>
+                            <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-[280px] p-0"
+                          align="start"
                           onClick={(e) => e.stopPropagation()}
-                          className="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-white border border-[#e4e4e7] rounded-[6px] text-[12px] hover:border-[#d4d4d8] transition-colors h-[36px]"
+                          onKeyDown={(e) => e.stopPropagation()}
                         >
-                          <div className="flex items-center gap-2 flex-1 min-w-0">
-                            <User className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
-                            <span className="text-[#71717a] truncate">
-                              {projectCardSelectedUsers.length === 0
-                                ? 'Select user...'
-                                : projectCardSelectedUsers.length === 1
-                                ? projectCardSelectedUsers[0]
-                                : `${projectCardSelectedUsers.length} users selected`}
-                            </span>
-                          </div>
-                          <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[280px] p-0" align="start" onClick={(e) => e.stopPropagation()}>
-                        <Command>
-                          <div className="flex items-center border-b px-3">
-                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                            <input
-                              placeholder="Search users..."
-                              value={projectCardUserSearch}
-                              onChange={(e) => setProjectCardUserSearch(e.target.value)}
-                              className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#71717a]"
-                            />
-                          </div>
-                          <CommandList>
-                            <CommandEmpty>No users found.</CommandEmpty>
-                            <CommandGroup>
-                              {/* All Users option */}
-                              <CommandItem
-                                onSelect={() => {
-                                  if (projectCardSelectedUsers.length === availableUsers.length) {
-                                    setProjectCardSelectedUsers([]);
-                                  } else {
-                                    setProjectCardSelectedUsers(availableUsers.map(u => u.name));
-                                  }
-                                }}
-                                className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                              >
-                                <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                                  projectCardSelectedUsers.length === availableUsers.length
-                                    ? 'bg-[#fc6] border-[#fc6]'
-                                    : 'border-[#d4d4d8]'
-                                }`}>
-                                  {projectCardSelectedUsers.length === availableUsers.length && (
-                                    <Check className="w-3 h-3 text-[#18181b]" />
-                                  )}
-                                </div>
-                                <span className="font-medium text-[14px]">All Users</span>
-                              </CommandItem>
+                          <Command>
+                            <div className="flex items-center border-b px-3">
+                              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                              <input
+                                placeholder="Search health centers..."
+                                value={projectCardCenterSearch}
+                                onChange={(e) => setProjectCardCenterSearch(e.target.value)}
+                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#71717a]"
+                              />
+                            </div>
+                            <CommandList>
+                              <CommandEmpty>No health centers found.</CommandEmpty>
+                              <CommandGroup>
+                                {healthCenters
+                                  .filter((center) =>
+                                    projectCardCenterSearch === '' ||
+                                    center.toLowerCase().includes(projectCardCenterSearch.toLowerCase())
+                                  )
+                                  .map((center) => {
+                                    const isSelected = projectCardSelectedCenters.includes(center);
+                                    return (
+                                      <CommandItem
+                                        key={center}
+                                        onSelect={() => {
+                                          setProjectCardSelectedCenters((prev) =>
+                                            prev.includes(center)
+                                              ? prev.filter((c) => c !== center)
+                                              : [...prev, center]
+                                          );
+                                        }}
+                                        className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                                      >
+                                        <div
+                                          className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
+                                            isSelected
+                                              ? 'bg-[#fc6] border-[#fc6]'
+                                              : 'border-[#d4d4d8]'
+                                          }`}
+                                        >
+                                          {isSelected && <Check className="w-3 h-3 text-[#18181b]" />}
+                                        </div>
+                                        <Building2 className="w-4 h-4 text-[#71717a]" />
+                                        <span className="text-[14px]">{center}</span>
+                                      </CommandItem>
+                                    );
+                                  })}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
 
-                              {/* Individual users */}
-                              {availableUsers
-                                .filter(user =>
-                                  projectCardUserSearch === '' ||
-                                  user.name.toLowerCase().includes(projectCardUserSearch.toLowerCase())
-                                )
-                                .map((user) => (
-                                  <CommandItem
-                                    key={user.name}
-                                    onSelect={() => {
-                                      setProjectCardSelectedUsers(prev =>
-                                        prev.includes(user.name)
-                                          ? prev.filter(name => name !== user.name)
-                                          : [...prev, user.name]
-                                      );
-                                    }}
-                                    className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                                  >
-                                    <div className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                                      projectCardSelectedUsers.includes(user.name)
-                                        ? 'bg-[#fc6] border-[#fc6]'
-                                        : 'border-[#d4d4d8]'
-                                    }`}>
-                                      {projectCardSelectedUsers.includes(user.name) && (
-                                        <Check className="w-3 h-3 text-[#18181b]" />
-                                      )}
-                                    </div>
-                                    <Avatar initials={user.initials} name={user.name} size="sm" />
-                                    <span className="text-[14px]">{user.name}</span>
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                      {projectCardSelectedCenters.length > 0 && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setProjectCardSelectedCenters([]);
+                              setProjectCardCenterSearch('');
+                            }}
+                            className="h-[36px] w-[36px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
+                            title="Clear selection"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
 
-                    {projectCardSelectedUsers.length > 0 && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setProjectCardSelectedUsers([]);
-                            setProjectCardUserSearch('');
-                          }}
-                          className="h-[36px] w-[36px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
-                          title="Clear selection"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
+                          <Button
+                            size="sm"
+                            className="shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const newCenters = [...projectCardSelectedCenters];
+                              setProjects((prev) =>
+                                prev.map((p) => {
+                                  if (p.id !== project.id) return p;
+                                  const current = p.assignedHealthCenters || [];
+                                  const merged = [
+                                    ...current,
+                                    ...newCenters.filter((c) => !current.includes(c)),
+                                  ];
+                                  return { ...p, assignedHealthCenters: merged };
+                                })
+                              );
+                              setProjectCardSelectedCenters([]);
+                              setProjectCardCenterSearch('');
+                              setProjectCardAssignOpen(null);
+                              toast.success(
+                                `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`
+                              );
+                            }}
+                          >
+                            Send
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
 
-                        <Button
-                          size="sm"
-                          className="shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Add selected users to the project's assignedTo list
-                            const newAssignees = projectCardSelectedUsers.map(userName => {
-                              const user = availableUsers.find(u => u.name === userName);
-                              return user ? { initials: user.initials, name: user.name } : null;
-                            }).filter(Boolean) as Array<{ initials: string; name: string }>;
-
-                            setProjects(prev => prev.map(p => {
-                              if (p.id === project.id) {
-                                const currentAssignees = p.assignedTo || [];
-                                // Filter out duplicates
-                                const uniqueNewAssignees = newAssignees.filter(
-                                  newUser => !currentAssignees.some(existing => existing.name === newUser.name)
-                                );
-                                return {
-                                  ...p,
-                                  assignedTo: [...currentAssignees, ...uniqueNewAssignees]
-                                };
-                              }
-                              return p;
-                            }));
-
-                            // Reset UI first
-                            setProjectCardSelectedUsers([]);
-                            setProjectCardUserSearch('');
-                            setProjectCardAssignOpen(null);
-
-                            // Show toast after resetting
-                            toast.success(`Project assigned to ${newAssignees.length} user${newAssignees.length > 1 ? 's' : ''}`);
-                          }}
-                        >
-                          Send
-                        </Button>
-                      </>
-                    )}
+                  <div className="flex items-center justify-between text-[12px] text-[#71717a] pt-3 border-t border-[#f4f4f5]">
+                    <span className="font-medium">
+                      {project.tasks.length} {project.tasks.length === 1 ? 'task' : 'tasks'}
+                    </span>
+                    <span>Created {format(new Date(project.createdAt), 'MMM d, yyyy')}</span>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between text-[12px] text-[#71717a] pt-3 border-t border-[#f4f4f5]">
-                  <span className="font-medium">{project.tasks.length} {project.tasks.length === 1 ? 'task' : 'tasks'}</span>
-                  <span>Created {format(new Date(project.createdAt), 'MMM d, yyyy')}</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

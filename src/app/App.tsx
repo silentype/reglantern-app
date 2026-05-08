@@ -476,10 +476,9 @@ export default function App() {
   const allTasksIncludingProjects = useMemo(() => {
     const projectTasks: Task[] = [];
 
-    // Collect tasks from all assigned projects
+    // Collect tasks from all projects assigned to a health center
     projects.forEach(project => {
-      if (project.assignedTo && project.assignedTo.length > 0 && project.tasks.length > 0) {
-        // Add all tasks from this assigned project
+      if (project.assignedHealthCenters && project.assignedHealthCenters.length > 0 && project.tasks.length > 0) {
         project.tasks.forEach(task => {
           projectTasks.push(task);
         });
