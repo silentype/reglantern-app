@@ -4,6 +4,9 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format, parse, isValid, addDays, addMonths, addYears } from 'date-fns';
 import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { Tab, TabStrip } from './design-system/Tab';
+import { RelativeDuePicker } from './RelativeDuePicker';
+import type { DueDateRule, Task } from './TaskTableDynamic';
 
 interface DueDatePickerProps {
   value?: string; // Current date value in MM/dd/yyyy format or relative format like '7d', '1m'
@@ -14,6 +17,18 @@ interface DueDatePickerProps {
   align?: 'start' | 'center' | 'end';
   side?: 'top' | 'right' | 'bottom' | 'left';
   showToast?: boolean;
+  /**
+   * When provided, the popover offers a "Relative to / Specific date" tab
+   * toggle and shows the rule picker in relative mode. Used for
+   * Project Builder tasks; omit elsewhere.
+   */
+  relative?: {
+    initialRule?: DueDateRule;
+    siblingTasks?: Task[];
+    projectStartDate?: string;
+    excludeTaskId?: number;
+    onSave: (rule: DueDateRule) => void;
+  };
 }
 
 export function DueDatePicker({
@@ -24,21 +39,27 @@ export function DueDatePicker({
   triggerClassName,
   align = 'start',
   side = 'bottom',
-  showToast = true
+  showToast = true,
+  relative,
 }: DueDatePickerProps) {
   const [inputValue, setInputValue] = useState('');
   const [calendarOpen, setCalendarOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // When relative mode is enabled, default to 'relative' (per the user's
+  // preference) unless the task already has a hard date with no rule.
+  const [dateMode, setDateMode] = useState<'specific' | 'relative'>(
+    relative ? (value && !relative.initialRule ? 'specific' : 'relative') : 'specific'
+  );
 
   // Parse the current value for the calendar
-  const selectedDate = value && /^\d{2}\/\d{2}\/\d{4}$/.test(value) 
-    ? parse(value, 'MM/dd/yyyy', new Date()) 
+  const selectedDate = value && /^\d{2}\/\d{2}\/\d{4}$/.test(value)
+    ? parse(value, 'MM/dd/yyyy', new Date())
     : undefined;
 
   return (
     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
       <PopoverTrigger asChild>
-        <button 
+        <button
           className={triggerClassName}
           onClick={(e) => e.stopPropagation()}
         >
@@ -46,7 +67,36 @@ export function DueDatePicker({
           <ChevronDown className="size-[16px] text-[#71717a] ml-1" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align={align} side={side}>
+      <PopoverContent
+        className="w-auto p-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
+        align={align}
+        side={side}
+        collisionPadding={16}
+      >
+        {relative && (
+          <div className="sticky top-0 z-10 bg-white px-3 pt-3 pb-2 border-b border-[#e4e4e7]">
+            <TabStrip>
+              <Tab active={dateMode === 'relative'} onClick={() => setDateMode('relative')}>
+                Relative to
+              </Tab>
+              <Tab active={dateMode === 'specific'} onClick={() => setDateMode('specific')}>
+                Specific date
+              </Tab>
+            </TabStrip>
+          </div>
+        )}
+        {relative && dateMode === 'relative' ? (
+          <RelativeDuePicker
+            initialRule={relative.initialRule}
+            siblingTasks={relative.siblingTasks}
+            projectStartDate={relative.projectStartDate}
+            excludeTaskId={relative.excludeTaskId}
+            onSave={(rule) => {
+              relative.onSave(rule);
+              setCalendarOpen(false);
+            }}
+          />
+        ) : (
         <div className="flex">
           {/* Left Side - Quick Select */}
           <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
@@ -171,6 +221,7 @@ export function DueDatePicker({
             />
           </div>
         </div>
+        )}
       </PopoverContent>
     </Popover>
   );

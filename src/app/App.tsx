@@ -384,15 +384,7 @@ export default function App() {
 
   const handleUpdateTaskDetails = useCallback((
     taskId: number,
-    updates: {
-      title?: string;
-      description?: string;
-      status?: string;
-      dueDate?: string;
-      assignedTo?: { initials: string; name: string };
-      collaborators?: Array<{ initials: string; name: string }>;
-      healthCenter?: string;
-    }
+    updates: Partial<Task>
   ) => {
     // Check if we're updating a project task
     if (selectedProjectId !== null) {
@@ -451,26 +443,19 @@ export default function App() {
 
   // Memoize current task to avoid recalculation on every render
   const currentTask = useMemo(() => {
-    // If we're in a project, find the task in the project
     if (selectedProjectId !== null) {
       const project = projects.find(p => p.id === selectedProjectId);
-      if (project) {
-        const task = project.tasks.find(t => t.id === selectedTaskId);
-        if (task) {
-          console.log('Current project task:', task.id, 'Has subtasks:', task.subtasks?.length || 0, task.subtasks);
-        }
-        return task;
-      }
-      return undefined;
+      return project?.tasks.find(t => t.id === selectedTaskId);
     }
-
-    // Otherwise find in main tasks
-    const task = tasks.find(t => t.id === selectedTaskId);
-    if (task) {
-      console.log('Current task:', task.id, 'Has subtasks:', task.subtasks?.length || 0, task.subtasks);
-    }
-    return task;
+    return tasks.find(t => t.id === selectedTaskId);
   }, [tasks, projects, selectedTaskId, selectedProjectId]);
+
+  // The project the side panel is currently scoped to (if any). Used to pass
+  // project-relative date context (start date + sibling tasks) into the panel.
+  const currentProject = useMemo(
+    () => (selectedProjectId !== null ? projects.find(p => p.id === selectedProjectId) : undefined),
+    [projects, selectedProjectId]
+  );
 
   // Compute all tasks including those from assigned projects for the Tasks page
   const allTasksIncludingProjects = useMemo(() => {
@@ -625,6 +610,8 @@ export default function App() {
               initialTaskType='custom'
               initialSubtasks={[]}
               simplifiedFields={selectedProjectId !== null}
+              projectStartDate={currentProject?.startDate}
+              siblingTasks={currentProject?.tasks}
             />
           ) : selectedTaskId !== null && currentTask ? (
             <MultiFileUpload1
@@ -644,6 +631,9 @@ export default function App() {
               initialTaskType={currentTask.taskType || 'system'}
               initialSubtasks={currentTask.subtasks || []}
               simplifiedFields={selectedProjectId !== null}
+              initialDueDateRule={currentTask.dueDateRule}
+              projectStartDate={currentProject?.startDate}
+              siblingTasks={currentProject?.tasks}
             />
           ) : null}
         </div>

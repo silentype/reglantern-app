@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Avatar } from "./design-system/Avatar";
 import { Tab, TabStrip } from "./design-system/Tab";
 import { Button } from "./design-system/Button";
-import { computeDueDate, describeDueDateRule } from "../utils/helpers";
+import { RelativeDuePicker } from "./RelativeDuePicker";
 import { AVAILABLE_USERS, HEALTH_CENTERS, QUICK_DATE_OPTIONS } from "../constants";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -405,22 +405,11 @@ const TaskRow = memo(function TaskRow({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [assignedToOpen, setAssignedToOpen] = useState(false);
   const [inputValue, setInputValue] = useState(task.dueDate || '');
-  // Relative-date picker state. Initialized from the task's existing rule
-  // (if any) when the popover opens.
+  // Date picker mode -- defaults to 'relative' so a fresh task opens straight
+  // into the rule picker. Tasks with an existing hard date (and no rule) open
+  // on 'specific' so the date is visible.
   const [dateMode, setDateMode] = useState<'specific' | 'relative'>(
-    task.dueDateRule ? 'relative' : 'specific'
-  );
-  const [draftAnchorKey, setDraftAnchorKey] = useState<string>(() => {
-    const a = task.dueDateRule?.anchor;
-    if (!a) return 'project-start';
-    if (a.kind === 'projectStart') return 'project-start';
-    if (a.kind === 'taskDue') return `task-due-${a.taskId}`;
-    return `task-completed-${a.taskId}`;
-  });
-  const [draftAmount, setDraftAmount] = useState<number>(task.dueDateRule?.amount ?? 2);
-  const [draftUnit, setDraftUnit] = useState<DueDateRule['unit']>(task.dueDateRule?.unit ?? 'weeks');
-  const [draftDirection, setDraftDirection] = useState<DueDateRule['direction']>(
-    task.dueDateRule?.direction ?? 'after'
+    task.dueDate && !task.dueDateRule ? 'specific' : 'relative'
   );
 
   const canBeCompleted = useMemo(
@@ -466,42 +455,14 @@ const TaskRow = memo(function TaskRow({
     }
   }, [task.id, onUpdateTask]);
 
-  // Build a draft rule from the picker's current selections (used for both
-  // the live "Computed: …" preview and the save action).
-  const draftRule = useMemo<DueDateRule>(() => {
-    let anchor: DueDateAnchor;
-    if (draftAnchorKey === 'project-start') {
-      anchor = { kind: 'projectStart' };
-    } else if (draftAnchorKey.startsWith('task-due-')) {
-      anchor = { kind: 'taskDue', taskId: Number(draftAnchorKey.replace('task-due-', '')) };
-    } else {
-      anchor = {
-        kind: 'taskCompleted',
-        taskId: Number(draftAnchorKey.replace('task-completed-', '')),
-      };
-    }
-    return { anchor, amount: draftAmount, unit: draftUnit, direction: draftDirection };
-  }, [draftAnchorKey, draftAmount, draftUnit, draftDirection]);
-
-  const computedPreview = useMemo(() => {
-    if (!enableRelativeDates) return null;
-    return computeDueDate(draftRule, {
-      projectStartDate,
-      tasks: siblingTasks ?? [],
-    });
-  }, [enableRelativeDates, draftRule, projectStartDate, siblingTasks]);
-
-  const handleSaveRelativeRule = useCallback(() => {
-    onUpdateTask(task.id, { dueDateRule: draftRule });
-    toast.success('Due date rule saved');
-    setCalendarOpen(false);
-  }, [task.id, onUpdateTask, draftRule]);
-
-  // Description of the existing rule (when the task has one) for the cell tooltip.
-  const ruleDescription = useMemo(() => {
-    if (!task.dueDateRule) return null;
-    return describeDueDateRule(task.dueDateRule, { tasks: siblingTasks ?? [] });
-  }, [task.dueDateRule, siblingTasks]);
+  const handleSaveRelativeRule = useCallback(
+    (rule: DueDateRule) => {
+      onUpdateTask(task.id, { dueDateRule: rule });
+      toast.success('Due date rule saved');
+      setCalendarOpen(false);
+    },
+    [task.id, onUpdateTask]
+  );
 
   const handleUserChange = useCallback((value: string) => {
     const user = AVAILABLE_USERS.find(u => u.name === value);
@@ -552,11 +513,11 @@ const TaskRow = memo(function TaskRow({
             {enableRelativeDates && (
               <div className="sticky top-0 z-10 bg-white px-3 pt-3 pb-2 border-b border-[#e4e4e7]">
                 <TabStrip>
-                  <Tab active={dateMode === 'specific'} onClick={() => setDateMode('specific')}>
-                    Specific date
-                  </Tab>
                   <Tab active={dateMode === 'relative'} onClick={() => setDateMode('relative')}>
                     Relative to
+                  </Tab>
+                  <Tab active={dateMode === 'specific'} onClick={() => setDateMode('specific')}>
+                    Specific date
                   </Tab>
                 </TabStrip>
               </div>
@@ -601,70 +562,13 @@ const TaskRow = memo(function TaskRow({
             )}
 
             {enableRelativeDates && dateMode === 'relative' && (
-              <div className="p-4 w-[420px] flex flex-col gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-[#18181b] mb-1.5">Anchor</label>
-                  <select
-                    value={draftAnchorKey}
-                    onChange={(e) => setDraftAnchorKey(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white border border-[#e4e4e7] rounded cursor-pointer hover:border-[#cdd7e1] focus:outline-none focus:border-[#fc6]"
-                  >
-                    <option value="project-start">Project start date</option>
-                    {(siblingTasks ?? [])
-                      .filter((t) => t.id !== task.id)
-                      .flatMap((t) => [
-                        <option key={`task-due-${t.id}`} value={`task-due-${t.id}`}>
-                          {t.title} — due date
-                        </option>,
-                        <option key={`task-completed-${t.id}`} value={`task-completed-${t.id}`}>
-                          {t.title} — when complete
-                        </option>,
-                      ])}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-[#18181b] mb-1.5">Offset</label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-[#71717a]">Due</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={draftAmount}
-                      onChange={(e) => setDraftAmount(Math.max(1, Number(e.target.value) || 1))}
-                      className="w-16 px-2 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
-                    />
-                    <select
-                      value={draftUnit}
-                      onChange={(e) => setDraftUnit(e.target.value as DueDateRule['unit'])}
-                      className="px-2 py-2 text-sm bg-white border border-[#e4e4e7] rounded cursor-pointer hover:border-[#cdd7e1] focus:outline-none focus:border-[#fc6]"
-                    >
-                      <option value="days">{draftAmount === 1 ? 'day' : 'days'}</option>
-                      <option value="weeks">{draftAmount === 1 ? 'week' : 'weeks'}</option>
-                      <option value="months">{draftAmount === 1 ? 'month' : 'months'}</option>
-                    </select>
-                    <select
-                      value={draftDirection}
-                      onChange={(e) => setDraftDirection(e.target.value as DueDateRule['direction'])}
-                      className="px-2 py-2 text-sm bg-white border border-[#e4e4e7] rounded cursor-pointer hover:border-[#cdd7e1] focus:outline-none focus:border-[#fc6]"
-                    >
-                      <option value="after">after</option>
-                      <option value="before">before</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="text-xs text-[#71717a] border-t border-[#f4f4f5] pt-2">
-                  Computed:{' '}
-                  <span className={computedPreview ? 'text-[#18181b] font-medium' : 'italic'}>
-                    {computedPreview ?? 'anchor not set yet'}
-                  </span>
-                </div>
-
-                <Button size="sm" onClick={handleSaveRelativeRule} disabled={!computedPreview}>
-                  Save rule
-                </Button>
-              </div>
+              <RelativeDuePicker
+                initialRule={task.dueDateRule}
+                siblingTasks={siblingTasks}
+                projectStartDate={projectStartDate}
+                excludeTaskId={task.id}
+                onSave={handleSaveRelativeRule}
+              />
             )}
           </PopoverContent>
         </Popover>
@@ -777,8 +681,7 @@ const TaskRow = memo(function TaskRow({
     // Relative-due-date picker state and derived values must invalidate the
     // memo so flipping tabs / editing the rule re-renders the popover.
     enableRelativeDates, projectStartDate, siblingTasks,
-    dateMode, draftAnchorKey, draftAmount, draftUnit, draftDirection,
-    computedPreview, handleSaveRelativeRule,
+    dateMode, handleSaveRelativeRule,
   ]);
 
   return (

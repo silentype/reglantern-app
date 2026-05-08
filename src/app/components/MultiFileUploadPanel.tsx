@@ -17,6 +17,7 @@ import { DueDatePicker } from './DueDatePicker';
 import { Tab, TabStrip } from './design-system/Tab';
 import { Button } from './design-system/Button';
 import { Avatar } from './design-system/Avatar';
+import type { DueDateRule, Task } from './TaskTableDynamic';
 import { AVAILABLE_USERS, STATUS_OPTIONS } from '../constants';
 import { getTaskDescription, getDisplayValueForDate } from '../utils/helpers';
 
@@ -71,6 +72,9 @@ export default function MultiFileUploadPanel({
   initialSubtasks = [],
   initialView = 'task',
   simplifiedFields = false,
+  initialDueDateRule,
+  projectStartDate,
+  siblingTasks,
 }: {
   taskId: number | null;
   taskTitle: string;
@@ -82,6 +86,7 @@ export default function MultiFileUploadPanel({
       description?: string;
       status?: string;
       dueDate?: string;
+      dueDateRule?: DueDateRule;
       assignedTo?: { initials: string; name: string };
       collaborators?: Array<{ initials: string; name: string }>;
       healthCenter?: string;
@@ -131,6 +136,12 @@ export default function MultiFileUploadPanel({
    * level (per health center) rather than per task.
    */
   simplifiedFields?: boolean;
+  /** Existing rule on the task; prefilled into the Relative-mode picker. */
+  initialDueDateRule?: DueDateRule;
+  /** MM/dd/yyyy. Used as the "Project started" anchor. */
+  projectStartDate?: string;
+  /** Other tasks in the same project (anchor options). */
+  siblingTasks?: Task[];
 }) {
   // Panel sub-state lives in URL search params so each view is paste-able:
   //   ?subtask=:subtaskId  -> drilled into subtask upload page (omit -> task overview)
@@ -1369,6 +1380,21 @@ export default function MultiFileUploadPanel({
                   triggerClassName="flex-1 max-w-[240px] bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[#f9fafb] transition-colors"
                   align="start"
                   showToast={false}
+                  relative={
+                    simplifiedFields
+                      ? {
+                          initialRule: initialDueDateRule,
+                          siblingTasks,
+                          projectStartDate,
+                          excludeTaskId: taskId ?? undefined,
+                          onSave: (rule) => {
+                            if (taskId !== null && onUpdateTaskDetails) {
+                              onUpdateTaskDetails(taskId, { dueDateRule: rule });
+                            }
+                          },
+                        }
+                      : undefined
+                  }
                 />
               </div>
 
