@@ -770,7 +770,16 @@ const TaskRow = memo(function TaskRow({
         </div>
       </div>
     )
-  }), [task, onClick, calendarOpen, inputValue, handleCheckboxClick, handleQuickDateSelect, handleCalendarSelect, handleUserChange, handleHealthCenterChange]);
+  }), [
+    task, onClick, calendarOpen, inputValue,
+    handleCheckboxClick, handleQuickDateSelect, handleCalendarSelect,
+    handleUserChange, handleHealthCenterChange,
+    // Relative-due-date picker state and derived values must invalidate the
+    // memo so flipping tabs / editing the rule re-renders the popover.
+    enableRelativeDates, projectStartDate, siblingTasks,
+    dateMode, draftAnchorKey, draftAmount, draftUnit, draftDirection,
+    computedPreview, handleSaveRelativeRule,
+  ]);
 
   return (
     <>
