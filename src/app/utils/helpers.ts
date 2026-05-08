@@ -1,5 +1,6 @@
-import { addDays, addWeeks, addMonths, addYears, parse, isValid } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears, format, parse, isValid } from 'date-fns';
 import { DATE_FILTER_PRESETS } from '../constants';
+import type { DueDateRule, Task } from '../components/TaskTableDynamic';
 
 /**
  * Utility Functions
@@ -224,10 +225,109 @@ export function debounce<T extends (...args: any[]) => any>(
       timeout = null;
       func(...args);
     };
-    
+
     if (timeout) {
       clearTimeout(timeout);
     }
     timeout = setTimeout(later, wait);
   };
+}
+
+// ==================== RELATIVE DUE DATES ====================
+
+const DATE_FMT = 'MM/dd/yyyy';
+
+function tryParse(s?: string): Date | null {
+  if (!s) return null;
+  const d = parse(s, DATE_FMT, new Date());
+  return isValid(d) ? d : null;
+}
+
+/**
+ * Compute a task's due date from a rule against a project context.
+ * Returns null when the anchor cannot be resolved (e.g. the project has no
+ * start date yet, or the anchor task was deleted, or the anchor task hasn't
+ * been completed yet).
+ *
+ * Anchors are resolved against the supplied raw tasks (not against rules
+ * themselves) — a task whose rule depends on another task that *also* has
+ * a rule will see that other task's stored dueDate, not its currently-
+ * computed one. This avoids cycle handling and keeps the resolution single
+ * pass; it's a deliberate v1 limitation.
+ */
+export function computeDueDate(
+  rule: DueDateRule,
+  ctx: { projectStartDate?: string; tasks: Task[] }
+): string | null {
+  let anchorDate: Date | null = null;
+  const anchor = rule.anchor;
+
+  if (anchor.kind === 'projectStart') {
+    anchorDate = tryParse(ctx.projectStartDate);
+  } else if (anchor.kind === 'taskDue') {
+    const t = ctx.tasks.find((x) => x.id === anchor.taskId);
+    anchorDate = tryParse(t?.dueDate);
+  } else if (anchor.kind === 'taskCompleted') {
+    const t = ctx.tasks.find((x) => x.id === anchor.taskId);
+    anchorDate = tryParse(t?.completedAt);
+  }
+
+  if (!anchorDate) return null;
+
+  const sign = rule.direction === 'after' ? 1 : -1;
+  const offset = rule.amount * sign;
+
+  let result: Date;
+  if (rule.unit === 'days') result = addDays(anchorDate, offset);
+  else if (rule.unit === 'weeks') result = addWeeks(anchorDate, offset);
+  else if (rule.unit === 'months') result = addMonths(anchorDate, offset);
+  else return null;
+
+  return format(result, DATE_FMT);
+}
+
+/**
+ * Human-readable rendering of a rule, for tooltips next to the computed
+ * date. e.g. "2 weeks after Project start" / "30 days after Service Area
+ * Documentation is complete".
+ */
+export function describeDueDateRule(
+  rule: DueDateRule,
+  ctx: { tasks: Task[] }
+): string {
+  const unitLabel = rule.amount === 1 ? rule.unit.replace(/s$/, '') : rule.unit;
+  const offsetText = `${rule.amount} ${unitLabel} ${rule.direction}`;
+
+  let anchorText: string;
+  const anchor = rule.anchor;
+  if (anchor.kind === 'projectStart') {
+    anchorText = 'Project start';
+  } else {
+    const t = ctx.tasks.find((x) => x.id === anchor.taskId);
+    const name = t ? t.title : `task #${anchor.taskId}`;
+    anchorText =
+      anchor.kind === 'taskDue' ? `${name}'s due date` : `${name} is complete`;
+  }
+
+  return `${offsetText} ${anchorText}`;
+}
+
+/**
+ * Apply rules across an entire project's tasks, producing a new array where
+ * each rule-driven task's `dueDate` is replaced with the computed value.
+ * Tasks without a rule are returned unchanged. Single-pass resolution; see
+ * `computeDueDate` for the cycle/chaining caveat.
+ */
+export function resolveTaskDueDates(
+  tasks: Task[],
+  projectStartDate?: string
+): Task[] {
+  return tasks.map((task) => {
+    if (!task.dueDateRule) return task;
+    const computed = computeDueDate(task.dueDateRule, {
+      projectStartDate,
+      tasks,
+    });
+    return computed ? { ...task, dueDate: computed } : task;
+  });
 }

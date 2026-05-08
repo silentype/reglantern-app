@@ -9,6 +9,9 @@ import { MoreHorizontal, ChevronDown, Calendar as CalendarIcon, ChevronsUpDown, 
 import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { Avatar } from "./design-system/Avatar";
+import { Tab, TabStrip } from "./design-system/Tab";
+import { Button } from "./design-system/Button";
+import { computeDueDate, describeDueDateRule } from "../utils/helpers";
 import { AVAILABLE_USERS, HEALTH_CENTERS, QUICK_DATE_OPTIONS } from "../constants";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -28,11 +31,35 @@ export interface ColumnConfig {
   minWidth: number;
 }
 
+/**
+ * Relative-due-date rule. When present on a task, the task's `dueDate` is
+ * computed from this rule against a project context (the project's
+ * startDate + sibling tasks' dueDate / completedAt). Stored alongside the
+ * computed dueDate so static reads still work; AdminPage re-resolves rules
+ * whenever the project's tasks change so the date stays in sync with its
+ * anchor.
+ */
+export type DueDateAnchor =
+  | { kind: 'projectStart' }
+  | { kind: 'taskDue'; taskId: number }
+  | { kind: 'taskCompleted'; taskId: number };
+
+export interface DueDateRule {
+  anchor: DueDateAnchor;
+  amount: number; // positive integer
+  unit: 'days' | 'weeks' | 'months';
+  direction: 'before' | 'after';
+}
+
 export interface Task {
   id: number;
   title: string;
   completed: boolean;
+  /** ISO/MM-dd-yyyy date when `completed` was last flipped to true. */
+  completedAt?: string;
   dueDate?: string;
+  /** Optional rule that derives `dueDate` from a project anchor. */
+  dueDateRule?: DueDateRule;
   assignedTo?: { initials: string; name: string };
   healthCenter?: string;
   attention?: { type: 'needs' | 'missing'; count: number };
@@ -71,6 +98,14 @@ interface TaskTableDynamicProps {
   onUpdateTask: (taskId: number, updates: Partial<Task>) => void;
   onDeleteTask?: (taskId: number) => void;
   visibleColumns?: string[];
+  /**
+   * When true, the inline date popover offers a "Relative to" mode and
+   * exposes the project context (start date + sibling tasks) to its
+   * dropdowns. Used in Project Builder; off elsewhere.
+   */
+  enableRelativeDates?: boolean;
+  /** MM/dd/yyyy. Required for the "Project start" anchor option. */
+  projectStartDate?: string;
 }
 
 // ==================== UTILITIES ====================
@@ -351,7 +386,10 @@ const TaskRow = memo(function TaskRow({
   selectedTaskId,
   onUpdateTask,
   columns,
-  onDeleteTask
+  onDeleteTask,
+  enableRelativeDates = false,
+  projectStartDate,
+  siblingTasks,
 }: {
   task: Task;
   onClick: () => void;
@@ -360,10 +398,30 @@ const TaskRow = memo(function TaskRow({
   onUpdateTask: (taskId: number, updates: Partial<Task>) => void;
   columns: ColumnConfig[];
   onDeleteTask?: (taskId: number) => void;
+  enableRelativeDates?: boolean;
+  projectStartDate?: string;
+  siblingTasks?: Task[];
 }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [assignedToOpen, setAssignedToOpen] = useState(false);
   const [inputValue, setInputValue] = useState(task.dueDate || '');
+  // Relative-date picker state. Initialized from the task's existing rule
+  // (if any) when the popover opens.
+  const [dateMode, setDateMode] = useState<'specific' | 'relative'>(
+    task.dueDateRule ? 'relative' : 'specific'
+  );
+  const [draftAnchorKey, setDraftAnchorKey] = useState<string>(() => {
+    const a = task.dueDateRule?.anchor;
+    if (!a) return 'project-start';
+    if (a.kind === 'projectStart') return 'project-start';
+    if (a.kind === 'taskDue') return `task-due-${a.taskId}`;
+    return `task-completed-${a.taskId}`;
+  });
+  const [draftAmount, setDraftAmount] = useState<number>(task.dueDateRule?.amount ?? 2);
+  const [draftUnit, setDraftUnit] = useState<DueDateRule['unit']>(task.dueDateRule?.unit ?? 'weeks');
+  const [draftDirection, setDraftDirection] = useState<DueDateRule['direction']>(
+    task.dueDateRule?.direction ?? 'after'
+  );
 
   const canBeCompleted = useMemo(
     () => !task.attention && task.assignedTo && task.dueDate,
@@ -392,7 +450,8 @@ const TaskRow = memo(function TaskRow({
   const handleQuickDateSelect = useCallback((option: typeof QUICK_DATE_OPTIONS[number]) => {
     const newDate = addDays(new Date(), option.days);
     const formatted = format(newDate, 'MM/dd/yyyy');
-    onUpdateTask(task.id, { dueDate: formatted });
+    // Specific-date selection clears any existing rule so it doesn't override on next resolve.
+    onUpdateTask(task.id, { dueDate: formatted, dueDateRule: undefined });
     toast.success(`Due date set to ${formatted}`);
     setCalendarOpen(false);
   }, [task.id, onUpdateTask]);
@@ -400,12 +459,49 @@ const TaskRow = memo(function TaskRow({
   const handleCalendarSelect = useCallback((date: Date | undefined) => {
     if (date) {
       const formatted = format(date, 'MM/dd/yyyy');
-      onUpdateTask(task.id, { dueDate: formatted });
+      onUpdateTask(task.id, { dueDate: formatted, dueDateRule: undefined });
       setInputValue(formatted);
       toast.success(`Due date set to ${formatted}`);
       setCalendarOpen(false);
     }
   }, [task.id, onUpdateTask]);
+
+  // Build a draft rule from the picker's current selections (used for both
+  // the live "Computed: …" preview and the save action).
+  const draftRule = useMemo<DueDateRule>(() => {
+    let anchor: DueDateAnchor;
+    if (draftAnchorKey === 'project-start') {
+      anchor = { kind: 'projectStart' };
+    } else if (draftAnchorKey.startsWith('task-due-')) {
+      anchor = { kind: 'taskDue', taskId: Number(draftAnchorKey.replace('task-due-', '')) };
+    } else {
+      anchor = {
+        kind: 'taskCompleted',
+        taskId: Number(draftAnchorKey.replace('task-completed-', '')),
+      };
+    }
+    return { anchor, amount: draftAmount, unit: draftUnit, direction: draftDirection };
+  }, [draftAnchorKey, draftAmount, draftUnit, draftDirection]);
+
+  const computedPreview = useMemo(() => {
+    if (!enableRelativeDates) return null;
+    return computeDueDate(draftRule, {
+      projectStartDate,
+      tasks: siblingTasks ?? [],
+    });
+  }, [enableRelativeDates, draftRule, projectStartDate, siblingTasks]);
+
+  const handleSaveRelativeRule = useCallback(() => {
+    onUpdateTask(task.id, { dueDateRule: draftRule });
+    toast.success('Due date rule saved');
+    setCalendarOpen(false);
+  }, [task.id, onUpdateTask, draftRule]);
+
+  // Description of the existing rule (when the task has one) for the cell tooltip.
+  const ruleDescription = useMemo(() => {
+    if (!task.dueDateRule) return null;
+    return describeDueDateRule(task.dueDateRule, { tasks: siblingTasks ?? [] });
+  }, [task.dueDateRule, siblingTasks]);
 
   const handleUserChange = useCallback((value: string) => {
     const user = AVAILABLE_USERS.find(u => u.name === value);
@@ -449,41 +545,123 @@ const TaskRow = memo(function TaskRow({
             </div>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">
-            <div className="flex">
-              <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
-                <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
-                <div className="flex flex-col gap-1">
-                  {QUICK_DATE_OPTIONS.map((option, idx) => (
-                    <QuickDateButton key={idx} label={option.label} onClick={() => handleQuickDateSelect(option)} />
-                  ))}
-                </div>
+            {enableRelativeDates && (
+              <div className="px-3 pt-3 pb-0 border-b border-[#e4e4e7]">
+                <TabStrip>
+                  <Tab active={dateMode === 'specific'} onClick={() => setDateMode('specific')}>
+                    Specific date
+                  </Tab>
+                  <Tab active={dateMode === 'relative'} onClick={() => setDateMode('relative')}>
+                    Relative to
+                  </Tab>
+                </TabStrip>
               </div>
-              <div className="flex flex-col">
-                <div className="p-3 border-b border-[#e4e4e7]">
-                  <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
-                  <input
-                    type="text"
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(inputValue)) {
-                        const parsed = parse(inputValue, 'MM/dd/yyyy', new Date());
-                        if (!isNaN(parsed.getTime())) handleCalendarSelect(parsed);
-                      }
-                    }}
-                    placeholder="mm/dd/yyyy"
-                    maxLength={10}
-                    className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
+            )}
+
+            {(!enableRelativeDates || dateMode === 'specific') && (
+              <div className="flex">
+                <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
+                  <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
+                  <div className="flex flex-col gap-1">
+                    {QUICK_DATE_OPTIONS.map((option, idx) => (
+                      <QuickDateButton key={idx} label={option.label} onClick={() => handleQuickDateSelect(option)} />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex flex-col">
+                  <div className="p-3 border-b border-[#e4e4e7]">
+                    <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
+                    <input
+                      type="text"
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(inputValue)) {
+                          const parsed = parse(inputValue, 'MM/dd/yyyy', new Date());
+                          if (!isNaN(parsed.getTime())) handleCalendarSelect(parsed);
+                        }
+                      }}
+                      placeholder="mm/dd/yyyy"
+                      maxLength={10}
+                      className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
+                    />
+                  </div>
+                  <Calendar
+                    mode="single"
+                    selected={task.dueDate ? parse(task.dueDate, 'MM/dd/yyyy', new Date()) : undefined}
+                    onSelect={handleCalendarSelect}
+                    initialFocus
                   />
                 </div>
-                <Calendar
-                  mode="single"
-                  selected={task.dueDate ? parse(task.dueDate, 'MM/dd/yyyy', new Date()) : undefined}
-                  onSelect={handleCalendarSelect}
-                  initialFocus
-                />
               </div>
-            </div>
+            )}
+
+            {enableRelativeDates && dateMode === 'relative' && (
+              <div className="p-4 w-[420px] flex flex-col gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#18181b] mb-1.5">Anchor</label>
+                  <select
+                    value={draftAnchorKey}
+                    onChange={(e) => setDraftAnchorKey(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-white border border-[#e4e4e7] rounded cursor-pointer hover:border-[#cdd7e1] focus:outline-none focus:border-[#fc6]"
+                  >
+                    <option value="project-start">Project start date</option>
+                    {(siblingTasks ?? [])
+                      .filter((t) => t.id !== task.id)
+                      .flatMap((t) => [
+                        <option key={`task-due-${t.id}`} value={`task-due-${t.id}`}>
+                          {t.title} — due date
+                        </option>,
+                        <option key={`task-completed-${t.id}`} value={`task-completed-${t.id}`}>
+                          {t.title} — when complete
+                        </option>,
+                      ])}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#18181b] mb-1.5">Offset</label>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-[#71717a]">Due</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={draftAmount}
+                      onChange={(e) => setDraftAmount(Math.max(1, Number(e.target.value) || 1))}
+                      className="w-16 px-2 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
+                    />
+                    <select
+                      value={draftUnit}
+                      onChange={(e) => setDraftUnit(e.target.value as DueDateRule['unit'])}
+                      className="px-2 py-2 text-sm bg-white border border-[#e4e4e7] rounded cursor-pointer hover:border-[#cdd7e1] focus:outline-none focus:border-[#fc6]"
+                    >
+                      <option value="days">{draftAmount === 1 ? 'day' : 'days'}</option>
+                      <option value="weeks">{draftAmount === 1 ? 'week' : 'weeks'}</option>
+                      <option value="months">{draftAmount === 1 ? 'month' : 'months'}</option>
+                    </select>
+                    <select
+                      value={draftDirection}
+                      onChange={(e) => setDraftDirection(e.target.value as DueDateRule['direction'])}
+                      className="px-2 py-2 text-sm bg-white border border-[#e4e4e7] rounded cursor-pointer hover:border-[#cdd7e1] focus:outline-none focus:border-[#fc6]"
+                    >
+                      <option value="after">after</option>
+                      <option value="before">before</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="text-xs text-[#71717a] border-t border-[#f4f4f5] pt-2">
+                  Computed:{' '}
+                  <span className={computedPreview ? 'text-[#18181b] font-medium' : 'italic'}>
+                    {computedPreview ?? 'anchor not set yet'}
+                  </span>
+                </div>
+
+                <Button size="sm" onClick={handleSaveRelativeRule} disabled={!computedPreview}>
+                  Save rule
+                </Button>
+              </div>
+            )}
           </PopoverContent>
         </Popover>
       </div>
@@ -735,7 +913,7 @@ const TaskRow = memo(function TaskRow({
 });
 
 // ==================== MAIN COMPONENT ====================
-function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'] }: TaskTableDynamicProps) {
+function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate }: TaskTableDynamicProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -851,6 +1029,9 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
           onUpdateTask={onUpdateTask}
           columns={filteredColumns}
           onDeleteTask={onDeleteTask}
+          enableRelativeDates={enableRelativeDates}
+          projectStartDate={projectStartDate}
+          siblingTasks={tasks}
         />
       ))}
     </div>

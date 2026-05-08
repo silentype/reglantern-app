@@ -56,7 +56,7 @@ import {
   HEALTH_CENTERS,
   DATE_FILTER_PRESETS,
 } from '../constants';
-import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
+import { parseDueDateFilter, displayDueDateFilter, resolveTaskDueDates } from '../utils/helpers';
 import searchFilterSvgPaths from '../../imports/svg-oo9u3g75ma';
 
 import { ComplianceReviewPage } from './ComplianceReviewPage';
@@ -67,6 +67,12 @@ export interface Project {
   description: string;
   category: string;
   createdAt: string;
+  /**
+   * MM/dd/yyyy. The day work on the project actually begins -- distinct
+   * from `createdAt` (when the project record was created). Anchors any
+   * task whose dueDateRule uses { kind: 'projectStart' }.
+   */
+  startDate?: string;
   tasks: Task[];
   /**
    * Health centers this project is assigned to. When non-empty, the project's
@@ -226,9 +232,19 @@ export function AdminPage({
         if (project.id === selectedProject.id) {
           return {
             ...project,
-            tasks: project.tasks.map(task =>
-              task.id === taskId ? { ...task, completed: !task.completed } : task
-            )
+            tasks: project.tasks.map(task => {
+              if (task.id !== taskId) return task;
+              const willBeComplete = !task.completed;
+              return {
+                ...task,
+                completed: willBeComplete,
+                // Stamp completedAt when flipping to complete (anchors any other
+                // task whose dueDateRule is { kind: 'taskCompleted', taskId }).
+                // Clear it when un-completing so dependents don't anchor on a
+                // stale date.
+                completedAt: willBeComplete ? format(new Date(), 'MM/dd/yyyy') : undefined,
+              };
+            })
           };
         }
         return project;
@@ -289,11 +305,19 @@ export function AdminPage({
     toast.success('Task deleted successfully');
   }, [selectedProject]);
 
+  // Resolve rule-driven dueDates first (so each task's `dueDate` reflects its
+  // dueDateRule against the project's startDate + sibling tasks). Then filter.
+  const resolvedProjectTasks = useMemo(
+    () =>
+      selectedProject ? resolveTaskDueDates(selectedProject.tasks, selectedProject.startDate) : [],
+    [selectedProject]
+  );
+
   // Filter project tasks
   const filteredProjectTasks = useMemo(() => {
     if (!selectedProject) return [];
 
-    return selectedProject.tasks.filter(task => {
+    return resolvedProjectTasks.filter(task => {
       // Status filter
       if (!statusFilter.includes('all')) {
         const matchesStatus = statusFilter.some(filter => {
@@ -349,7 +373,7 @@ export function AdminPage({
 
       return true;
     });
-  }, [selectedProject, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery]);
+  }, [selectedProject, resolvedProjectTasks, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery]);
 
   const handleCreateProject = () => {
     if (!newProject.name || !newProject.category) {
@@ -400,10 +424,42 @@ export function AdminPage({
               <p className="text-sm font-medium text-[#71717a] leading-[14px]">
                 {selectedProject.description}
               </p>
-              <div className="mt-3">
+              <div className="mt-3 flex items-center gap-2">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] bg-[#f4f4f5] text-[#18181b] text-[12px] font-medium">
                   {selectedProject.category}
                 </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] border border-[#e4e4e7] bg-white text-[12px] font-medium cursor-pointer hover:border-[#cdd7e1] transition-colors">
+                      <CalendarIcon className="w-3.5 h-3.5 text-[#71717a]" />
+                      <span className={selectedProject.startDate ? 'text-[#18181b]' : 'text-[#71717a]'}>
+                        {selectedProject.startDate
+                          ? `Starts ${format(parse(selectedProject.startDate, 'MM/dd/yyyy', new Date()), 'MMM d, yyyy')}`
+                          : 'Set start date'}
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={
+                        selectedProject.startDate
+                          ? parse(selectedProject.startDate, 'MM/dd/yyyy', new Date())
+                          : undefined
+                      }
+                      onSelect={(date) => {
+                        if (!date) return;
+                        const formatted = format(date, 'MM/dd/yyyy');
+                        setProjects((prev) =>
+                          prev.map((p) =>
+                            p.id === selectedProject.id ? { ...p, startDate: formatted } : p
+                          )
+                        );
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
@@ -806,6 +862,8 @@ export function AdminPage({
                 onUpdateTask={handleUpdateProjectTask}
                 onDeleteTask={handleDeleteProjectTask}
                 visibleColumns={visibleColumns}
+                enableRelativeDates={true}
+                projectStartDate={selectedProject.startDate}
               />
             </div>
           )}
