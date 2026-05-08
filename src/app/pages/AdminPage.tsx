@@ -73,6 +73,11 @@ export interface Project {
    * task whose dueDateRule uses { kind: 'projectStart' }.
    */
   startDate?: string;
+  /**
+   * MM/dd/yyyy. The day the project is targeted to wrap up. Anchors any
+   * task whose dueDateRule uses { kind: 'projectEnd' }.
+   */
+  endDate?: string;
   tasks: Task[];
   /**
    * Health centers this project is assigned to. When non-empty, the project's
@@ -307,10 +312,22 @@ export function AdminPage({
 
   // Resolve rule-driven dueDates first (so each task's `dueDate` reflects its
   // dueDateRule against the project's startDate + sibling tasks). Then filter.
+  const otherProjects = useMemo(
+    () =>
+      projects
+        .filter((p) => p.id !== selectedProject?.id)
+        .map((p) => ({ id: p.id, name: p.name, startDate: p.startDate, endDate: p.endDate })),
+    [projects, selectedProject]
+  );
   const resolvedProjectTasks = useMemo(
     () =>
-      selectedProject ? resolveTaskDueDates(selectedProject.tasks, selectedProject.startDate) : [],
-    [selectedProject]
+      selectedProject
+        ? resolveTaskDueDates(selectedProject.tasks, selectedProject.startDate, {
+            projectEndDate: selectedProject.endDate,
+            projects: otherProjects,
+          })
+        : [],
+    [selectedProject, otherProjects]
   );
 
   // Filter project tasks
@@ -864,6 +881,9 @@ export function AdminPage({
                 visibleColumns={visibleColumns}
                 enableRelativeDates={true}
                 projectStartDate={selectedProject.startDate}
+                projectEndDate={selectedProject.endDate}
+                projectName={selectedProject.name}
+                availableProjects={otherProjects}
               />
             </div>
           )}

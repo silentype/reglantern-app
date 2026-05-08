@@ -24,12 +24,20 @@ const sampleTasks: Task[] = [
   },
 ];
 
+const sampleProjects = [
+  { id: 21, name: 'FTCA Site Visit', startDate: '03/15/2026' },
+  { id: 22, name: 'Quality Improvement', startDate: '05/01/2026' },
+  { id: 23, name: 'Annual UDS Submission', startDate: '01/10/2026' },
+];
+
 const meta: Meta<typeof RelativeDuePicker> = {
   title: 'Design System/RelativeDuePicker',
   component: RelativeDuePicker,
   args: {
     siblingTasks: sampleTasks,
     projectStartDate: '04/01/2026',
+    currentProjectName: 'Site Compliance Review',
+    availableProjects: sampleProjects,
     onSave: () => {},
   },
 };

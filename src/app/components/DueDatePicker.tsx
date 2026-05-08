@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { Calendar } from './ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { format, parse, isValid, addDays, addMonths, addYears } from 'date-fns';
@@ -26,9 +27,18 @@ interface DueDatePickerProps {
     initialRule?: DueDateRule;
     siblingTasks?: Task[];
     projectStartDate?: string;
+    projectEndDate?: string;
     excludeTaskId?: number;
+    currentProjectName?: string;
+    availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
     onSave: (rule: DueDateRule) => void;
   };
+  /**
+   * When provided, opening the popover writes ?<urlParam>=open to the URL
+   * (and removes it on close) so the open state is shareable / screenshottable.
+   * Each picker instance on a page should pass a unique key.
+   */
+  urlParam?: string;
 }
 
 export function DueDatePicker({
@@ -41,14 +51,34 @@ export function DueDatePicker({
   side = 'bottom',
   showToast = true,
   relative,
+  urlParam,
 }: DueDatePickerProps) {
   const [inputValue, setInputValue] = useState('');
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlOpen = urlParam ? searchParams.get(urlParam) === 'open' : false;
+  const [calendarOpen, setCalendarOpenLocal] = useState(urlOpen);
   const inputRef = useRef<HTMLInputElement>(null);
-  // When relative mode is enabled, default to 'relative' (per the user's
-  // preference) unless the task already has a hard date with no rule.
+
+  // When urlParam is provided, mirror open state in the URL so screengrabs
+  // captured at the URL level reflect the popover-open view.
+  const setCalendarOpen = (next: boolean) => {
+    setCalendarOpenLocal(next);
+    if (!urlParam) return;
+    const params = new URLSearchParams(searchParams);
+    if (next) params.set(urlParam, 'open');
+    else params.delete(urlParam);
+    setSearchParams(params, { replace: true });
+  };
+
+  // Keep local state in sync if URL changes externally (back/forward, paste).
+  useEffect(() => {
+    if (!urlParam) return;
+    setCalendarOpenLocal(urlOpen);
+  }, [urlParam, urlOpen]);
+  // In project-builder context (relative prop provided), always default to
+  // 'relative' per user preference -- even if the task already has a hard date.
   const [dateMode, setDateMode] = useState<'specific' | 'relative'>(
-    relative ? (value && !relative.initialRule ? 'specific' : 'relative') : 'specific'
+    relative ? 'relative' : 'specific'
   );
 
   // Parse the current value for the calendar
@@ -90,7 +120,10 @@ export function DueDatePicker({
             initialRule={relative.initialRule}
             siblingTasks={relative.siblingTasks}
             projectStartDate={relative.projectStartDate}
+            projectEndDate={relative.projectEndDate}
             excludeTaskId={relative.excludeTaskId}
+            currentProjectName={relative.currentProjectName}
+            availableProjects={relative.availableProjects}
             onSave={(rule) => {
               relative.onSave(rule);
               setCalendarOpen(false);

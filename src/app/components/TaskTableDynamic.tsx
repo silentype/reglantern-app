@@ -7,6 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { format, parse, differenceInCalendarDays, addDays, addMonths, addYears } from "date-fns";
 import { MoreHorizontal, ChevronDown, Calendar as CalendarIcon, ChevronsUpDown, ChevronUp, User, Building2, AlertCircle, GripVertical, Check } from "lucide-react";
 import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { Avatar } from "./design-system/Avatar";
 import { Tab, TabStrip } from "./design-system/Tab";
@@ -40,7 +41,9 @@ export interface ColumnConfig {
  * anchor.
  */
 export type DueDateAnchor =
-  | { kind: 'projectStart' }
+  | { kind: 'projectStart'; projectId?: number } // omit projectId = current project
+  | { kind: 'projectEnd'; projectId?: number }
+  | { kind: 'taskStart'; taskId: number }
   | { kind: 'taskDue'; taskId: number }
   | { kind: 'taskCompleted'; taskId: number };
 
@@ -55,6 +58,8 @@ export interface Task {
   id: number;
   title: string;
   completed: boolean;
+  /** MM/dd/yyyy date when work on this task began (status flipped to In Progress). */
+  startedAt?: string;
   /** ISO/MM-dd-yyyy date when `completed` was last flipped to true. */
   completedAt?: string;
   dueDate?: string;
@@ -106,6 +111,12 @@ interface TaskTableDynamicProps {
   enableRelativeDates?: boolean;
   /** MM/dd/yyyy. Required for the "Project start" anchor option. */
   projectStartDate?: string;
+  /** MM/dd/yyyy. Required for the "Project ended" anchor option. */
+  projectEndDate?: string;
+  /** Name of the project these tasks belong to (shown in the anchor Reference dropdown). */
+  projectName?: string;
+  /** Other projects available as Reference options for cross-project anchors. */
+  availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
 }
 
 // ==================== UTILITIES ====================
@@ -237,7 +248,11 @@ const QuickDateButton = memo(({ label, onClick }: { label: string; onClick: () =
 QuickDateButton.displayName = 'QuickDateButton';
 
 const DueDateBadge = memo(({ dueDate, onOpenChange }: { dueDate?: string; onOpenChange: () => void }) => {
-  const relativeInfo = useMemo(() => dueDate ? formatRelativeDate(dueDate) : null, [dueDate]);
+  // Treat unparseable dates (wrong format, missing, etc.) as "no due date" so
+  // the badge falls through to the "Set Due Date" placeholder instead of
+  // rendering "NaN/NaN/aN".
+  const isValidDueDate = !!dueDate && /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(dueDate);
+  const relativeInfo = useMemo(() => isValidDueDate ? formatRelativeDate(dueDate as string) : null, [isValidDueDate, dueDate]);
   const styles = useMemo(() => relativeInfo ? getDateBadgeStyles(relativeInfo.daysUntil, relativeInfo.isOverdue) : null, [relativeInfo]);
 
   return (
@@ -255,10 +270,12 @@ const DueDateBadge = memo(({ dueDate, onOpenChange }: { dueDate?: string; onOpen
           <ChevronDown className="size-[16px] text-[#71717a] ml-1" />
         </>
       ) : (
-        <>
-          <span className="font-['Geist:Regular',sans-serif] font-normal text-[#999] text-[14px]">Set Due Date</span>
-          <ChevronDown className="size-[16px] text-[#71717a]" />
-        </>
+        <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[#e4e4e7] bg-white">
+          <span className="font-['Geist:Regular',sans-serif] font-normal text-[#71717a] text-[13px] leading-tight">
+            Set Due Date
+          </span>
+          <ChevronDown className="size-[14px] text-[#71717a]" />
+        </div>
       )}
     </button>
   );
@@ -389,6 +406,9 @@ const TaskRow = memo(function TaskRow({
   onDeleteTask,
   enableRelativeDates = false,
   projectStartDate,
+  projectEndDate,
+  projectName,
+  availableProjects,
   siblingTasks,
 }: {
   task: Task;
@@ -400,16 +420,29 @@ const TaskRow = memo(function TaskRow({
   onDeleteTask?: (taskId: number) => void;
   enableRelativeDates?: boolean;
   projectStartDate?: string;
+  projectEndDate?: string;
+  projectName?: string;
+  availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
   siblingTasks?: Task[];
 }) {
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Mirror the inline date popover's open state in ?datePicker=task-<id> so
+  // the URL alone is enough to reproduce the open popover for screengrabs.
+  const datePickerKey = `task-${task.id}`;
+  const calendarOpen = searchParams.get('datePicker') === datePickerKey;
+  const setCalendarOpen = useCallback((next: boolean) => {
+    const params = new URLSearchParams(searchParams);
+    if (next) params.set('datePicker', datePickerKey);
+    else if (params.get('datePicker') === datePickerKey) params.delete('datePicker');
+    setSearchParams(params, { replace: true });
+  }, [searchParams, setSearchParams, datePickerKey]);
   const [assignedToOpen, setAssignedToOpen] = useState(false);
   const [inputValue, setInputValue] = useState(task.dueDate || '');
-  // Date picker mode -- defaults to 'relative' so a fresh task opens straight
-  // into the rule picker. Tasks with an existing hard date (and no rule) open
-  // on 'specific' so the date is visible.
+  // Date picker mode -- in project-builder context (enableRelativeDates),
+  // always default to 'relative' per user preference. Outside that context,
+  // 'specific' is forced (relative mode isn't available anyway).
   const [dateMode, setDateMode] = useState<'specific' | 'relative'>(
-    task.dueDate && !task.dueDateRule ? 'specific' : 'relative'
+    enableRelativeDates ? 'relative' : 'specific'
   );
 
   const canBeCompleted = useMemo(
@@ -566,7 +599,10 @@ const TaskRow = memo(function TaskRow({
                 initialRule={task.dueDateRule}
                 siblingTasks={siblingTasks}
                 projectStartDate={projectStartDate}
+                projectEndDate={projectEndDate}
                 excludeTaskId={task.id}
+                currentProjectName={projectName}
+                availableProjects={availableProjects}
                 onSave={handleSaveRelativeRule}
               />
             )}
@@ -680,7 +716,7 @@ const TaskRow = memo(function TaskRow({
     handleUserChange, handleHealthCenterChange,
     // Relative-due-date picker state and derived values must invalidate the
     // memo so flipping tabs / editing the rule re-renders the popover.
-    enableRelativeDates, projectStartDate, siblingTasks,
+    enableRelativeDates, projectStartDate, projectName, siblingTasks, availableProjects,
     dateMode, handleSaveRelativeRule,
   ]);
 
@@ -829,7 +865,7 @@ const TaskRow = memo(function TaskRow({
 });
 
 // ==================== MAIN COMPONENT ====================
-function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate }: TaskTableDynamicProps) {
+function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects }: TaskTableDynamicProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -947,6 +983,9 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
           onDeleteTask={onDeleteTask}
           enableRelativeDates={enableRelativeDates}
           projectStartDate={projectStartDate}
+          projectEndDate={projectEndDate}
+          projectName={projectName}
+          availableProjects={availableProjects}
           siblingTasks={tasks}
         />
       ))}

@@ -254,16 +254,40 @@ function tryParse(s?: string): Date | null {
  * a rule will see that other task's stored dueDate, not its currently-
  * computed one. This avoids cycle handling and keeps the resolution single
  * pass; it's a deliberate v1 limitation.
+ *
+ * For `kind: 'projectStart'`, an optional `projectId` selects a project from
+ * `ctx.projects` (cross-project anchor). When `projectId` is omitted the
+ * anchor falls back to `ctx.projectStartDate` (the current project).
  */
 export function computeDueDate(
   rule: DueDateRule,
-  ctx: { projectStartDate?: string; tasks: Task[] }
+  ctx: {
+    projectStartDate?: string;
+    projectEndDate?: string;
+    tasks: Task[];
+    projects?: Array<{ id: number; startDate?: string; endDate?: string }>;
+  }
 ): string | null {
   let anchorDate: Date | null = null;
   const anchor = rule.anchor;
 
   if (anchor.kind === 'projectStart') {
-    anchorDate = tryParse(ctx.projectStartDate);
+    if (anchor.projectId !== undefined && ctx.projects) {
+      const p = ctx.projects.find((x) => x.id === anchor.projectId);
+      anchorDate = tryParse(p?.startDate);
+    } else {
+      anchorDate = tryParse(ctx.projectStartDate);
+    }
+  } else if (anchor.kind === 'projectEnd') {
+    if (anchor.projectId !== undefined && ctx.projects) {
+      const p = ctx.projects.find((x) => x.id === anchor.projectId);
+      anchorDate = tryParse(p?.endDate);
+    } else {
+      anchorDate = tryParse(ctx.projectEndDate);
+    }
+  } else if (anchor.kind === 'taskStart') {
+    const t = ctx.tasks.find((x) => x.id === anchor.taskId);
+    anchorDate = tryParse(t?.startedAt);
   } else if (anchor.kind === 'taskDue') {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
     anchorDate = tryParse(t?.dueDate);
@@ -302,11 +326,14 @@ export function describeDueDateRule(
   const anchor = rule.anchor;
   if (anchor.kind === 'projectStart') {
     anchorText = 'Project start';
+  } else if (anchor.kind === 'projectEnd') {
+    anchorText = 'Project end';
   } else {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
     const name = t ? t.title : `task #${anchor.taskId}`;
-    anchorText =
-      anchor.kind === 'taskDue' ? `${name}'s due date` : `${name} is complete`;
+    if (anchor.kind === 'taskStart') anchorText = `${name} starts`;
+    else if (anchor.kind === 'taskDue') anchorText = `${name}'s due date`;
+    else anchorText = `${name} is complete`;
   }
 
   return `${offsetText} ${anchorText}`;
@@ -320,13 +347,16 @@ export function describeDueDateRule(
  */
 export function resolveTaskDueDates(
   tasks: Task[],
-  projectStartDate?: string
+  projectStartDate?: string,
+  opts?: { projectEndDate?: string; projects?: Array<{ id: number; startDate?: string; endDate?: string }> }
 ): Task[] {
   return tasks.map((task) => {
     if (!task.dueDateRule) return task;
     const computed = computeDueDate(task.dueDateRule, {
       projectStartDate,
+      projectEndDate: opts?.projectEndDate,
       tasks,
+      projects: opts?.projects,
     });
     return computed ? { ...task, dueDate: computed } : task;
   });

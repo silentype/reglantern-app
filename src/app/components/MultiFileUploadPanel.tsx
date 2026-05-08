@@ -74,7 +74,10 @@ export default function MultiFileUploadPanel({
   simplifiedFields = false,
   initialDueDateRule,
   projectStartDate,
+  projectEndDate,
   siblingTasks,
+  currentProjectName,
+  availableProjects,
 }: {
   taskId: number | null;
   taskTitle: string;
@@ -140,8 +143,14 @@ export default function MultiFileUploadPanel({
   initialDueDateRule?: DueDateRule;
   /** MM/dd/yyyy. Used as the "Project started" anchor. */
   projectStartDate?: string;
+  /** MM/dd/yyyy. Used as the "Project ended" anchor. */
+  projectEndDate?: string;
   /** Other tasks in the same project (anchor options). */
   siblingTasks?: Task[];
+  /** Display name for the current project in the Reference dropdown. */
+  currentProjectName?: string;
+  /** Other projects in the system (cross-project anchor options). */
+  availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
 }) {
   // Panel sub-state lives in URL search params so each view is paste-able:
   //   ?subtask=:subtaskId  -> drilled into subtask upload page (omit -> task overview)
@@ -1380,13 +1389,17 @@ export default function MultiFileUploadPanel({
                   triggerClassName="flex-1 max-w-[240px] bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[#f9fafb] transition-colors"
                   align="start"
                   showToast={false}
+                  urlParam="datePicker"
                   relative={
                     simplifiedFields
                       ? {
                           initialRule: initialDueDateRule,
                           siblingTasks,
                           projectStartDate,
+                          projectEndDate,
                           excludeTaskId: taskId ?? undefined,
+                          currentProjectName,
+                          availableProjects,
                           onSave: (rule) => {
                             if (taskId !== null && onUpdateTaskDetails) {
                               onUpdateTaskDetails(taskId, { dueDateRule: rule });
