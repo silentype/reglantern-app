@@ -544,7 +544,11 @@ const TaskRow = memo(function TaskRow({
               <DueDateBadge dueDate={task.dueDate} onOpenChange={() => setCalendarOpen(true)} />
             </div>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
+          <PopoverContent
+            className="w-auto p-0 max-h-[min(640px,calc(100vh-100px))] overflow-y-auto"
+            align="start"
+            collisionPadding={16}
+          >
             {enableRelativeDates && (
               <div className="px-3 pt-3 pb-0 border-b border-[#e4e4e7]">
                 <TabStrip>
