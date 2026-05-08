@@ -69,7 +69,8 @@ export default function MultiFileUploadPanel({
   initialCreatedBy,
   initialTaskType = 'custom',
   initialSubtasks = [],
-  initialView = 'task'
+  initialView = 'task',
+  simplifiedFields = false,
 }: {
   taskId: number | null;
   taskTitle: string;
@@ -124,6 +125,12 @@ export default function MultiFileUploadPanel({
   initialTaskType?: 'system' | 'custom';
   initialSubtasks?: Subtask[];
   initialView?: 'task' | 'subtask';
+  /**
+   * When true, hide the Assigned To + Collaborators sections in the Details
+   * tab. Used by Project Builder, where assignment lives at the project
+   * level (per health center) rather than per task.
+   */
+  simplifiedFields?: boolean;
 }) {
   // Panel sub-state lives in URL search params so each view is paste-able:
   //   ?subtask=:subtaskId  -> drilled into subtask upload page (omit -> task overview)
@@ -1365,6 +1372,7 @@ export default function MultiFileUploadPanel({
                 />
               </div>
 
+              {!simplifiedFields && (
               <div className="flex items-center gap-2">
                 <User size={20} className="text-[#09090b]" />
                 <span className="text-sm text-[#09090b] w-[104px]">Assigned to</span>
@@ -1414,7 +1422,9 @@ export default function MultiFileUploadPanel({
                   </PopoverContent>
                 </Popover>
               </div>
+              )}
 
+              {!simplifiedFields && (
               <div className="flex items-start gap-2">
                 <Users size={20} className="text-[#09090b] mt-2" />
                 <span className="text-sm text-[#09090b] w-[104px] mt-2">Collaborators</span>
@@ -1488,6 +1498,7 @@ export default function MultiFileUploadPanel({
                   )}
                 </div>
               </div>
+              )}
 
               {initialTaskType === 'system' && (
                 <div className="flex items-start gap-2">

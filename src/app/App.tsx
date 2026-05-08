@@ -609,10 +609,10 @@ export default function App() {
           }`}
         >
           {isCreatingNewTask ? (
-            <MultiFileUpload1 
-              taskId={null} 
-              taskTitle={newTaskTitle} 
-              onClose={handleClosePanel} 
+            <MultiFileUpload1
+              taskId={null}
+              taskTitle={newTaskTitle}
+              onClose={handleClosePanel}
               onSaveNewTask={handleSaveNewTask}
               isCreatingNew={true}
               initialFiles={[]}
@@ -624,12 +624,13 @@ export default function App() {
               initialCreatedBy={{ initials: 'TF', name: 'Tim Freeman' }}
               initialTaskType='custom'
               initialSubtasks={[]}
+              simplifiedFields={selectedProjectId !== null}
             />
           ) : selectedTaskId !== null && currentTask ? (
-            <MultiFileUpload1 
-              taskId={selectedTaskId} 
-              taskTitle={currentTask.title} 
-              onClose={handleClosePanel} 
+            <MultiFileUpload1
+              taskId={selectedTaskId}
+              taskTitle={currentTask.title}
+              onClose={handleClosePanel}
               onUpdateTaskDetails={handleUpdateTaskDetails}
               onUpdateFiles={handleUpdateTaskFiles}
               isCreatingNew={false}
@@ -642,6 +643,7 @@ export default function App() {
               initialCreatedBy={currentTask.createdBy}
               initialTaskType={currentTask.taskType || 'system'}
               initialSubtasks={currentTask.subtasks || []}
+              simplifiedFields={selectedProjectId !== null}
             />
           ) : null}
         </div>

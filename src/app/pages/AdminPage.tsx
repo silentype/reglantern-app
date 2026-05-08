@@ -111,7 +111,8 @@ export function AdminPage({
   const [healthCenterFilter, setHealthCenterFilter] = useState<string[]>(['All Health Centers']);
   const [needsAttentionFilter, setNeedsAttentionFilter] = useState<string[]>(['all']);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(['title', 'status', 'dueDate', 'assignedTo', 'healthCenter', 'collaborators', 'attention']);
+  // Project tasks intentionally show only Task Name + Due Date.
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(['title', 'dueDate']);
   const [customDateInput, setCustomDateInput] = useState('');
   const [assignedToOpen, setAssignedToOpen] = useState(false);
   const [healthCenterOpen, setHealthCenterOpen] = useState(false);
@@ -120,14 +121,12 @@ export function AdminPage({
 
   const categories = ['Compliance', 'Documentation', 'Training', 'Quality Assurance', 'Operational'];
 
+  // Project tasks deliberately offer only Task Name + Due Date as columns
+  // (assigned to / health center / needs attention live on the project itself,
+  // not per task here). The Tasks page keeps its full set independently.
   const availableColumns = [
     { id: 'title', label: 'Task Name' },
-    { id: 'status', label: 'Status' },
     { id: 'dueDate', label: 'Due Date' },
-    { id: 'assignedTo', label: 'Assigned To' },
-    { id: 'healthCenter', label: 'Health Center' },
-    { id: 'collaborators', label: 'Collaborators' },
-    { id: 'attention', label: 'Needs Attention' }
   ];
 
   const toggleColumnVisibility = useCallback((columnId: string) => {
