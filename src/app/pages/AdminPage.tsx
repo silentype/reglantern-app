@@ -419,14 +419,9 @@ export function AdminPage({
                 Back to Projects
               </button>
               <div className="mb-2">
-                <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px]">
-                  Project Builder
-                </h1>
+                <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px]">{selectedProject.name}</h1>
               </div>
-              <h2 className="text-base font-semibold text-[#18181b] leading-[22px]">
-                {selectedProject.name}
-              </h2>
-              <p className="text-sm font-medium text-[#71717a] leading-[14px] mt-1">
+              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
                 {selectedProject.description}
               </p>
               <div className="mt-3 flex items-center gap-2">

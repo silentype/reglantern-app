@@ -545,12 +545,12 @@ const TaskRow = memo(function TaskRow({
             </div>
           </PopoverTrigger>
           <PopoverContent
-            className="w-auto p-0 max-h-[min(640px,calc(100vh-100px))] overflow-y-auto"
+            className="w-auto p-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
             align="start"
             collisionPadding={16}
           >
             {enableRelativeDates && (
-              <div className="px-3 pt-3 pb-0 border-b border-[#e4e4e7]">
+              <div className="sticky top-0 z-10 bg-white px-3 pt-3 pb-2 border-b border-[#e4e4e7]">
                 <TabStrip>
                   <Tab active={dateMode === 'specific'} onClick={() => setDateMode('specific')}>
                     Specific date
