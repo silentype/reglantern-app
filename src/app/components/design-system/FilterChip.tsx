@@ -22,9 +22,9 @@ export const FilterChip = forwardRef<HTMLButtonElement, FilterChipProps>(
       type="button"
       aria-pressed={active}
       className={clsx(
-        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
+        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
         active
-          ? 'bg-[#fc6] text-[#18181b] hover:bg-[#ffcc77]'
+          ? 'bg-[#fc6] text-[#18181b] hover:bg-[#eab308]'
           : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]',
         className
       )}

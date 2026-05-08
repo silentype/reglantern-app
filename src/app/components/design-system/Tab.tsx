@@ -16,10 +16,10 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(
       role="tab"
       aria-selected={active}
       className={clsx(
-        'px-3 py-1.5 text-sm font-medium rounded transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
+        'px-3 py-1.5 text-sm font-medium rounded transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
         flex && 'flex-1',
         active
-          ? 'bg-white text-[#09090b] shadow-sm'
+          ? 'bg-white text-[#09090b]'
           : 'bg-transparent text-[#6b7280] hover:text-[#09090b]',
         className
       )}

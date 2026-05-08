@@ -7,7 +7,7 @@ export interface PaginationProps {
   total: number;
   onPrev?: () => void;
   onNext?: () => void;
-  /** Custom labels — defaults are uppercase BACK / NEXT to match the Compliance Review pattern. */
+  /** Custom labels — default to title-case "Back" / "Next". */
   prevLabel?: string;
   nextLabel?: string;
   className?: string;
@@ -22,8 +22,8 @@ export function Pagination({
   total,
   onPrev,
   onNext,
-  prevLabel = 'BACK',
-  nextLabel = 'NEXT',
+  prevLabel = 'Back',
+  nextLabel = 'Next',
   className,
 }: PaginationProps) {
   const atStart = current <= 1;

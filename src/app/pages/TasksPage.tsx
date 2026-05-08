@@ -47,6 +47,7 @@ import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
 import searchFilterSvgPaths from '../../imports/svg-oo9u3g75ma';
 import filterSvgPaths from '../../imports/svg-vp1nlfqwh3';
 import { Avatar } from '../components/design-system/Avatar';
+import { Button } from '../components/design-system/Button';
 
 export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; }) {
   const [statusFilter, setStatusFilter] = useState<string[]>(['all']);
@@ -357,18 +358,12 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
         {/* HIDDEN - Top Filters Bar */}
         <div className="hidden content-stretch items-center justify-between relative mb-6" data-name="Filters">
           {/* Add Task Button */}
-          <button className="bg-[#fc6] content-stretch flex gap-[8px] h-[40px] items-center px-[16px] py-[8px] relative rounded-[6px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] shrink-0">
-            <div className="flex flex-col font-['Geist:Medium',sans-serif] font-medium justify-center leading-[0] relative shrink-0 text-[#18181b] text-[14px] whitespace-nowrap">
-              <p className="leading-[20px]">Add a Task</p>
-            </div>
-            <div className="overflow-clip relative shrink-0 size-[16px]">
-              <div className="absolute inset-[16.67%]">
-                <svg className="absolute block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 10.6667 10.6667">
-                  <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="var(--fill-0, #18181b)" fillRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </button>
+          <Button className="shrink-0">
+            Add a Task
+            <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
+              <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="#18181b" fillRule="evenodd" />
+            </svg>
+          </Button>
 
           {/* Search and Filter Group - Desktop */}
           <div className="hidden lg:flex content-stretch items-center gap-[8px] relative shrink-0">
@@ -947,13 +942,12 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
           </div>
 
           {/* Mobile View Filters Button - Shown only on mobile */}
-          <button className="lg:hidden bg-white h-[40px] px-3 py-2 rounded-md shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] flex items-center gap-2 relative shrink-0">
-            <div className="absolute border border-[#e4e4e7] border-solid inset-0 pointer-events-none rounded-md" />
-            <span className="text-sm font-normal text-[#18181b] leading-[20px]">View Filters</span>
+          <Button variant="secondary" className="lg:hidden shrink-0">
+            View Filters
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path clipRule="evenodd" d={filterSvgPaths.p248d3d00} fill="#18181B" fillRule="evenodd" />
             </svg>
-          </button>
+          </Button>
         </div>
 
         {/* HIDDEN - Horizontal Filter Bar - New Comparison Version */}

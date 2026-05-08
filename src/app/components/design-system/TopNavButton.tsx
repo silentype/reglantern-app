@@ -18,7 +18,7 @@ export const TopNavButton = forwardRef<HTMLButtonElement, TopNavButtonProps>(
       type="button"
       aria-current={active ? 'page' : undefined}
       className={clsx(
-        'px-4 py-2 rounded text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]',
+        'px-4 py-2 rounded text-sm font-medium transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]',
         active ? 'text-white' : 'text-[#9ca3af] hover:text-white',
         className
       )}

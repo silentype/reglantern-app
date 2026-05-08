@@ -23,7 +23,7 @@ export const DateChip = forwardRef<HTMLButtonElement, DateChipProps>(
         ref={ref}
         type="button"
         className={clsx(
-          'inline-flex items-center gap-2 px-3 h-[36px] rounded-md text-[14px] transition-colors',
+          'inline-flex items-center gap-2 px-3 h-[36px] rounded-md text-[14px] transition-colors cursor-pointer',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
           highlighted
             ? 'bg-white border border-[#fc6] text-[#18181b]'

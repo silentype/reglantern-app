@@ -10,12 +10,12 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  // Match the canonical "Add a Task" button on the Tasks page: yellow surface,
-  // dark-zinc text, subtle 1px shadow.
-  primary: 'bg-[#fc6] text-[#18181b] shadow-sm hover:bg-[#ffcc77] active:bg-[#ffbf66]',
-  secondary: 'bg-white text-[#18181b] border border-[#e4e4e7] hover:bg-[#f9fafb]',
-  ghost: 'bg-transparent text-[#18181b] hover:bg-[#e4e4e7]',
-  danger: 'bg-[#dc2626] text-white hover:bg-[#b91c1c]',
+  // Yellow surface, dark-zinc text. No shadow -- flat by design across all variants.
+  // Hover/active go meaningfully darker so the state change is unambiguous.
+  primary: 'bg-[#fc6] text-[#18181b] hover:bg-[#eab308] active:bg-[#ca8a04]',
+  secondary: 'bg-white text-[#18181b] border border-[#e4e4e7] hover:bg-[#f4f4f5] active:bg-[#e4e4e7]',
+  ghost: 'bg-transparent text-[#18181b] hover:bg-[#e4e4e7] active:bg-[#d4d4d8]',
+  danger: 'bg-[#dc2626] text-white hover:bg-[#b91c1c] active:bg-[#991b1b]',
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -29,7 +29,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={clsx(
-        'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+        'inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
         variantClasses[variant],
         sizeClasses[size],
         className

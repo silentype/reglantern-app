@@ -680,6 +680,18 @@ export function ComplianceReviewPage() {
 
   return (
     <div className="h-full flex flex-col bg-white relative">
+      {/* Page Header */}
+      <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
+        <div className="mb-2">
+          <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px]">
+            Compliance Review
+          </h1>
+        </div>
+        <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+          Walk through each chapter and confirm compliance for every element
+        </p>
+      </div>
+
       {/* Top Bar - Category Filters and Status Filters */}
       <div className="border-b border-[#e4e4e7] px-6 py-4">
         <div className="flex items-center justify-between">
