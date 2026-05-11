@@ -51,7 +51,7 @@ export interface RelativeDuePickerProps {
   className?: string;
 }
 
-type AnchorType = 'project' | 'task';
+type AnchorType = 'project' | 'task' | 'fixedDate';
 type EventKey = 'started' | 'ended' | 'due' | 'completed';
 
 // Sentinel used in the Reference dropdown to mean "the project this task
@@ -59,47 +59,80 @@ type EventKey = 'started' | 'ended' | 'due' | 'completed';
 // it can't collide with a real project id.
 const CURRENT_PROJECT_VALUE = '__current__';
 
+const MONTH_OPTIONS = [
+  { value: 1, label: 'January' },
+  { value: 2, label: 'February' },
+  { value: 3, label: 'March' },
+  { value: 4, label: 'April' },
+  { value: 5, label: 'May' },
+  { value: 6, label: 'June' },
+  { value: 7, label: 'July' },
+  { value: 8, label: 'August' },
+  { value: 9, label: 'September' },
+  { value: 10, label: 'October' },
+  { value: 11, label: 'November' },
+  { value: 12, label: 'December' },
+];
+
 function ruleToState(rule: DueDateRule | undefined): {
   type: AnchorType;
   taskId: number | null;
   projectRef: string;
   event: EventKey;
+  fixedMonth: number;
+  fixedDay: number;
 } {
-  if (!rule) {
-    return { type: 'project', taskId: null, projectRef: CURRENT_PROJECT_VALUE, event: 'started' };
-  }
+  const defaults = {
+    type: 'project' as AnchorType,
+    taskId: null,
+    projectRef: CURRENT_PROJECT_VALUE,
+    event: 'started' as EventKey,
+    fixedMonth: 1,
+    fixedDay: 1,
+  };
+  if (!rule) return defaults;
   const a = rule.anchor;
   if (a.kind === 'projectStart') {
     return {
+      ...defaults,
       type: 'project',
-      taskId: null,
       projectRef: a.projectId !== undefined ? String(a.projectId) : CURRENT_PROJECT_VALUE,
       event: 'started',
     };
   }
   if (a.kind === 'projectEnd') {
     return {
+      ...defaults,
       type: 'project',
-      taskId: null,
       projectRef: a.projectId !== undefined ? String(a.projectId) : CURRENT_PROJECT_VALUE,
       event: 'ended',
     };
   }
+  if (a.kind === 'fixedAnniversary') {
+    return { ...defaults, type: 'fixedDate', fixedMonth: a.month, fixedDay: a.day };
+  }
   if (a.kind === 'taskStart') {
-    return { type: 'task', taskId: a.taskId, projectRef: CURRENT_PROJECT_VALUE, event: 'started' };
+    return { ...defaults, type: 'task', taskId: a.taskId, event: 'started' };
   }
   if (a.kind === 'taskDue') {
-    return { type: 'task', taskId: a.taskId, projectRef: CURRENT_PROJECT_VALUE, event: 'due' };
+    return { ...defaults, type: 'task', taskId: a.taskId, event: 'due' };
   }
-  return { type: 'task', taskId: a.taskId, projectRef: CURRENT_PROJECT_VALUE, event: 'ended' };
+  return { ...defaults, type: 'task', taskId: a.taskId, event: 'ended' };
 }
 
 function buildAnchor(
   type: AnchorType,
   taskId: number | null,
   projectRef: string,
-  event: EventKey
+  event: EventKey,
+  fixedMonth: number,
+  fixedDay: number
 ): DueDateAnchor | null {
+  if (type === 'fixedDate') {
+    if (!Number.isInteger(fixedMonth) || fixedMonth < 1 || fixedMonth > 12) return null;
+    if (!Number.isInteger(fixedDay) || fixedDay < 1 || fixedDay > 31) return null;
+    return { kind: 'fixedAnniversary', month: fixedMonth, day: fixedDay };
+  }
   if (type === 'project') {
     if (event !== 'started' && event !== 'ended') return null;
     const projectId =
@@ -128,6 +161,7 @@ function eventOptionsFor(type: AnchorType): Array<{ value: EventKey; label: stri
       { value: 'ended', label: 'ended' },
     ];
   }
+  if (type === 'fixedDate') return [];
   return [
     { value: 'started', label: 'started' },
     { value: 'due', label: 'due date' },
@@ -160,6 +194,8 @@ export function RelativeDuePicker({
   );
   const [projectRef, setProjectRef] = useState<string>(initial.projectRef);
   const [event, setEvent] = useState<EventKey>(initial.event);
+  const [fixedMonth, setFixedMonth] = useState<number>(initial.fixedMonth);
+  const [fixedDay, setFixedDay] = useState<number>(initial.fixedDay);
   const [amount, setAmount] = useState<number>(initialRule?.amount ?? 2);
   const [unit, setUnit] = useState<DueDateRule['unit']>(initialRule?.unit ?? 'weeks');
   const [direction, setDirection] = useState<DueDateRule['direction']>(initialRule?.direction ?? 'after');
@@ -167,7 +203,7 @@ export function RelativeDuePicker({
   // Snap event + reference to valid defaults when type changes.
   useEffect(() => {
     const validEvents = eventOptionsFor(type).map((o) => o.value);
-    if (!validEvents.includes(event)) setEvent(validEvents[0]);
+    if (validEvents.length > 0 && !validEvents.includes(event)) setEvent(validEvents[0]);
     if (type === 'task' && taskId === null && taskOptions[0]) {
       setTaskId(taskOptions[0].id);
     }
@@ -175,10 +211,10 @@ export function RelativeDuePicker({
   }, [type]);
 
   const draftRule: DueDateRule | null = useMemo(() => {
-    const anchor = buildAnchor(type, taskId, projectRef, event);
+    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay);
     if (!anchor) return null;
     return { anchor, amount, unit, direction };
-  }, [type, taskId, projectRef, event, amount, unit, direction]);
+  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, amount, unit, direction]);
 
   const computedPreview = useMemo(() => {
     if (!draftRule) return null;
@@ -242,55 +278,91 @@ export function RelativeDuePicker({
             >
               <option value="project">Project</option>
               <option value="task">Task</option>
+              <option value="fixedDate">Fixed Date</option>
             </Select>
           </div>
 
-          <div>
-            <label className={labelClasses}>Reference</label>
-            <Select
-              size="sm"
-              value={type === 'project' ? projectRef : (taskId ?? '').toString()}
-              onChange={(e) => {
-                if (type === 'task') setTaskId(Number(e.target.value));
-                else setProjectRef(e.target.value);
-              }}
-              disabled={type === 'task' && taskOptions.length === 0}
-            >
-              {type === 'project' ? (
-                <>
-                  <option value={CURRENT_PROJECT_VALUE}>{currentProjectName}</option>
-                  {projectOptions.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
+          {type === 'fixedDate' ? (
+            <>
+              <div>
+                <label className={labelClasses}>Month</label>
+                <Select
+                  size="sm"
+                  value={fixedMonth}
+                  onChange={(e) => setFixedMonth(Number(e.target.value))}
+                >
+                  {MONTH_OPTIONS.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.label}
                     </option>
                   ))}
-                </>
-              ) : taskOptions.length === 0 ? (
-                <option value="">No other tasks</option>
-              ) : (
-                taskOptions.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}
-                  </option>
-                ))
-              )}
-            </Select>
-          </div>
+                </Select>
+              </div>
+              <div>
+                <label className={labelClasses}>Day</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={fixedDay}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (Number.isInteger(n)) setFixedDay(Math.min(31, Math.max(1, n)));
+                  }}
+                  className="w-full h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className={labelClasses}>Reference</label>
+                <Select
+                  size="sm"
+                  value={type === 'project' ? projectRef : (taskId ?? '').toString()}
+                  onChange={(e) => {
+                    if (type === 'task') setTaskId(Number(e.target.value));
+                    else setProjectRef(e.target.value);
+                  }}
+                  disabled={type === 'task' && taskOptions.length === 0}
+                >
+                  {type === 'project' ? (
+                    <>
+                      <option value={CURRENT_PROJECT_VALUE}>{currentProjectName}</option>
+                      {projectOptions.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </>
+                  ) : taskOptions.length === 0 ? (
+                    <option value="">No other tasks</option>
+                  ) : (
+                    taskOptions.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.title}
+                      </option>
+                    ))
+                  )}
+                </Select>
+              </div>
 
-          <div>
-            <label className={labelClasses}>Event</label>
-            <Select
-              size="sm"
-              value={event}
-              onChange={(e) => setEvent(e.target.value as EventKey)}
-            >
-              {eventOptions.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          </div>
+              <div>
+                <label className={labelClasses}>Event</label>
+                <Select
+                  size="sm"
+                  value={event}
+                  onChange={(e) => setEvent(e.target.value as EventKey)}
+                >
+                  {eventOptions.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

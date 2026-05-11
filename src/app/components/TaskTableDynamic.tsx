@@ -45,7 +45,13 @@ export type DueDateAnchor =
   | { kind: 'projectEnd'; projectId?: number }
   | { kind: 'taskStart'; taskId: number }
   | { kind: 'taskDue'; taskId: number }
-  | { kind: 'taskCompleted'; taskId: number };
+  | { kind: 'taskCompleted'; taskId: number }
+  /**
+   * Recurring fixed month/day -- resolves to the next occurrence of (month, day)
+   * on or after today. Useful for annual deadlines (e.g. "Sept 30").
+   * `month` is 1-12, `day` is 1-31.
+   */
+  | { kind: 'fixedAnniversary'; month: number; day: number };
 
 export interface DueDateRule {
   anchor: DueDateAnchor;
