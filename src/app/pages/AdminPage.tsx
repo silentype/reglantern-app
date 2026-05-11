@@ -96,6 +96,8 @@ export function AdminPage({
   setProjects,
   creatingNewProject,
   onCreatingNewProjectChange,
+  selectedProjectId,
+  onSelectProject,
   onAddTaskToProject,
   onOpenProjectTask
 }: {
@@ -106,6 +108,8 @@ export function AdminPage({
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   creatingNewProject: boolean;
   onCreatingNewProjectChange: (creating: boolean) => void;
+  selectedProjectId: number | null;
+  onSelectProject: (projectId: number | null) => void;
   onAddTaskToProject: (projectId: number) => void;
   onOpenProjectTask: (projectId: number, taskId: number, taskTitle: string) => void;
 }) {
@@ -113,7 +117,12 @@ export function AdminPage({
   // (The selectedNavItem === 'Compliance Review' branch is handled below;
   // splitting AdminPage into ProjectBuilder + ComplianceReview is Phase 5.)
   const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  // selectedProject is derived from URL (selectedProjectId prop) so it survives
+  // refresh and is shareable. Mutations to the projects array auto-flow through.
+  const selectedProject = useMemo(
+    () => (selectedProjectId !== null ? projects.find(p => p.id === selectedProjectId) ?? null : null),
+    [projects, selectedProjectId]
+  );
   const [tableSaveStatus, setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [projectCardAssignOpen, setProjectCardAssignOpen] = useState<number | null>(null);
   const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
@@ -275,16 +284,6 @@ export function AdminPage({
     if (!needsAttentionFilter.includes('all')) count++;
     return count;
   }, [statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter]);
-
-  // Keep selectedProject in sync with projects state
-  useEffect(() => {
-    if (selectedProject) {
-      const updatedProject = projects.find(p => p.id === selectedProject.id);
-      if (updatedProject) {
-        setSelectedProject(updatedProject);
-      }
-    }
-  }, [projects]);
 
   const handleProjectTaskClick = useCallback((taskId: number, taskTitle: string) => {
     if (selectedProject) {
@@ -490,7 +489,7 @@ export function AdminPage({
           <div className="mb-4 flex items-end justify-between gap-6">
             <div className="flex-1">
               <button
-                onClick={() => setSelectedProject(null)}
+                onClick={() => onSelectProject(null)}
                 className="bg-white h-[40px] px-[16px] py-[8px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#f9fafb] transition-colors mb-3 flex items-center gap-2"
               >
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -1043,7 +1042,7 @@ export function AdminPage({
         {projects.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {projects.map((project) => {
-              const openProject = () => setSelectedProject(project);
+              const openProject = () => onSelectProject(project.id);
               return (
                 <div
                   key={project.id}
