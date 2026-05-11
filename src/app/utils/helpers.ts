@@ -294,6 +294,21 @@ export function computeDueDate(
   } else if (anchor.kind === 'taskCompleted') {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
     anchorDate = tryParse(t?.completedAt);
+  } else if (anchor.kind === 'fixedAnniversary') {
+    // Resolve to the next occurrence of (month, day) on or after today.
+    // month is 1-12, day is 1-31. Invalid date components -> null.
+    const m = anchor.month;
+    const d = anchor.day;
+    if (!Number.isInteger(m) || m < 1 || m > 12) return null;
+    if (!Number.isInteger(d) || d < 1 || d > 31) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let candidate = new Date(today.getFullYear(), m - 1, d);
+    // Skip impossible days (e.g. Feb 30) by advancing to next year.
+    if (candidate.getMonth() !== m - 1) candidate = new Date(today.getFullYear() + 1, m - 1, d);
+    if (candidate < today) candidate = new Date(today.getFullYear() + 1, m - 1, d);
+    if (candidate.getMonth() !== m - 1) return null;
+    anchorDate = candidate;
   }
 
   if (!anchorDate) return null;
@@ -328,6 +343,11 @@ export function describeDueDateRule(
     anchorText = 'Project start';
   } else if (anchor.kind === 'projectEnd') {
     anchorText = 'Project end';
+  } else if (anchor.kind === 'fixedAnniversary') {
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
+    const m = anchor.month >= 1 && anchor.month <= 12 ? monthNames[anchor.month - 1] : '?';
+    anchorText = `${m} ${anchor.day} (next occurrence)`;
   } else {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
     const name = t ? t.title : `task #${anchor.taskId}`;
