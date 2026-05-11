@@ -51,13 +51,26 @@ export interface RelativeDuePickerProps {
    * is the kickoff date anchor.
    */
   assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+  /**
+   * Global catalog of date-typed health-center fields (authored in
+   * Settings). Source for the "Health Center Info" Type option's
+   * Reference dropdown.
+   */
+  healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  /**
+   * Per-center field values, used to resolve `healthCenterField` anchor
+   * previews against the task's own health center.
+   */
+  healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+  /** The health center the task is currently assigned to. */
+  taskHealthCenter?: string;
   onSave: (rule: DueDateRule) => void;
   /** Save button label. Defaults to "Save rule". */
   saveLabel?: string;
   className?: string;
 }
 
-type AnchorType = 'project' | 'task' | 'fixedDate' | 'kickoff';
+type AnchorType = 'project' | 'task' | 'fixedDate' | 'kickoff' | 'healthCenterField';
 type EventKey = 'started' | 'ended' | 'due' | 'completed';
 
 // Sentinel used in the Reference dropdown to mean "the project this task
@@ -88,6 +101,7 @@ function ruleToState(rule: DueDateRule | undefined): {
   fixedMonth: number;
   fixedDay: number;
   kickoffCenter: string;
+  healthCenterFieldId: string;
 } {
   const defaults = {
     type: 'project' as AnchorType,
@@ -97,6 +111,7 @@ function ruleToState(rule: DueDateRule | undefined): {
     fixedMonth: 1,
     fixedDay: 1,
     kickoffCenter: '',
+    healthCenterFieldId: '',
   };
   if (!rule) return defaults;
   const a = rule.anchor;
@@ -119,6 +134,9 @@ function ruleToState(rule: DueDateRule | undefined): {
   if (a.kind === 'projectKickoff') {
     return { ...defaults, type: 'kickoff', kickoffCenter: a.healthCenter };
   }
+  if (a.kind === 'healthCenterField') {
+    return { ...defaults, type: 'healthCenterField', healthCenterFieldId: a.fieldId };
+  }
   if (a.kind === 'fixedAnniversary') {
     return { ...defaults, type: 'fixedDate', fixedMonth: a.month, fixedDay: a.day };
   }
@@ -138,7 +156,8 @@ function buildAnchor(
   event: EventKey,
   fixedMonth: number,
   fixedDay: number,
-  kickoffCenter: string
+  kickoffCenter: string,
+  healthCenterFieldId: string
 ): DueDateAnchor | null {
   if (type === 'fixedDate') {
     if (!Number.isInteger(fixedMonth) || fixedMonth < 1 || fixedMonth > 12) return null;
@@ -148,6 +167,10 @@ function buildAnchor(
   if (type === 'kickoff') {
     if (!kickoffCenter) return null;
     return { kind: 'projectKickoff', healthCenter: kickoffCenter };
+  }
+  if (type === 'healthCenterField') {
+    if (!healthCenterFieldId) return null;
+    return { kind: 'healthCenterField', fieldId: healthCenterFieldId };
   }
   if (type === 'project') {
     if (event !== 'started' && event !== 'ended') return null;
@@ -177,7 +200,7 @@ function eventOptionsFor(type: AnchorType): Array<{ value: EventKey; label: stri
       { value: 'ended', label: 'ended' },
     ];
   }
-  if (type === 'fixedDate' || type === 'kickoff') return [];
+  if (type === 'fixedDate' || type === 'kickoff' || type === 'healthCenterField') return [];
   return [
     { value: 'started', label: 'started' },
     { value: 'due', label: 'due date' },
@@ -194,6 +217,9 @@ export function RelativeDuePicker({
   currentProjectName = 'Current project',
   availableProjects,
   assignedHealthCenters,
+  healthCenterFieldDefs,
+  healthCenters,
+  taskHealthCenter,
   onSave,
   saveLabel = 'Save rule',
   className,
@@ -225,6 +251,14 @@ export function RelativeDuePicker({
     return !kickoffOptions.some((c) => c.name === initialRule.anchor.healthCenter);
   }, [initialRule, kickoffOptions]);
 
+  const hcFieldOptions = healthCenterFieldDefs ?? [];
+  // And health-center field: "missing" when the rule references a fieldId
+  // that's no longer in the global catalog (deleted in Settings).
+  const initialHCFieldMissing = useMemo(() => {
+    if (!initialRule || initialRule.anchor.kind !== 'healthCenterField') return false;
+    return !hcFieldOptions.some((d) => d.id === initialRule.anchor.fieldId);
+  }, [initialRule, hcFieldOptions]);
+
   const [type, setType] = useState<AnchorType>(initial.type);
   const [taskId, setTaskId] = useState<number | null>(
     initialReferenceMissing ? null : (initial.taskId ?? taskOptions[0]?.id ?? null)
@@ -235,6 +269,9 @@ export function RelativeDuePicker({
   const [fixedDay, setFixedDay] = useState<number>(initial.fixedDay);
   const [kickoffCenter, setKickoffCenter] = useState<string>(
     initialKickoffMissing ? '' : initial.kickoffCenter
+  );
+  const [healthCenterFieldId, setHealthCenterFieldId] = useState<string>(
+    initialHCFieldMissing ? '' : initial.healthCenterFieldId
   );
   const [amount, setAmount] = useState<number>(initialRule?.amount ?? 2);
   const [unit, setUnit] = useState<DueDateRule['unit']>(initialRule?.unit ?? 'weeks');
@@ -254,14 +291,17 @@ export function RelativeDuePicker({
     if (type === 'kickoff' && !kickoffCenter && kickoffOptions[0] && !initialKickoffMissing) {
       setKickoffCenter(kickoffOptions[0].name);
     }
+    if (type === 'healthCenterField' && !healthCenterFieldId && hcFieldOptions[0] && !initialHCFieldMissing) {
+      setHealthCenterFieldId(hcFieldOptions[0].id);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
   const draftRule: DueDateRule | null = useMemo(() => {
-    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay, kickoffCenter);
+    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay, kickoffCenter, healthCenterFieldId);
     if (!anchor) return null;
     return { anchor, amount, unit, direction };
-  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, kickoffCenter, amount, unit, direction]);
+  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, kickoffCenter, healthCenterFieldId, amount, unit, direction]);
 
   const computedPreview = useMemo(() => {
     if (!draftRule) return null;
@@ -271,8 +311,10 @@ export function RelativeDuePicker({
       tasks: siblingTasks ?? [],
       projects: projectOptions,
       assignedHealthCenters: kickoffOptions,
+      healthCenters,
+      taskHealthCenter,
     });
-  }, [draftRule, projectStartDate, projectEndDate, siblingTasks, projectOptions, kickoffOptions]);
+  }, [draftRule, projectStartDate, projectEndDate, siblingTasks, projectOptions, kickoffOptions, healthCenters, taskHealthCenter]);
 
   const eventOptions = eventOptionsFor(type);
   const labelClasses = 'block text-[11px] font-medium text-[#71717a] mb-1';
@@ -326,6 +368,11 @@ export function RelativeDuePicker({
             The previously-selected health center was unassigned. Pick a new center or switch to a different type.
           </div>
         )}
+        {initialHCFieldMissing && (
+          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
+            The previously-selected health-center field was removed in Settings. Pick a new field or switch to a different type.
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className={labelClasses}>Type</label>
@@ -340,10 +387,36 @@ export function RelativeDuePicker({
               <option value="kickoff" disabled={kickoffOptions.length === 0}>
                 Kickoff{kickoffOptions.length === 0 ? ' (assign a center first)' : ''}
               </option>
+              <option value="healthCenterField" disabled={hcFieldOptions.length === 0}>
+                Health Center Info{hcFieldOptions.length === 0 ? ' (add a field first)' : ''}
+              </option>
             </Select>
           </div>
 
-          {type === 'kickoff' ? (
+          {type === 'healthCenterField' ? (
+            <div className="col-span-2">
+              <label className={labelClasses}>Field</label>
+              <Select
+                size="sm"
+                value={healthCenterFieldId}
+                onChange={(e) => setHealthCenterFieldId(e.target.value)}
+                disabled={hcFieldOptions.length === 0}
+              >
+                {hcFieldOptions.length === 0 ? (
+                  <option value="">No fields configured</option>
+                ) : (
+                  <>
+                    {initialHCFieldMissing && <option value="">Select a field…</option>}
+                    {hcFieldOptions.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.label}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </Select>
+            </div>
+          ) : type === 'kickoff' ? (
             <div className="col-span-2">
               <label className={labelClasses}>Health Center</label>
               <Select

@@ -272,6 +272,17 @@ export function computeDueDate(
      * date for that center.
      */
     assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+    /**
+     * Global catalog of health-center records and their date-field
+     * values. Source for `healthCenterField` anchors -- the resolver
+     * looks up the task's own `healthCenter` against this catalog.
+     */
+    healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+    /**
+     * The `healthCenter` of the task currently being resolved. Used as
+     * the implicit "which center" in `healthCenterField` anchors.
+     */
+    taskHealthCenter?: string;
   }
 ): string | null {
   let anchorDate: Date | null = null;
@@ -294,6 +305,11 @@ export function computeDueDate(
   } else if (anchor.kind === 'projectKickoff') {
     const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === anchor.healthCenter);
     anchorDate = tryParse(assignment?.assignedAt);
+  } else if (anchor.kind === 'healthCenterField') {
+    const record = ctx.taskHealthCenter
+      ? (ctx.healthCenters ?? []).find((h) => h.name === ctx.taskHealthCenter)
+      : undefined;
+    anchorDate = tryParse(record?.dateFields?.[anchor.fieldId]);
   } else if (anchor.kind === 'taskStart') {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
     anchorDate = tryParse(t?.startedAt);
@@ -350,6 +366,10 @@ export function getRuleStatus(
   ctx: {
     tasks: Task[];
     assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+    healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+    taskHealthCenter?: string;
+    /** Catalog of field ids that currently exist (Settings). */
+    healthCenterFieldIds?: string[];
   }
 ): RuleStatus {
   const anchor = rule.anchor;
@@ -367,6 +387,19 @@ export function getRuleStatus(
     // Unassigning the center entirely => the rule's reference is gone.
     if (!assignment) return 'missingReference';
     return tryParse(assignment.assignedAt) ? 'ok' : 'unresolved';
+  }
+  if (anchor.kind === 'healthCenterField') {
+    // The field itself being removed from the global catalog => the rule's
+    // reference is gone. The task lacking a healthCenter OR the record
+    // having no value for this field => just unresolved (not broken):
+    // assigning a center or filling in the date makes the rule resolve
+    // again.
+    if (ctx.healthCenterFieldIds && !ctx.healthCenterFieldIds.includes(anchor.fieldId)) {
+      return 'missingReference';
+    }
+    if (!ctx.taskHealthCenter) return 'unresolved';
+    const record = (ctx.healthCenters ?? []).find((h) => h.name === ctx.taskHealthCenter);
+    return tryParse(record?.dateFields?.[anchor.fieldId]) ? 'ok' : 'unresolved';
   }
   if (anchor.kind === 'fixedAnniversary') {
     const m = anchor.month;
@@ -388,7 +421,10 @@ export function getRuleStatus(
  */
 export function describeDueDateRule(
   rule: DueDateRule,
-  ctx: { tasks: Task[] }
+  ctx: {
+    tasks: Task[];
+    healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  }
 ): string {
   const unitLabel = rule.amount === 1 ? rule.unit.replace(/s$/, '') : rule.unit;
   const offsetText = `${rule.amount} ${unitLabel} ${rule.direction}`;
@@ -401,6 +437,9 @@ export function describeDueDateRule(
     anchorText = 'Project end';
   } else if (anchor.kind === 'projectKickoff') {
     anchorText = `Kickoff at ${anchor.healthCenter}`;
+  } else if (anchor.kind === 'healthCenterField') {
+    const def = (ctx.healthCenterFieldDefs ?? []).find((d) => d.id === anchor.fieldId);
+    anchorText = def ? def.label : `a removed health-center field`;
   } else if (anchor.kind === 'fixedAnniversary') {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                         'July', 'August', 'September', 'October', 'November', 'December'];
@@ -433,6 +472,8 @@ export function resolveTaskDueDates(
     projectEndDate?: string;
     projects?: Array<{ id: number; startDate?: string; endDate?: string }>;
     assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+    healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+    healthCenterFieldIds?: string[];
   }
 ): Task[] {
   return tasks.map((task) => {
@@ -443,16 +484,22 @@ export function resolveTaskDueDates(
       tasks,
       projects: opts?.projects,
       assignedHealthCenters: opts?.assignedHealthCenters,
+      healthCenters: opts?.healthCenters,
+      taskHealthCenter: task.healthCenter,
     });
     if (computed) return { ...task, dueDate: computed, dueDateBroken: false };
     // The rule's reference is gone (e.g. the anchor task was deleted,
-    // or the health center this task's kickoff anchor pointed to was
-    // unassigned). Clear any previously-computed date so the row doesn't
-    // show a stale value and stamp a transient flag so the badge can
-    // render the "Reference broken" state.
+    // the health center this task's kickoff anchor pointed to was
+    // unassigned, or a referenced health-center field was removed from
+    // the catalog). Clear any previously-computed date so the row
+    // doesn't show a stale value and stamp a transient flag so the
+    // badge can render the "Reference broken" state.
     const status = getRuleStatus(task.dueDateRule, {
       tasks,
       assignedHealthCenters: opts?.assignedHealthCenters,
+      healthCenters: opts?.healthCenters,
+      taskHealthCenter: task.healthCenter,
+      healthCenterFieldIds: opts?.healthCenterFieldIds,
     });
     if (status === 'missingReference') {
       return { ...task, dueDate: undefined, dueDateBroken: true };

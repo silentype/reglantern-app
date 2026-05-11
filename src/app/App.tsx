@@ -17,10 +17,18 @@ import { TopNavButton } from './components/design-system/TopNavButton';
 import { Avatar } from './components/design-system/Avatar';
 
 import { INITIAL_TASKS } from './data/initialTasks';
+import {
+  INITIAL_HEALTH_CENTERS,
+  INITIAL_HEALTH_CENTER_FIELD_DEFS,
+  type HealthCenter,
+  type HealthCenterDateFieldDef,
+} from './data/healthCenters';
 
 import { ChecklistsPage } from './pages/ChecklistsPage';
 import { AdminPage, type Project } from './pages/AdminPage';
 import { TasksPage } from './pages/TasksPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { HealthCenterAdminPage } from './pages/HealthCenterAdminPage';
 
 // URL <-> sidebar nav item mappings. URL is the source of truth for navigation.
 const NAV_ITEM_TO_URL: Record<string, string> = {
@@ -30,6 +38,7 @@ const NAV_ITEM_TO_URL: Record<string, string> = {
   'FTCA Site Visit Protocol': '/checklists/ftca-site-visit-protocol',
   'Project Builder': '/admin/project-builder',
   'Compliance Review': '/admin/compliance-review',
+  'Health Center Information': '/admin/health-centers',
 };
 
 const URL_TO_NAV_ITEM: Record<string, string> = {
@@ -39,6 +48,7 @@ const URL_TO_NAV_ITEM: Record<string, string> = {
   'ftca-site-visit-protocol': 'FTCA Site Visit Protocol',
   'project-builder': 'Project Builder',
   'compliance-review': 'Compliance Review',
+  'health-centers': 'Health Center Information',
 };
 
 export default function App() {
@@ -61,10 +71,19 @@ export default function App() {
   const itemSeg = segments[1];
   const restSegs = segments.slice(2);
 
-  const currentPage: 'tasks' | 'checklists' | 'admin' =
+  const currentPage: 'tasks' | 'checklists' | 'admin' | 'settings' =
     sectionSeg === 'admin' ? 'admin' :
     sectionSeg === 'checklists' ? 'checklists' :
+    sectionSeg === 'settings' ? 'settings' :
     'tasks';
+
+  // /admin/health-centers and /admin/health-centers/:name resolve to the
+  // Health Center Information admin page. We surface the optional detail
+  // name as `healthCenterDetail`.
+  const healthCenterDetail =
+    currentPage === 'admin' && itemSeg === 'health-centers' && restSegs[0]
+      ? decodeURIComponent(restSegs[0])
+      : null;
 
   const selectedNavItem = URL_TO_NAV_ITEM[itemSeg ?? ''] ?? (
     currentPage === 'tasks' ? 'My Tasks' :
@@ -120,6 +139,10 @@ export default function App() {
 
   // Data state
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
+  const [healthCenters, setHealthCenters] = useState<HealthCenter[]>(INITIAL_HEALTH_CENTERS);
+  const [healthCenterFieldDefs, setHealthCenterFieldDefs] = useState<HealthCenterDateFieldDef[]>(
+    INITIAL_HEALTH_CENTER_FIELD_DEFS
+  );
   const [projects, setProjects] = useState<Project[]>([
     {
       id: 1,
@@ -504,9 +527,10 @@ export default function App() {
     setSideNavOpen(prev => !prev);
   }, []);
 
-  const handleNavChange = useCallback((page: 'tasks' | 'checklists' | 'admin') => {
+  const handleNavChange = useCallback((page: 'tasks' | 'checklists' | 'admin' | 'settings') => {
     if (page === 'tasks') navigate('/tasks/my-tasks');
     else if (page === 'admin') navigate('/admin/project-builder');
+    else if (page === 'settings') navigate('/settings');
     else navigate('/checklists/site-visit-protocol');
   }, [navigate]);
 
@@ -586,7 +610,7 @@ export default function App() {
             <TopNavButton active={currentPage === 'checklists'} onClick={() => handleNavChange('checklists')}>Tools</TopNavButton>
             <TopNavButton onClick={() => {}}>Resources</TopNavButton>
             <TopNavButton onClick={() => {}}>Documents</TopNavButton>
-            <TopNavButton onClick={() => {}}>Settings</TopNavButton>
+            <TopNavButton active={currentPage === 'settings'} onClick={() => handleNavChange('settings')}>Settings</TopNavButton>
             <TopNavButton active={currentPage === 'admin'} onClick={() => handleNavChange('admin')}>Admin</TopNavButton>
           </nav>
         </div>
@@ -635,6 +659,30 @@ export default function App() {
             />
           ) : currentPage === 'checklists' ? (
             <ChecklistsPage onToggleSideNav={toggleSideNav} sideNavOpen={sideNavOpen} />
+          ) : currentPage === 'settings' ? (
+            <SettingsPage
+              onToggleSideNav={toggleSideNav}
+              sideNavOpen={sideNavOpen}
+              fieldDefs={healthCenterFieldDefs}
+              setFieldDefs={setHealthCenterFieldDefs}
+              setHealthCenters={setHealthCenters}
+            />
+          ) : selectedNavItem === 'Health Center Information' ? (
+            <HealthCenterAdminPage
+              onToggleSideNav={toggleSideNav}
+              sideNavOpen={sideNavOpen}
+              healthCenters={healthCenters}
+              setHealthCenters={setHealthCenters}
+              fieldDefs={healthCenterFieldDefs}
+              selectedCenterName={healthCenterDetail}
+              onSelectCenter={(name) => {
+                navigate(
+                  name !== null
+                    ? `/admin/health-centers/${encodeURIComponent(name)}`
+                    : '/admin/health-centers'
+                );
+              }}
+            />
           ) : (
             <AdminPage
               onToggleSideNav={toggleSideNav}
@@ -657,6 +705,8 @@ export default function App() {
               onOpenProjectTask={(projectId, taskId) => {
                 navigate(`/admin/project-builder/${projectId}/${taskId}`);
               }}
+              healthCenters={healthCenters}
+              healthCenterFieldDefs={healthCenterFieldDefs}
             />
           )}
         </main>

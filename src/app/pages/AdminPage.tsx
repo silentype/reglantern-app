@@ -61,6 +61,7 @@ import { parseDueDateFilter, displayDueDateFilter, resolveTaskDueDates } from '.
 import searchFilterSvgPaths from '../../imports/svg-oo9u3g75ma';
 
 import { ComplianceReviewPage } from './ComplianceReviewPage';
+import type { HealthCenter, HealthCenterDateFieldDef } from '../data/healthCenters';
 
 export interface Project {
   id: number;
@@ -102,7 +103,9 @@ export function AdminPage({
   selectedProjectId,
   onSelectProject,
   onAddTaskToProject,
-  onOpenProjectTask
+  onOpenProjectTask,
+  healthCenters: healthCenterRecords,
+  healthCenterFieldDefs,
 }: {
   onToggleSideNav: () => void;
   sideNavOpen: boolean;
@@ -115,6 +118,14 @@ export function AdminPage({
   onSelectProject: (projectId: number | null) => void;
   onAddTaskToProject: (projectId: number) => void;
   onOpenProjectTask: (projectId: number, taskId: number, taskTitle: string) => void;
+  /**
+   * Global catalog of health-center records + their date-field values
+   * (authored in Settings + Admin > Health Center Information). Threaded
+   * down to TaskTableDynamic so the RelativeDuePicker can offer the
+   * "Health Center Info" Type and the resolver can produce dates.
+   */
+  healthCenters?: HealthCenter[];
+  healthCenterFieldDefs?: HealthCenterDateFieldDef[];
 }) {
   // All hooks must be called unconditionally before any early return.
   // (The selectedNavItem === 'Compliance Review' branch is handled below;
@@ -395,6 +406,10 @@ export function AdminPage({
         .map((p) => ({ id: p.id, name: p.name, startDate: p.startDate, endDate: p.endDate })),
     [projects, selectedProject]
   );
+  const healthCenterFieldIds = useMemo(
+    () => (healthCenterFieldDefs ?? []).map((d) => d.id),
+    [healthCenterFieldDefs]
+  );
   const resolvedProjectTasks = useMemo(
     () =>
       selectedProject
@@ -402,9 +417,11 @@ export function AdminPage({
             projectEndDate: selectedProject.endDate,
             projects: otherProjects,
             assignedHealthCenters: selectedProject.assignedHealthCenters,
+            healthCenters: healthCenterRecords,
+            healthCenterFieldIds,
           })
         : [],
-    [selectedProject, otherProjects]
+    [selectedProject, otherProjects, healthCenterRecords, healthCenterFieldIds]
   );
 
   // Filter project tasks
@@ -984,6 +1001,8 @@ export function AdminPage({
                 projectName={selectedProject.name}
                 availableProjects={otherProjects}
                 assignedHealthCenters={selectedProject.assignedHealthCenters}
+                healthCenterFieldDefs={healthCenterFieldDefs}
+                healthCenters={healthCenterRecords}
               />
             </div>
           )}

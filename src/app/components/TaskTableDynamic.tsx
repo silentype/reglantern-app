@@ -61,7 +61,16 @@ export type DueDateAnchor =
    * whichever center it's individually assigned to needs a separate
    * future anchor kind.
    */
-  | { kind: 'projectKickoff'; healthCenter: string };
+  | { kind: 'projectKickoff'; healthCenter: string }
+  /**
+   * A date field on the task's currently-assigned health center, e.g.
+   * "Accreditation expires". The `fieldId` references a row in the
+   * global Health Center Fields catalog (Settings). The center itself
+   * is implicit: the task's own `healthCenter` selects the record;
+   * tasks with no `healthCenter` or pointing at a record with no value
+   * for the field flip to "Reference broken."
+   */
+  | { kind: 'healthCenterField'; fieldId: string };
 
 export interface DueDateRule {
   anchor: DueDateAnchor;
@@ -145,6 +154,18 @@ interface TaskTableDynamicProps {
    * anchor references.
    */
   assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+  /**
+   * Global catalog of health-center date fields. Passed to the
+   * RelativeDuePicker so the "Health Center Info" Type can offer those
+   * fields as anchor references.
+   */
+  healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  /**
+   * Per-center field values. Passed to the RelativeDuePicker so the
+   * "Health Center Info" preview can resolve against the task's health
+   * center.
+   */
+  healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
 }
 
 // ==================== UTILITIES ====================
@@ -449,6 +470,8 @@ const TaskRow = memo(function TaskRow({
   availableProjects,
   siblingTasks,
   assignedHealthCenters,
+  healthCenterFieldDefs,
+  healthCenters,
 }: {
   task: Task;
   onClick: () => void;
@@ -464,6 +487,8 @@ const TaskRow = memo(function TaskRow({
   availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
   siblingTasks?: Task[];
   assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+  healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   // Mirror the inline date popover's open state in ?datePicker=task-<id> so
@@ -644,6 +669,9 @@ const TaskRow = memo(function TaskRow({
                 currentProjectName={projectName}
                 availableProjects={availableProjects}
                 assignedHealthCenters={assignedHealthCenters}
+                healthCenterFieldDefs={healthCenterFieldDefs}
+                healthCenters={healthCenters}
+                taskHealthCenter={task.healthCenter}
                 onSave={handleSaveRelativeRule}
               />
             )}
@@ -758,7 +786,7 @@ const TaskRow = memo(function TaskRow({
     // Relative-due-date picker state and derived values must invalidate the
     // memo so flipping tabs / editing the rule re-renders the popover.
     enableRelativeDates, projectStartDate, projectName, siblingTasks, availableProjects,
-    assignedHealthCenters,
+    assignedHealthCenters, healthCenterFieldDefs, healthCenters,
     dateMode, handleSaveRelativeRule,
   ]);
 
@@ -907,7 +935,7 @@ const TaskRow = memo(function TaskRow({
 });
 
 // ==================== MAIN COMPONENT ====================
-function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects, assignedHealthCenters }: TaskTableDynamicProps) {
+function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects, assignedHealthCenters, healthCenterFieldDefs, healthCenters }: TaskTableDynamicProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -1029,6 +1057,8 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
           projectName={projectName}
           availableProjects={availableProjects}
           assignedHealthCenters={assignedHealthCenters}
+          healthCenterFieldDefs={healthCenterFieldDefs}
+          healthCenters={healthCenters}
           siblingTasks={tasks}
         />
       ))}
