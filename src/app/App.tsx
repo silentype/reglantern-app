@@ -50,7 +50,8 @@ export default function App() {
   //   /tasks/my-tasks/new           -> tasks + new-task panel
   //   /tasks/my-tasks/:taskId       -> tasks + task detail panel
   //   /checklists/:slug             -> checklists page
-  //   /admin/project-builder        -> admin project list
+  //   /admin/project-builder                  -> admin project list
+  //   /admin/project-builder/new              -> admin project list + create-project form
   //   /admin/project-builder/:pid             -> project detail
   //   /admin/project-builder/:pid/new         -> new task in project
   //   /admin/project-builder/:pid/:taskId     -> task detail in project
@@ -71,21 +72,27 @@ export default function App() {
     'Site Visit Protocol Checklist'
   );
 
-  const isCreatingNewTask = restSegs[restSegs.length - 1] === 'new';
-
+  let isCreatingNewTask = false;
+  let isCreatingNewProject = false;
   let selectedTaskId: number | null = null;
   let selectedProjectId: number | null = null;
 
   if (currentPage === 'tasks' && itemSeg === 'my-tasks') {
-    if (restSegs[0] && restSegs[0] !== 'new') {
+    if (restSegs[0] === 'new') {
+      isCreatingNewTask = true;
+    } else if (restSegs[0]) {
       const id = Number(restSegs[0]);
       if (Number.isInteger(id)) selectedTaskId = id;
     }
   } else if (currentPage === 'admin' && itemSeg === 'project-builder') {
-    if (restSegs[0] && restSegs[0] !== 'new') {
+    if (restSegs[0] === 'new' && restSegs.length === 1) {
+      isCreatingNewProject = true;
+    } else if (restSegs[0]) {
       const pid = Number(restSegs[0]);
       if (Number.isInteger(pid)) selectedProjectId = pid;
-      if (restSegs[1] && restSegs[1] !== 'new') {
+      if (restSegs[1] === 'new') {
+        isCreatingNewTask = true;
+      } else if (restSegs[1]) {
         const tid = Number(restSegs[1]);
         if (Number.isInteger(tid)) selectedTaskId = tid;
       }
@@ -635,6 +642,10 @@ export default function App() {
               selectedNavItem={selectedNavItem}
               projects={projects}
               setProjects={setProjects}
+              creatingNewProject={isCreatingNewProject}
+              onCreatingNewProjectChange={(creating) => {
+                navigate(creating ? '/admin/project-builder/new' : '/admin/project-builder');
+              }}
               onAddTaskToProject={(projectId) => {
                 setNewTaskTitle('');
                 navigate(`/admin/project-builder/${projectId}/new`);
