@@ -71,6 +71,12 @@ export interface Task {
   dueDate?: string;
   /** Optional rule that derives `dueDate` from a project anchor. */
   dueDateRule?: DueDateRule;
+  /**
+   * Transient flag stamped by `resolveTaskDueDates` when this task has a
+   * rule whose reference no longer exists (e.g. the source task was
+   * deleted). Drives the red "Reference broken" badge — never persisted.
+   */
+  dueDateBroken?: boolean;
   assignedTo?: { initials: string; name: string };
   healthCenter?: string;
   attention?: { type: 'needs' | 'missing'; count: number };
@@ -253,7 +259,7 @@ const QuickDateButton = memo(({ label, onClick }: { label: string; onClick: () =
 ));
 QuickDateButton.displayName = 'QuickDateButton';
 
-const DueDateBadge = memo(({ dueDate, onOpenChange }: { dueDate?: string; onOpenChange: () => void }) => {
+const DueDateBadge = memo(({ dueDate, ruleBroken, onOpenChange }: { dueDate?: string; ruleBroken?: boolean; onOpenChange: () => void }) => {
   // Treat unparseable dates (wrong format, missing, etc.) as "no due date" so
   // the badge falls through to the "Set Due Date" placeholder instead of
   // rendering "NaN/NaN/aN".
@@ -266,7 +272,17 @@ const DueDateBadge = memo(({ dueDate, onOpenChange }: { dueDate?: string; onOpen
       className="flex items-center justify-between w-full h-full relative z-10"
       onClick={(e) => { e.stopPropagation(); onOpenChange(); }}
     >
-      {relativeInfo && styles ? (
+      {ruleBroken ? (
+        <div
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[#fecaca] bg-[#fef2f2]"
+          title="The task this due date depended on was removed. Click to fix the rule."
+        >
+          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#b91c1c] text-[13px] leading-tight">
+            Reference broken
+          </span>
+          <ChevronDown className="size-[14px] text-[#b91c1c]" />
+        </div>
+      ) : relativeInfo && styles ? (
         <>
           <div className={`inline-flex items-center px-2 py-0.5 rounded-md border ${styles.bg} ${styles.border}`} title={dueDate}>
             <span className={`font-['Geist:Medium',sans-serif] font-medium leading-tight ${relativeInfo.color} text-[13px]`}>
@@ -541,7 +557,7 @@ const TaskRow = memo(function TaskRow({
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
             <div className="w-full h-full">
-              <DueDateBadge dueDate={task.dueDate} onOpenChange={() => setCalendarOpen(true)} />
+              <DueDateBadge dueDate={task.dueDate} ruleBroken={task.dueDateBroken} onOpenChange={() => setCalendarOpen(true)} />
             </div>
           </PopoverTrigger>
           <PopoverContent

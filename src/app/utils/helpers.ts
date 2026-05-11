@@ -326,6 +326,44 @@ export function computeDueDate(
 }
 
 /**
+ * Whether a rule resolves cleanly today, can't resolve because its
+ * reference is gone, or can't resolve because the anchor hasn't reached
+ * a date yet (e.g. "when complete" but the task isn't complete).
+ *
+ * The badge UI shows a red "Reference broken" pill only for
+ * `missingReference`; `unresolved` is a normal waiting state (the rule
+ * will start producing a date once the anchor becomes available).
+ */
+export type RuleStatus = 'ok' | 'missingReference' | 'unresolved' | 'invalid';
+
+export function getRuleStatus(
+  rule: DueDateRule,
+  ctx: { tasks: Task[] }
+): RuleStatus {
+  const anchor = rule.anchor;
+  if (anchor.kind === 'taskStart' || anchor.kind === 'taskDue' || anchor.kind === 'taskCompleted') {
+    const t = ctx.tasks.find((x) => x.id === anchor.taskId);
+    if (!t) return 'missingReference';
+    const src =
+      anchor.kind === 'taskStart' ? t.startedAt :
+      anchor.kind === 'taskDue' ? t.dueDate :
+      t.completedAt;
+    return tryParse(src) ? 'ok' : 'unresolved';
+  }
+  if (anchor.kind === 'fixedAnniversary') {
+    const m = anchor.month;
+    const d = anchor.day;
+    if (!Number.isInteger(m) || m < 1 || m > 12) return 'invalid';
+    if (!Number.isInteger(d) || d < 1 || d > 31) return 'invalid';
+    return 'ok';
+  }
+  // projectStart / projectEnd: 'unresolved' covers both "no project pick"
+  // and "project has no start/end date set" — both look the same to the
+  // user (waiting for someone to fill in a date) and neither is "broken."
+  return 'ok';
+}
+
+/**
  * Human-readable rendering of a rule, for tooltips next to the computed
  * date. e.g. "2 weeks after Project start" / "30 days after Service Area
  * Documentation is complete".
@@ -350,7 +388,10 @@ export function describeDueDateRule(
     anchorText = `${m} ${anchor.day} (next occurrence)`;
   } else {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
-    const name = t ? t.title : `task #${anchor.taskId}`;
+    if (!t) {
+      return `${offsetText} a removed task`;
+    }
+    const name = t.title;
     if (anchor.kind === 'taskStart') anchorText = `${name} starts`;
     else if (anchor.kind === 'taskDue') anchorText = `${name}'s due date`;
     else anchorText = `${name} is complete`;
@@ -378,6 +419,18 @@ export function resolveTaskDueDates(
       tasks,
       projects: opts?.projects,
     });
-    return computed ? { ...task, dueDate: computed } : task;
+    if (computed) return { ...task, dueDate: computed, dueDateBroken: false };
+    // The rule's reference is gone (e.g. the anchor task was deleted).
+    // Clear any previously-computed date so the row doesn't show a stale
+    // value and stamp a transient flag so the badge can render the
+    // "Reference broken" state.
+    const status = getRuleStatus(task.dueDateRule, { tasks });
+    if (status === 'missingReference') {
+      return { ...task, dueDate: undefined, dueDateBroken: true };
+    }
+    // 'unresolved' / 'invalid' / project anchors without dates: leave the
+    // task as-is (caller's existing behavior). The rule will start
+    // producing a date once the anchor is filled in.
+    return task;
   });
 }

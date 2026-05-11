@@ -188,9 +188,21 @@ export function RelativeDuePicker({
   );
   const projectOptions = availableProjects ?? [];
 
+  // When the initial rule points to a sibling task that no longer exists,
+  // surface a banner and force the user to pick a new reference. We
+  // null out the taskId so `buildAnchor` returns null (disabling Save)
+  // until they choose.
+  const initialReferenceMissing = useMemo(() => {
+    if (!initialRule) return false;
+    const a = initialRule.anchor;
+    if (a.kind !== 'taskStart' && a.kind !== 'taskDue' && a.kind !== 'taskCompleted') return false;
+    if (a.taskId === excludeTaskId) return false;
+    return !(siblingTasks ?? []).some((t) => t.id === a.taskId);
+  }, [initialRule, siblingTasks, excludeTaskId]);
+
   const [type, setType] = useState<AnchorType>(initial.type);
   const [taskId, setTaskId] = useState<number | null>(
-    initial.taskId ?? taskOptions[0]?.id ?? null
+    initialReferenceMissing ? null : (initial.taskId ?? taskOptions[0]?.id ?? null)
   );
   const [projectRef, setProjectRef] = useState<string>(initial.projectRef);
   const [event, setEvent] = useState<EventKey>(initial.event);
@@ -200,11 +212,15 @@ export function RelativeDuePicker({
   const [unit, setUnit] = useState<DueDateRule['unit']>(initialRule?.unit ?? 'weeks');
   const [direction, setDirection] = useState<DueDateRule['direction']>(initialRule?.direction ?? 'after');
 
-  // Snap event + reference to valid defaults when type changes.
+  // Snap event + reference to valid defaults when type changes. When the
+  // initial reference is missing we deliberately leave taskId null until
+  // the user explicitly picks a new sibling (or changes type), so Save
+  // stays disabled — otherwise this effect would silently swap the rule
+  // to point at the first available sibling.
   useEffect(() => {
     const validEvents = eventOptionsFor(type).map((o) => o.value);
     if (validEvents.length > 0 && !validEvents.includes(event)) setEvent(validEvents[0]);
-    if (type === 'task' && taskId === null && taskOptions[0]) {
+    if (type === 'task' && taskId === null && taskOptions[0] && !initialReferenceMissing) {
       setTaskId(taskOptions[0].id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -268,6 +284,11 @@ export function RelativeDuePicker({
 
       <div>
         <h3 className="text-sm font-semibold text-[#18181b] mb-2">Trigger</h3>
+        {initialReferenceMissing && (
+          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
+            The previously-selected task was removed. Pick a new reference or switch to a different type.
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className={labelClasses}>Type</label>
