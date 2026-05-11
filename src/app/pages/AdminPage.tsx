@@ -116,7 +116,13 @@ export function AdminPage({
   // All hooks must be called unconditionally before any early return.
   // (The selectedNavItem === 'Compliance Review' branch is handled below;
   // splitting AdminPage into ProjectBuilder + ComplianceReview is Phase 5.)
+  // In-progress form contents stay local; only the form's visibility (path
+  // /admin/project-builder/new) and the open/closed state of popovers/selects
+  // are URL-driven.
   const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
+  const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
+  const [projectCardCenterSearch, setProjectCardCenterSearch] = useState('');
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(['title', 'dueDate']);
   // selectedProject is derived from URL (selectedProjectId prop) so it survives
   // refresh and is shareable. Mutations to the projects array auto-flow through.
   const selectedProject = useMemo(
@@ -124,9 +130,6 @@ export function AdminPage({
     [projects, selectedProjectId]
   );
   const [tableSaveStatus, setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [projectCardAssignOpen, setProjectCardAssignOpen] = useState<number | null>(null);
-  const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
-  const [projectCardCenterSearch, setProjectCardCenterSearch] = useState('');
 
   // Filter state for project tasks lives in URL search params so each
   // filtered view is shareable / refresh-safe:
@@ -157,6 +160,11 @@ export function AdminPage({
   );
   const searchQuery = searchParams.get('q') ?? '';
 
+  // popover: only one popover/select is open at a time across the page, so we
+  // use a single URL param. Values: 'assignedTo' | 'healthCenter' | 'attention'
+  // | 'columns' | 'due' | 'projectStart' | 'newCat' | 'assign:<projectId>'.
+  const popover = searchParams.get('popover');
+
   const setSearchQuery = useCallback((next: string) => {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
@@ -175,13 +183,16 @@ export function AdminPage({
     }, { replace: true });
   }, [setSearchParams]);
 
-  // Project tasks intentionally show only Task Name + Due Date.
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(['title', 'dueDate']);
+  const setPopover = useCallback((next: string | null) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (next) params.set('popover', next);
+      else params.delete('popover');
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   const [customDateInput, setCustomDateInput] = useState('');
-  const [assignedToOpen, setAssignedToOpen] = useState(false);
-  const [healthCenterOpen, setHealthCenterOpen] = useState(false);
-  const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
-  const [columnVisibilityOpen, setColumnVisibilityOpen] = useState(false);
 
   const categories = ['Compliance', 'Documentation', 'Training', 'Quality Assurance', 'Operational'];
 
@@ -507,7 +518,10 @@ export function AdminPage({
                 <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] bg-[#f4f4f5] text-[#18181b] text-[12px] font-medium">
                   {selectedProject.category}
                 </span>
-                <Popover>
+                <Popover
+                  open={popover === 'projectStart'}
+                  onOpenChange={(o) => setPopover(o ? 'projectStart' : null)}
+                >
                   <PopoverTrigger asChild>
                     <button className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] border border-[#e4e4e7] bg-white text-[12px] font-medium cursor-pointer hover:border-[#cdd7e1] transition-colors">
                       <CalendarIcon className="w-3.5 h-3.5 text-[#71717a]" />
@@ -609,7 +623,10 @@ export function AdminPage({
                 <div className="h-6 w-px bg-[#e4e4e7]"></div>
 
                 {/* Date Filter Chip */}
-                <Popover>
+                <Popover
+                  open={popover === 'due'}
+                  onOpenChange={(o) => setPopover(o ? 'due' : null)}
+                >
                   <PopoverTrigger asChild>
                     <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${dueDateFilter ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
                       <CalendarIcon className="h-3.5 w-3.5" />
@@ -682,7 +699,10 @@ export function AdminPage({
                 </Popover>
 
                 {/* Assigned To Chip */}
-                <Popover open={assignedToOpen} onOpenChange={setAssignedToOpen}>
+                <Popover
+                  open={popover === 'assignedTo'}
+                  onOpenChange={(o) => setPopover(o ? 'assignedTo' : null)}
+                >
                   <PopoverTrigger asChild>
                     <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!assignedToFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
                       <User className="h-3.5 w-3.5" />
@@ -699,7 +719,7 @@ export function AdminPage({
                             value="all"
                             onSelect={() => {
                               toggleAssignedToFilter('all');
-                              setAssignedToOpen(false);
+                              setPopover(null);
                             }}
                           >
                             <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
@@ -739,7 +759,10 @@ export function AdminPage({
                 </Popover>
 
                 {/* Health Center Chip */}
-                <Popover open={healthCenterOpen} onOpenChange={setHealthCenterOpen}>
+                <Popover
+                  open={popover === 'healthCenter'}
+                  onOpenChange={(o) => setPopover(o ? 'healthCenter' : null)}
+                >
                   <PopoverTrigger asChild>
                     <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
                       <Building2 className="h-3.5 w-3.5" />
@@ -756,7 +779,7 @@ export function AdminPage({
                             value="all"
                             onSelect={() => {
                               toggleHealthCenterFilter('All Health Centers');
-                              setHealthCenterOpen(false);
+                              setPopover(null);
                             }}
                           >
                             <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
@@ -793,7 +816,10 @@ export function AdminPage({
                 </Popover>
 
                 {/* Needs Attention Chip */}
-                <Popover open={needsAttentionOpen} onOpenChange={setNeedsAttentionOpen}>
+                <Popover
+                  open={popover === 'attention'}
+                  onOpenChange={(o) => setPopover(o ? 'attention' : null)}
+                >
                   <PopoverTrigger asChild>
                     <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!needsAttentionFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
                       <AlertCircle className="h-3.5 w-3.5" />
@@ -808,7 +834,7 @@ export function AdminPage({
                             value="all"
                             onSelect={() => {
                               toggleNeedsAttentionFilter('all');
-                              setNeedsAttentionOpen(false);
+                              setPopover(null);
                             }}
                           >
                             <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
@@ -853,7 +879,10 @@ export function AdminPage({
                 </Popover>
 
                 {/* Column Visibility Button */}
-                <Popover open={columnVisibilityOpen} onOpenChange={setColumnVisibilityOpen}>
+                <Popover
+                  open={popover === 'columns'}
+                  onOpenChange={(o) => setPopover(o ? 'columns' : null)}
+                >
                   <PopoverTrigger asChild>
                     <button className="px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5] text-[12px] ml-auto">
                       <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
@@ -1011,7 +1040,12 @@ export function AdminPage({
               </div>
               <div>
                 <label className="block text-[14px] font-medium text-[#18181b] mb-1.5">Category *</label>
-                <Select value={newProject.category} onValueChange={(value) => setNewProject({ ...newProject, category: value })}>
+                <Select
+                  value={newProject.category}
+                  onValueChange={(value) => setNewProject({ ...newProject, category: value })}
+                  open={popover === 'newCat'}
+                  onOpenChange={(o) => setPopover(o ? 'newCat' : null)}
+                >
                   <SelectTrigger className="w-full h-[40px] focus:border-[#fc6]">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
@@ -1088,9 +1122,9 @@ export function AdminPage({
                   <div className="mb-3">
                     <div className="flex items-center gap-1.5">
                       <Popover
-                        open={projectCardAssignOpen === project.id}
+                        open={popover === `assign:${project.id}`}
                         onOpenChange={(open) => {
-                          setProjectCardAssignOpen(open ? project.id : null);
+                          setPopover(open ? `assign:${project.id}` : null);
                           if (!open) {
                             setProjectCardSelectedCenters([]);
                             setProjectCardCenterSearch('');
@@ -1206,7 +1240,7 @@ export function AdminPage({
                               );
                               setProjectCardSelectedCenters([]);
                               setProjectCardCenterSearch('');
-                              setProjectCardAssignOpen(null);
+                              setPopover(null);
                               toast.success(
                                 `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`
                               );
