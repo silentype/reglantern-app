@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as React from 'react';
+import { useSearchParams } from 'react-router';
 import { format, parse, isValid } from 'date-fns';
 import {
   X,
@@ -93,6 +94,8 @@ export function AdminPage({
   selectedNavItem,
   projects,
   setProjects,
+  creatingNewProject,
+  onCreatingNewProjectChange,
   onAddTaskToProject,
   onOpenProjectTask
 }: {
@@ -101,13 +104,14 @@ export function AdminPage({
   selectedNavItem: string;
   projects: Project[];
   setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+  creatingNewProject: boolean;
+  onCreatingNewProjectChange: (creating: boolean) => void;
   onAddTaskToProject: (projectId: number) => void;
   onOpenProjectTask: (projectId: number, taskId: number, taskTitle: string) => void;
 }) {
   // All hooks must be called unconditionally before any early return.
   // (The selectedNavItem === 'Compliance Review' branch is handled below;
   // splitting AdminPage into ProjectBuilder + ComplianceReview is Phase 5.)
-  const [showNewProjectForm, setShowNewProjectForm] = useState(false);
   const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [tableSaveStatus, setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -115,13 +119,53 @@ export function AdminPage({
   const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
   const [projectCardCenterSearch, setProjectCardCenterSearch] = useState('');
 
-  // Filter states for project tasks
-  const [statusFilter, setStatusFilter] = useState<string[]>(['all']);
-  const [dueDateFilter, setDueDateFilter] = useState<string>('');
-  const [assignedToFilter, setAssignedToFilter] = useState<string[]>(['all']);
-  const [healthCenterFilter, setHealthCenterFilter] = useState<string[]>(['All Health Centers']);
-  const [needsAttentionFilter, setNeedsAttentionFilter] = useState<string[]>(['all']);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  // Filter state for project tasks lives in URL search params so each
+  // filtered view is shareable / refresh-safe:
+  //   ?q=safety                            free-text search
+  //   ?status=incomplete,complete          omit -> ['all']
+  //   ?due=this-week | 05/30/2026 | none   omit -> '' (no date filter)
+  //   ?assignedTo=Sarah Kim,Michael ...    omit -> ['all']
+  //   ?healthCenter=Main Campus,...        omit -> ['All Health Centers']
+  //   ?attention=missing,needs             omit -> ['all']
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const statusFilter = useMemo<string[]>(
+    () => searchParams.get('status')?.split(',').filter(Boolean) || ['all'],
+    [searchParams]
+  );
+  const dueDateFilter = searchParams.get('due') ?? '';
+  const assignedToFilter = useMemo<string[]>(
+    () => searchParams.get('assignedTo')?.split(',').filter(Boolean) || ['all'],
+    [searchParams]
+  );
+  const healthCenterFilter = useMemo<string[]>(
+    () => searchParams.get('healthCenter')?.split(',').filter(Boolean) || ['All Health Centers'],
+    [searchParams]
+  );
+  const needsAttentionFilter = useMemo<string[]>(
+    () => searchParams.get('attention')?.split(',').filter(Boolean) || ['all'],
+    [searchParams]
+  );
+  const searchQuery = searchParams.get('q') ?? '';
+
+  const setSearchQuery = useCallback((next: string) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (next) params.set('q', next);
+      else params.delete('q');
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  const setDueDateFilter = useCallback((next: string) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (next) params.set('due', next);
+      else params.delete('due');
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   // Project tasks intentionally show only Task Name + Due Date.
   const [visibleColumns, setVisibleColumns] = useState<string[]>(['title', 'dueDate']);
   const [customDateInput, setCustomDateInput] = useState('');
@@ -153,54 +197,73 @@ export function AdminPage({
   const availableUsers = AVAILABLE_USERS;
   const healthCenters = HEALTH_CENTERS;
 
-  // Toggle functions for filters
+  // Toggle helpers: compute the next filter array using the same rules
+  // as before, then write it to the URL (or remove the param when default).
+  const writeListParam = useCallback(
+    (key: string, defaultValue: string, next: string[]) => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        const isDefault =
+          next.length === 0 || (next.length === 1 && next[0] === defaultValue);
+        if (isDefault) params.delete(key);
+        else params.set(key, next.join(','));
+        return params;
+      }, { replace: true });
+    },
+    [setSearchParams]
+  );
+
   const toggleStatusFilter = useCallback((status: string) => {
-    setStatusFilter(prev => {
-      if (status === 'all') return ['all'];
-      if (prev.includes('all')) return [status];
-      if (prev.includes(status)) {
-        const newFilters = prev.filter(f => f !== status);
-        return newFilters.length === 0 ? ['all'] : newFilters;
-      }
-      return [...prev, status];
-    });
-  }, []);
+    let next: string[];
+    if (status === 'all') next = ['all'];
+    else if (statusFilter.includes('all')) next = [status];
+    else if (statusFilter.includes(status)) {
+      const filtered = statusFilter.filter(f => f !== status);
+      next = filtered.length === 0 ? ['all'] : filtered;
+    } else {
+      next = [...statusFilter, status];
+    }
+    writeListParam('status', 'all', next);
+  }, [statusFilter, writeListParam]);
 
   const toggleAssignedToFilter = useCallback((userName: string) => {
-    setAssignedToFilter(prev => {
-      if (userName === 'all') return ['all'];
-      if (prev.includes('all')) return [userName];
-      if (prev.includes(userName)) {
-        const newFilters = prev.filter(name => name !== userName);
-        return newFilters.length === 0 ? ['all'] : newFilters;
-      }
-      return [...prev, userName];
-    });
-  }, []);
+    let next: string[];
+    if (userName === 'all') next = ['all'];
+    else if (assignedToFilter.includes('all')) next = [userName];
+    else if (assignedToFilter.includes(userName)) {
+      const filtered = assignedToFilter.filter(name => name !== userName);
+      next = filtered.length === 0 ? ['all'] : filtered;
+    } else {
+      next = [...assignedToFilter, userName];
+    }
+    writeListParam('assignedTo', 'all', next);
+  }, [assignedToFilter, writeListParam]);
 
   const toggleHealthCenterFilter = useCallback((center: string) => {
-    setHealthCenterFilter(prev => {
-      if (center === 'All Health Centers') return ['All Health Centers'];
-      if (prev.includes('All Health Centers')) return [center];
-      if (prev.includes(center)) {
-        const newFilters = prev.filter(c => c !== center);
-        return newFilters.length === 0 ? ['All Health Centers'] : newFilters;
-      }
-      return [...prev, center];
-    });
-  }, []);
+    let next: string[];
+    if (center === 'All Health Centers') next = ['All Health Centers'];
+    else if (healthCenterFilter.includes('All Health Centers')) next = [center];
+    else if (healthCenterFilter.includes(center)) {
+      const filtered = healthCenterFilter.filter(c => c !== center);
+      next = filtered.length === 0 ? ['All Health Centers'] : filtered;
+    } else {
+      next = [...healthCenterFilter, center];
+    }
+    writeListParam('healthCenter', 'All Health Centers', next);
+  }, [healthCenterFilter, writeListParam]);
 
   const toggleNeedsAttentionFilter = useCallback((filter: string) => {
-    setNeedsAttentionFilter(prev => {
-      if (filter === 'all') return ['all'];
-      if (prev.includes('all')) return [filter];
-      if (prev.includes(filter)) {
-        const newFilters = prev.filter(f => f !== filter);
-        return newFilters.length === 0 ? ['all'] : newFilters;
-      }
-      return [...prev, filter];
-    });
-  }, []);
+    let next: string[];
+    if (filter === 'all') next = ['all'];
+    else if (needsAttentionFilter.includes('all')) next = [filter];
+    else if (needsAttentionFilter.includes(filter)) {
+      const filtered = needsAttentionFilter.filter(f => f !== filter);
+      next = filtered.length === 0 ? ['all'] : filtered;
+    } else {
+      next = [...needsAttentionFilter, filter];
+    }
+    writeListParam('attention', 'all', next);
+  }, [needsAttentionFilter, writeListParam]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -409,7 +472,7 @@ export function AdminPage({
 
     setProjects([...projects, project]);
     setNewProject({ name: '', description: '', category: '' });
-    setShowNewProjectForm(false);
+    onCreatingNewProjectChange(false);
     toast.success('Project created successfully');
   };
 
@@ -836,12 +899,16 @@ export function AdminPage({
                 {activeFilterCount > 0 && (
                   <button
                     onClick={() => {
-                      setStatusFilter(['all']);
-                      setDueDateFilter('');
-                      setAssignedToFilter(['all']);
-                      setHealthCenterFilter(['All Health Centers']);
-                      setNeedsAttentionFilter(['all']);
-                      setSearchQuery('');
+                      setSearchParams((prev) => {
+                        const params = new URLSearchParams(prev);
+                        params.delete('status');
+                        params.delete('due');
+                        params.delete('assignedTo');
+                        params.delete('healthCenter');
+                        params.delete('attention');
+                        params.delete('q');
+                        return params;
+                      }, { replace: true });
                     }}
                     className="px-3 py-1.5 text-sm text-[#3b82f6] hover:text-[#2563eb] font-medium transition-colors ml-auto"
                   >
@@ -907,7 +974,7 @@ export function AdminPage({
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <SaveIndicator status={tableSaveStatus} />
-            <Button onClick={() => setShowNewProjectForm(true)}>
+            <Button onClick={() => onCreatingNewProjectChange(true)}>
               Create New Project
               <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
                 <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="#18181b" fillRule="evenodd" />
@@ -919,7 +986,7 @@ export function AdminPage({
 
       {/* Content */}
       <div className="flex-1 overflow-auto px-[24px] py-6">
-        {showNewProjectForm && (
+        {creatingNewProject && (
           <div className="mb-6 p-5 border border-[#e4e4e7] rounded-[6px] bg-[#fafafa]">
             <h2 className="text-[16px] font-semibold text-[#18181b] mb-4">Create New Project</h2>
             <div className="space-y-4">
@@ -960,7 +1027,7 @@ export function AdminPage({
                 <Button
                   variant="secondary"
                   onClick={() => {
-                    setShowNewProjectForm(false);
+                    onCreatingNewProjectChange(false);
                     setNewProject({ name: '', description: '', category: '' });
                   }}
                 >
@@ -1165,7 +1232,7 @@ export function AdminPage({
           </div>
         )}
 
-        {projects.length === 0 && !showNewProjectForm && (
+        {projects.length === 0 && !creatingNewProject && (
           <div className="text-center py-16">
             <p className="text-[#71717a] text-[14px]">No projects yet.</p>
             <p className="text-[#71717a] text-[14px] mt-1">Click "Create New Project" to get started.</p>
