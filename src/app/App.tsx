@@ -646,6 +646,10 @@ export default function App() {
               onCreatingNewProjectChange={(creating) => {
                 navigate(creating ? '/admin/project-builder/new' : '/admin/project-builder');
               }}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={(projectId) => {
+                navigate(projectId !== null ? `/admin/project-builder/${projectId}` : '/admin/project-builder');
+              }}
               onAddTaskToProject={(projectId) => {
                 setNewTaskTitle('');
                 navigate(`/admin/project-builder/${projectId}/new`);
