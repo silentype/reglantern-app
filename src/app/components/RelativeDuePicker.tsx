@@ -338,11 +338,20 @@ export function RelativeDuePicker({
                   ) : taskOptions.length === 0 ? (
                     <option value="">No other tasks</option>
                   ) : (
-                    taskOptions.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.title}
-                      </option>
-                    ))
+                    <>
+                      {/* Surface a missing-anchor placeholder when the saved
+                          taskId no longer exists in the project (defensive --
+                          AdminPage's delete cascade should clear these, but
+                          older data may still reference deleted ids). */}
+                      {taskId !== null && !taskOptions.some((t) => t.id === taskId) && (
+                        <option value={taskId}>(deleted task — pick another)</option>
+                      )}
+                      {taskOptions.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.title}
+                        </option>
+                      ))}
+                    </>
                   )}
                 </Select>
               </div>
