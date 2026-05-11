@@ -81,11 +81,14 @@ export interface Project {
   endDate?: string;
   tasks: Task[];
   /**
-   * Health centers this project is assigned to. When non-empty, the project's
-   * tasks bubble up into the main "My Tasks" list (see App.tsx's
-   * allTasksIncludingProjects merge).
+   * Health centers this project is assigned to, plus the date each
+   * assignment was made (the project's "kickoff date" for that center).
+   * The kickoff date anchors any task whose dueDateRule uses
+   * `{ kind: 'projectKickoff', healthCenter }`. When the list is
+   * non-empty the project's tasks bubble up into the main "My Tasks"
+   * list (see App.tsx's allTasksIncludingProjects merge).
    */
-  assignedHealthCenters?: string[];
+  assignedHealthCenters?: Array<{ name: string; assignedAt: string /* MM/dd/yyyy */ }>;
 }
 
 export function AdminPage({
@@ -398,6 +401,7 @@ export function AdminPage({
         ? resolveTaskDueDates(selectedProject.tasks, selectedProject.startDate, {
             projectEndDate: selectedProject.endDate,
             projects: otherProjects,
+            assignedHealthCenters: selectedProject.assignedHealthCenters,
           })
         : [],
     [selectedProject, otherProjects]
@@ -979,6 +983,7 @@ export function AdminPage({
                 projectEndDate={selectedProject.endDate}
                 projectName={selectedProject.name}
                 availableProjects={otherProjects}
+                assignedHealthCenters={selectedProject.assignedHealthCenters}
               />
             </div>
           )}
@@ -1106,15 +1111,92 @@ export function AdminPage({
                   {/* Currently assigned health centers (if any) */}
                   {project.assignedHealthCenters && project.assignedHealthCenters.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-1.5">
-                      {project.assignedHealthCenters.map((center) => (
-                        <span
-                          key={center}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] bg-[#fef3c7] text-[#92400e] text-[12px] font-medium"
-                        >
-                          <Building2 className="w-3 h-3" />
-                          {center}
-                        </span>
-                      ))}
+                      {project.assignedHealthCenters.map((center) => {
+                        const kickoffPopoverName = `kickoff:${project.id}:${center.name}`;
+                        const parsedAssignedAt = center.assignedAt
+                          ? parse(center.assignedAt, 'MM/dd/yyyy', new Date())
+                          : null;
+                        const kickoffLabel = parsedAssignedAt && isValid(parsedAssignedAt)
+                          ? format(parsedAssignedAt, 'MMM d, yyyy')
+                          : 'Set kickoff';
+                        return (
+                          <span
+                            key={center.name}
+                            className="inline-flex items-stretch rounded-[6px] bg-[#fef3c7] text-[#92400e] text-[12px] font-medium overflow-hidden"
+                          >
+                            <Popover
+                              open={popover === kickoffPopoverName}
+                              onOpenChange={(open) =>
+                                setPopover(open ? kickoffPopoverName : null)
+                              }
+                            >
+                              <PopoverTrigger asChild>
+                                <button
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 px-2 py-1 hover:bg-[#fde68a] transition-colors"
+                                  title={`Kickoff ${kickoffLabel}`}
+                                >
+                                  <Building2 className="w-3 h-3" />
+                                  <span>{center.name}</span>
+                                  <span className="text-[#a16207]">·</span>
+                                  <CalendarIcon className="w-3 h-3" />
+                                  <span>{kickoffLabel}</span>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={parsedAssignedAt && isValid(parsedAssignedAt) ? parsedAssignedAt : undefined}
+                                  onSelect={(date) => {
+                                    if (!date) return;
+                                    const formatted = format(date, 'MM/dd/yyyy');
+                                    setProjects((prev) =>
+                                      prev.map((p) => {
+                                        if (p.id !== project.id) return p;
+                                        return {
+                                          ...p,
+                                          assignedHealthCenters: (p.assignedHealthCenters || []).map((c) =>
+                                            c.name === center.name ? { ...c, assignedAt: formatted } : c
+                                          ),
+                                        };
+                                      })
+                                    );
+                                    setPopover(null);
+                                  }}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setProjects((prev) =>
+                                  prev.map((p) => {
+                                    if (p.id !== project.id) return p;
+                                    return {
+                                      ...p,
+                                      assignedHealthCenters: (p.assignedHealthCenters || []).filter(
+                                        (c) => c.name !== center.name
+                                      ),
+                                    };
+                                  })
+                                );
+                                toast.success(`Unassigned from ${center.name}`);
+                              }}
+                              className="px-1.5 hover:bg-[#fde68a] transition-colors border-l border-[#fde68a]"
+                              title={`Unassign from ${center.name}`}
+                              aria-label={`Unassign from ${center.name}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
 
@@ -1227,13 +1309,17 @@ export function AdminPage({
                             onClick={(e) => {
                               e.stopPropagation();
                               const newCenters = [...projectCardSelectedCenters];
+                              const assignedAt = format(new Date(), 'MM/dd/yyyy');
                               setProjects((prev) =>
                                 prev.map((p) => {
                                   if (p.id !== project.id) return p;
                                   const current = p.assignedHealthCenters || [];
+                                  const existingNames = new Set(current.map((c) => c.name));
                                   const merged = [
                                     ...current,
-                                    ...newCenters.filter((c) => !current.includes(c)),
+                                    ...newCenters
+                                      .filter((c) => !existingNames.has(c))
+                                      .map((name) => ({ name, assignedAt })),
                                   ];
                                   return { ...p, assignedHealthCenters: merged };
                                 })

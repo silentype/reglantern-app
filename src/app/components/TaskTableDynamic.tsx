@@ -51,7 +51,17 @@ export type DueDateAnchor =
    * on or after today. Useful for annual deadlines (e.g. "Sept 30").
    * `month` is 1-12, `day` is 1-31.
    */
-  | { kind: 'fixedAnniversary'; month: number; day: number };
+  | { kind: 'fixedAnniversary'; month: number; day: number }
+  /**
+   * The kickoff date for a specific health-center assignment on the
+   * current project. Resolves to `assignedAt` from the matching entry
+   * in the project's `assignedHealthCenters`. Unassigning the center
+   * breaks the rule (resolveTaskDueDates flips the row to "Reference
+   * broken"). One rule per center -- a task that should anchor on
+   * whichever center it's individually assigned to needs a separate
+   * future anchor kind.
+   */
+  | { kind: 'projectKickoff'; healthCenter: string };
 
 export interface DueDateRule {
   anchor: DueDateAnchor;
@@ -129,6 +139,12 @@ interface TaskTableDynamicProps {
   projectName?: string;
   /** Other projects available as Reference options for cross-project anchors. */
   availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
+  /**
+   * Current project's health-center assignments. Passed to the
+   * RelativeDuePicker so the "Kickoff" Type can offer those centers as
+   * anchor references.
+   */
+  assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
 }
 
 // ==================== UTILITIES ====================
@@ -432,6 +448,7 @@ const TaskRow = memo(function TaskRow({
   projectName,
   availableProjects,
   siblingTasks,
+  assignedHealthCenters,
 }: {
   task: Task;
   onClick: () => void;
@@ -446,6 +463,7 @@ const TaskRow = memo(function TaskRow({
   projectName?: string;
   availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
   siblingTasks?: Task[];
+  assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   // Mirror the inline date popover's open state in ?datePicker=task-<id> so
@@ -625,6 +643,7 @@ const TaskRow = memo(function TaskRow({
                 excludeTaskId={task.id}
                 currentProjectName={projectName}
                 availableProjects={availableProjects}
+                assignedHealthCenters={assignedHealthCenters}
                 onSave={handleSaveRelativeRule}
               />
             )}
@@ -739,6 +758,7 @@ const TaskRow = memo(function TaskRow({
     // Relative-due-date picker state and derived values must invalidate the
     // memo so flipping tabs / editing the rule re-renders the popover.
     enableRelativeDates, projectStartDate, projectName, siblingTasks, availableProjects,
+    assignedHealthCenters,
     dateMode, handleSaveRelativeRule,
   ]);
 
@@ -887,7 +907,7 @@ const TaskRow = memo(function TaskRow({
 });
 
 // ==================== MAIN COMPONENT ====================
-function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects }: TaskTableDynamicProps) {
+function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects, assignedHealthCenters }: TaskTableDynamicProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -1008,6 +1028,7 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
           projectEndDate={projectEndDate}
           projectName={projectName}
           availableProjects={availableProjects}
+          assignedHealthCenters={assignedHealthCenters}
           siblingTasks={tasks}
         />
       ))}

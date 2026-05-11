@@ -266,6 +266,12 @@ export function computeDueDate(
     projectEndDate?: string;
     tasks: Task[];
     projects?: Array<{ id: number; startDate?: string; endDate?: string }>;
+    /**
+     * Health-center assignments for the *current* project. Source for
+     * `projectKickoff` anchors. Each entry's `assignedAt` is the kickoff
+     * date for that center.
+     */
+    assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
   }
 ): string | null {
   let anchorDate: Date | null = null;
@@ -285,6 +291,9 @@ export function computeDueDate(
     } else {
       anchorDate = tryParse(ctx.projectEndDate);
     }
+  } else if (anchor.kind === 'projectKickoff') {
+    const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === anchor.healthCenter);
+    anchorDate = tryParse(assignment?.assignedAt);
   } else if (anchor.kind === 'taskStart') {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
     anchorDate = tryParse(t?.startedAt);
@@ -338,7 +347,10 @@ export type RuleStatus = 'ok' | 'missingReference' | 'unresolved' | 'invalid';
 
 export function getRuleStatus(
   rule: DueDateRule,
-  ctx: { tasks: Task[] }
+  ctx: {
+    tasks: Task[];
+    assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+  }
 ): RuleStatus {
   const anchor = rule.anchor;
   if (anchor.kind === 'taskStart' || anchor.kind === 'taskDue' || anchor.kind === 'taskCompleted') {
@@ -349,6 +361,12 @@ export function getRuleStatus(
       anchor.kind === 'taskDue' ? t.dueDate :
       t.completedAt;
     return tryParse(src) ? 'ok' : 'unresolved';
+  }
+  if (anchor.kind === 'projectKickoff') {
+    const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === anchor.healthCenter);
+    // Unassigning the center entirely => the rule's reference is gone.
+    if (!assignment) return 'missingReference';
+    return tryParse(assignment.assignedAt) ? 'ok' : 'unresolved';
   }
   if (anchor.kind === 'fixedAnniversary') {
     const m = anchor.month;
@@ -381,6 +399,8 @@ export function describeDueDateRule(
     anchorText = 'Project start';
   } else if (anchor.kind === 'projectEnd') {
     anchorText = 'Project end';
+  } else if (anchor.kind === 'projectKickoff') {
+    anchorText = `Kickoff at ${anchor.healthCenter}`;
   } else if (anchor.kind === 'fixedAnniversary') {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                         'July', 'August', 'September', 'October', 'November', 'December'];
@@ -409,7 +429,11 @@ export function describeDueDateRule(
 export function resolveTaskDueDates(
   tasks: Task[],
   projectStartDate?: string,
-  opts?: { projectEndDate?: string; projects?: Array<{ id: number; startDate?: string; endDate?: string }> }
+  opts?: {
+    projectEndDate?: string;
+    projects?: Array<{ id: number; startDate?: string; endDate?: string }>;
+    assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+  }
 ): Task[] {
   return tasks.map((task) => {
     if (!task.dueDateRule) return task;
@@ -418,13 +442,18 @@ export function resolveTaskDueDates(
       projectEndDate: opts?.projectEndDate,
       tasks,
       projects: opts?.projects,
+      assignedHealthCenters: opts?.assignedHealthCenters,
     });
     if (computed) return { ...task, dueDate: computed, dueDateBroken: false };
-    // The rule's reference is gone (e.g. the anchor task was deleted).
-    // Clear any previously-computed date so the row doesn't show a stale
-    // value and stamp a transient flag so the badge can render the
-    // "Reference broken" state.
-    const status = getRuleStatus(task.dueDateRule, { tasks });
+    // The rule's reference is gone (e.g. the anchor task was deleted,
+    // or the health center this task's kickoff anchor pointed to was
+    // unassigned). Clear any previously-computed date so the row doesn't
+    // show a stale value and stamp a transient flag so the badge can
+    // render the "Reference broken" state.
+    const status = getRuleStatus(task.dueDateRule, {
+      tasks,
+      assignedHealthCenters: opts?.assignedHealthCenters,
+    });
     if (status === 'missingReference') {
       return { ...task, dueDate: undefined, dueDateBroken: true };
     }

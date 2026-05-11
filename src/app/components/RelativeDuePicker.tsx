@@ -45,13 +45,19 @@ export interface RelativeDuePickerProps {
    * Type=Project shows the current project plus each of these as options.
    */
   availableProjects?: Array<{ id: number; name: string; startDate?: string }>;
+  /**
+   * Health-center assignments on the current project. Source for the
+   * "Kickoff" Type option's Reference dropdown. Each entry's `assignedAt`
+   * is the kickoff date anchor.
+   */
+  assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
   onSave: (rule: DueDateRule) => void;
   /** Save button label. Defaults to "Save rule". */
   saveLabel?: string;
   className?: string;
 }
 
-type AnchorType = 'project' | 'task' | 'fixedDate';
+type AnchorType = 'project' | 'task' | 'fixedDate' | 'kickoff';
 type EventKey = 'started' | 'ended' | 'due' | 'completed';
 
 // Sentinel used in the Reference dropdown to mean "the project this task
@@ -81,6 +87,7 @@ function ruleToState(rule: DueDateRule | undefined): {
   event: EventKey;
   fixedMonth: number;
   fixedDay: number;
+  kickoffCenter: string;
 } {
   const defaults = {
     type: 'project' as AnchorType,
@@ -89,6 +96,7 @@ function ruleToState(rule: DueDateRule | undefined): {
     event: 'started' as EventKey,
     fixedMonth: 1,
     fixedDay: 1,
+    kickoffCenter: '',
   };
   if (!rule) return defaults;
   const a = rule.anchor;
@@ -108,6 +116,9 @@ function ruleToState(rule: DueDateRule | undefined): {
       event: 'ended',
     };
   }
+  if (a.kind === 'projectKickoff') {
+    return { ...defaults, type: 'kickoff', kickoffCenter: a.healthCenter };
+  }
   if (a.kind === 'fixedAnniversary') {
     return { ...defaults, type: 'fixedDate', fixedMonth: a.month, fixedDay: a.day };
   }
@@ -126,12 +137,17 @@ function buildAnchor(
   projectRef: string,
   event: EventKey,
   fixedMonth: number,
-  fixedDay: number
+  fixedDay: number,
+  kickoffCenter: string
 ): DueDateAnchor | null {
   if (type === 'fixedDate') {
     if (!Number.isInteger(fixedMonth) || fixedMonth < 1 || fixedMonth > 12) return null;
     if (!Number.isInteger(fixedDay) || fixedDay < 1 || fixedDay > 31) return null;
     return { kind: 'fixedAnniversary', month: fixedMonth, day: fixedDay };
+  }
+  if (type === 'kickoff') {
+    if (!kickoffCenter) return null;
+    return { kind: 'projectKickoff', healthCenter: kickoffCenter };
   }
   if (type === 'project') {
     if (event !== 'started' && event !== 'ended') return null;
@@ -161,7 +177,7 @@ function eventOptionsFor(type: AnchorType): Array<{ value: EventKey; label: stri
       { value: 'ended', label: 'ended' },
     ];
   }
-  if (type === 'fixedDate') return [];
+  if (type === 'fixedDate' || type === 'kickoff') return [];
   return [
     { value: 'started', label: 'started' },
     { value: 'due', label: 'due date' },
@@ -177,6 +193,7 @@ export function RelativeDuePicker({
   excludeTaskId,
   currentProjectName = 'Current project',
   availableProjects,
+  assignedHealthCenters,
   onSave,
   saveLabel = 'Save rule',
   className,
@@ -200,6 +217,14 @@ export function RelativeDuePicker({
     return !(siblingTasks ?? []).some((t) => t.id === a.taskId);
   }, [initialRule, siblingTasks, excludeTaskId]);
 
+  const kickoffOptions = assignedHealthCenters ?? [];
+  // Likewise: kickoffCenter is "missing" when the rule references a center
+  // that's no longer in `assignedHealthCenters` (e.g. it was unassigned).
+  const initialKickoffMissing = useMemo(() => {
+    if (!initialRule || initialRule.anchor.kind !== 'projectKickoff') return false;
+    return !kickoffOptions.some((c) => c.name === initialRule.anchor.healthCenter);
+  }, [initialRule, kickoffOptions]);
+
   const [type, setType] = useState<AnchorType>(initial.type);
   const [taskId, setTaskId] = useState<number | null>(
     initialReferenceMissing ? null : (initial.taskId ?? taskOptions[0]?.id ?? null)
@@ -208,29 +233,35 @@ export function RelativeDuePicker({
   const [event, setEvent] = useState<EventKey>(initial.event);
   const [fixedMonth, setFixedMonth] = useState<number>(initial.fixedMonth);
   const [fixedDay, setFixedDay] = useState<number>(initial.fixedDay);
+  const [kickoffCenter, setKickoffCenter] = useState<string>(
+    initialKickoffMissing ? '' : initial.kickoffCenter
+  );
   const [amount, setAmount] = useState<number>(initialRule?.amount ?? 2);
   const [unit, setUnit] = useState<DueDateRule['unit']>(initialRule?.unit ?? 'weeks');
   const [direction, setDirection] = useState<DueDateRule['direction']>(initialRule?.direction ?? 'after');
 
   // Snap event + reference to valid defaults when type changes. When the
-  // initial reference is missing we deliberately leave taskId null until
-  // the user explicitly picks a new sibling (or changes type), so Save
-  // stays disabled — otherwise this effect would silently swap the rule
-  // to point at the first available sibling.
+  // initial reference is missing we deliberately leave taskId/kickoffCenter
+  // null until the user explicitly picks a new sibling/center (or changes
+  // type), so Save stays disabled — otherwise this effect would silently
+  // swap the rule to point at the first available sibling/center.
   useEffect(() => {
     const validEvents = eventOptionsFor(type).map((o) => o.value);
     if (validEvents.length > 0 && !validEvents.includes(event)) setEvent(validEvents[0]);
     if (type === 'task' && taskId === null && taskOptions[0] && !initialReferenceMissing) {
       setTaskId(taskOptions[0].id);
     }
+    if (type === 'kickoff' && !kickoffCenter && kickoffOptions[0] && !initialKickoffMissing) {
+      setKickoffCenter(kickoffOptions[0].name);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
   const draftRule: DueDateRule | null = useMemo(() => {
-    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay);
+    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay, kickoffCenter);
     if (!anchor) return null;
     return { anchor, amount, unit, direction };
-  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, amount, unit, direction]);
+  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, kickoffCenter, amount, unit, direction]);
 
   const computedPreview = useMemo(() => {
     if (!draftRule) return null;
@@ -239,8 +270,9 @@ export function RelativeDuePicker({
       projectEndDate,
       tasks: siblingTasks ?? [],
       projects: projectOptions,
+      assignedHealthCenters: kickoffOptions,
     });
-  }, [draftRule, projectStartDate, projectEndDate, siblingTasks, projectOptions]);
+  }, [draftRule, projectStartDate, projectEndDate, siblingTasks, projectOptions, kickoffOptions]);
 
   const eventOptions = eventOptionsFor(type);
   const labelClasses = 'block text-[11px] font-medium text-[#71717a] mb-1';
@@ -289,6 +321,11 @@ export function RelativeDuePicker({
             The previously-selected task was removed. Pick a new reference or switch to a different type.
           </div>
         )}
+        {initialKickoffMissing && (
+          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
+            The previously-selected health center was unassigned. Pick a new center or switch to a different type.
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className={labelClasses}>Type</label>
@@ -300,10 +337,36 @@ export function RelativeDuePicker({
               <option value="project">Project</option>
               <option value="task">Task</option>
               <option value="fixedDate">Fixed Date</option>
+              <option value="kickoff" disabled={kickoffOptions.length === 0}>
+                Kickoff{kickoffOptions.length === 0 ? ' (assign a center first)' : ''}
+              </option>
             </Select>
           </div>
 
-          {type === 'fixedDate' ? (
+          {type === 'kickoff' ? (
+            <div className="col-span-2">
+              <label className={labelClasses}>Health Center</label>
+              <Select
+                size="sm"
+                value={kickoffCenter}
+                onChange={(e) => setKickoffCenter(e.target.value)}
+                disabled={kickoffOptions.length === 0}
+              >
+                {kickoffOptions.length === 0 ? (
+                  <option value="">No health centers assigned</option>
+                ) : (
+                  <>
+                    {initialKickoffMissing && <option value="">Select a center…</option>}
+                    {kickoffOptions.map((c) => (
+                      <option key={c.name} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </Select>
+            </div>
+          ) : type === 'fixedDate' ? (
             <>
               <div>
                 <label className={labelClasses}>Month</label>
