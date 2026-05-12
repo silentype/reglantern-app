@@ -17,10 +17,19 @@ import { TopNavButton } from './components/design-system/TopNavButton';
 import { Avatar } from './components/design-system/Avatar';
 
 import { INITIAL_TASKS } from './data/initialTasks';
+import {
+  INITIAL_HEALTH_CENTERS,
+  INITIAL_HEALTH_CENTER_FIELD_DEFS,
+  type HealthCenter,
+  type HealthCenterDateFieldDef,
+} from './data/healthCenters';
+import { PROJECTS_STORAGE_KEY, loadProjects } from './data/initialProjects';
 
 import { ChecklistsPage } from './pages/ChecklistsPage';
 import { AdminPage, type Project } from './pages/AdminPage';
 import { TasksPage } from './pages/TasksPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { HealthCenterAdminPage } from './pages/HealthCenterAdminPage';
 
 // URL <-> sidebar nav item mappings. URL is the source of truth for navigation.
 const NAV_ITEM_TO_URL: Record<string, string> = {
@@ -30,6 +39,7 @@ const NAV_ITEM_TO_URL: Record<string, string> = {
   'FTCA Site Visit Protocol': '/checklists/ftca-site-visit-protocol',
   'Project Builder': '/admin/project-builder',
   'Compliance Review': '/admin/compliance-review',
+  'Health Center Information': '/admin/health-centers',
 };
 
 const URL_TO_NAV_ITEM: Record<string, string> = {
@@ -39,6 +49,7 @@ const URL_TO_NAV_ITEM: Record<string, string> = {
   'ftca-site-visit-protocol': 'FTCA Site Visit Protocol',
   'project-builder': 'Project Builder',
   'compliance-review': 'Compliance Review',
+  'health-centers': 'Health Center Information',
 };
 
 export default function App() {
@@ -61,10 +72,19 @@ export default function App() {
   const itemSeg = segments[1];
   const restSegs = segments.slice(2);
 
-  const currentPage: 'tasks' | 'checklists' | 'admin' =
+  const currentPage: 'tasks' | 'checklists' | 'admin' | 'settings' =
     sectionSeg === 'admin' ? 'admin' :
     sectionSeg === 'checklists' ? 'checklists' :
+    sectionSeg === 'settings' ? 'settings' :
     'tasks';
+
+  // /admin/health-centers and /admin/health-centers/:name resolve to the
+  // Health Center Information admin page. We surface the optional detail
+  // name as `healthCenterDetail`.
+  const healthCenterDetail =
+    currentPage === 'admin' && itemSeg === 'health-centers' && restSegs[0]
+      ? decodeURIComponent(restSegs[0])
+      : null;
 
   const selectedNavItem = URL_TO_NAV_ITEM[itemSeg ?? ''] ?? (
     currentPage === 'tasks' ? 'My Tasks' :
@@ -120,126 +140,21 @@ export default function App() {
 
   // Data state
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 1,
-      name: 'Site Compliance Review',
-      description: 'Comprehensive review of all site compliance requirements and documentation',
-      category: 'Compliance',
-      createdAt: '2026-04-01',
-      tasks: [
-        {
-          id: 9001,
-          title: 'Complete Site Safety Assessment',
-          completed: false,
-          status: 'In Progress',
-          dueDate: '05/01/2026',
-          assignedTo: { initials: 'SK', name: 'Sarah Kim' },
-          healthCenter: 'Main Campus',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9002,
-          title: 'Review Emergency Protocols',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '05/05/2026',
-          assignedTo: { initials: 'MJ', name: 'Michael Johnson' },
-          healthCenter: 'East Side Clinic',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9011,
-          title: 'Verify Patient Demographics Data',
-          completed: true,
-          completedAt: '04/22/2026',
-          status: 'Completed',
-          dueDate: '04/22/2026',
-          assignedTo: { initials: 'AR', name: 'Amelia Rodriguez' },
-          healthCenter: 'Main Campus',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9012,
-          title: 'Audit Quality Assurance Manual',
-          completed: false,
-          status: 'In Progress',
-          dueDate: '05/12/2026',
-          assignedTo: { initials: 'JL', name: 'Jasmine Lee' },
-          healthCenter: 'West Valley Center',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9013,
-          title: 'Update Service Area Documentation',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '05/18/2026',
-          assignedTo: { initials: 'DP', name: 'Daniel Park' },
-          healthCenter: 'East Side Clinic',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9014,
-          title: 'Submit Sliding Fee Discount Schedule',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '05/22/2026',
-          assignedTo: { initials: 'RB', name: 'Riya Banerjee' },
-          healthCenter: 'Main Campus',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9015,
-          title: 'Refresh HR Credentialing Files',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '05/29/2026',
-          assignedTo: { initials: 'CN', name: 'Carlos Nguyen' },
-          healthCenter: 'West Valley Center',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9016,
-          title: 'Conduct Quarterly Privacy Walkthrough',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '06/04/2026',
-          assignedTo: { initials: 'OK', name: 'Olivia Kim' },
-          healthCenter: 'Main Campus',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        }
-      ]
-    },
-    {
-      id: 2,
-      name: 'FTCA Documentation Update',
-      description: 'Update all FTCA-related documentation and procedures',
-      category: 'Documentation',
-      createdAt: '2026-03-15',
-      tasks: [
-        {
-          id: 9003,
-          title: 'Update FTCA Policy Manual',
-          completed: false,
-          status: 'In Progress',
-          dueDate: '04/30/2026',
-          assignedTo: { initials: 'EM', name: 'Emily Martinez' },
-          healthCenter: 'West Valley Center',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        }
-      ]
+  const [healthCenters, setHealthCenters] = useState<HealthCenter[]>(INITIAL_HEALTH_CENTERS);
+  const [healthCenterFieldDefs, setHealthCenterFieldDefs] = useState<HealthCenterDateFieldDef[]>(
+    INITIAL_HEALTH_CENTER_FIELD_DEFS
+  );
+  const [projects, setProjects] = useState<Project[]>(() => loadProjects());
+
+  // Mirror new projects + tasks into localStorage so a refresh (or an
+  // html.to.design capture) picks the same state back up.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+    } catch {
+      // localStorage unavailable (private mode, quota, etc.) -- non-fatal.
     }
-  ]);
+  }, [projects]);
 
   const handleAddNewTask = useCallback(() => {
     setNewTaskTitle('');
@@ -504,9 +419,10 @@ export default function App() {
     setSideNavOpen(prev => !prev);
   }, []);
 
-  const handleNavChange = useCallback((page: 'tasks' | 'checklists' | 'admin') => {
+  const handleNavChange = useCallback((page: 'tasks' | 'checklists' | 'admin' | 'settings') => {
     if (page === 'tasks') navigate('/tasks/my-tasks');
     else if (page === 'admin') navigate('/admin/project-builder');
+    else if (page === 'settings') navigate('/settings');
     else navigate('/checklists/site-visit-protocol');
   }, [navigate]);
 
@@ -586,7 +502,7 @@ export default function App() {
             <TopNavButton active={currentPage === 'checklists'} onClick={() => handleNavChange('checklists')}>Tools</TopNavButton>
             <TopNavButton onClick={() => {}}>Resources</TopNavButton>
             <TopNavButton onClick={() => {}}>Documents</TopNavButton>
-            <TopNavButton onClick={() => {}}>Settings</TopNavButton>
+            <TopNavButton active={currentPage === 'settings'} onClick={() => handleNavChange('settings')}>Settings</TopNavButton>
             <TopNavButton active={currentPage === 'admin'} onClick={() => handleNavChange('admin')}>Admin</TopNavButton>
           </nav>
         </div>
@@ -635,6 +551,30 @@ export default function App() {
             />
           ) : currentPage === 'checklists' ? (
             <ChecklistsPage onToggleSideNav={toggleSideNav} sideNavOpen={sideNavOpen} />
+          ) : currentPage === 'settings' ? (
+            <SettingsPage
+              onToggleSideNav={toggleSideNav}
+              sideNavOpen={sideNavOpen}
+              fieldDefs={healthCenterFieldDefs}
+              setFieldDefs={setHealthCenterFieldDefs}
+              setHealthCenters={setHealthCenters}
+            />
+          ) : selectedNavItem === 'Health Center Information' ? (
+            <HealthCenterAdminPage
+              onToggleSideNav={toggleSideNav}
+              sideNavOpen={sideNavOpen}
+              healthCenters={healthCenters}
+              setHealthCenters={setHealthCenters}
+              fieldDefs={healthCenterFieldDefs}
+              selectedCenterName={healthCenterDetail}
+              onSelectCenter={(name) => {
+                navigate(
+                  name !== null
+                    ? `/admin/health-centers/${encodeURIComponent(name)}`
+                    : '/admin/health-centers'
+                );
+              }}
+            />
           ) : (
             <AdminPage
               onToggleSideNav={toggleSideNav}
@@ -657,6 +597,8 @@ export default function App() {
               onOpenProjectTask={(projectId, taskId) => {
                 navigate(`/admin/project-builder/${projectId}/${taskId}`);
               }}
+              healthCenters={healthCenters}
+              healthCenterFieldDefs={healthCenterFieldDefs}
             />
           )}
         </main>

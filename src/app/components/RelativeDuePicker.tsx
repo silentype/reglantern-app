@@ -17,9 +17,16 @@
  * (TaskTableDynamic) and the side panel (MultiFileUploadPanel).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { Button } from './design-system/Button';
-import { Select } from './design-system/Select';
+import {
+  Select as UISelect,
+  SelectContent as UISelectContent,
+  SelectItem as UISelectItem,
+  SelectTrigger as UISelectTrigger,
+  SelectValue as UISelectValue,
+} from './ui/select';
 import { computeDueDate } from '../utils/helpers';
 import type {
   DueDateAnchor,
@@ -45,14 +52,43 @@ export interface RelativeDuePickerProps {
    * Type=Project shows the current project plus each of these as options.
    */
   availableProjects?: Array<{ id: number; name: string; startDate?: string }>;
+  /**
+   * Health-center assignments on the current project. Source for the
+   * "Kickoff" Type option's Reference dropdown. Each entry's `assignedAt`
+   * is the kickoff date anchor.
+   */
+  assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+  /**
+   * Global catalog of date-typed health-center fields (authored in
+   * Settings). Source for the "Health Center Info" Type option's
+   * Reference dropdown.
+   */
+  healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  /**
+   * Per-center field values, used to resolve `healthCenterField` anchor
+   * previews against the task's own health center.
+   */
+  healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+  /** The health center the task is currently assigned to. */
+  taskHealthCenter?: string;
   onSave: (rule: DueDateRule) => void;
   /** Save button label. Defaults to "Save rule". */
   saveLabel?: string;
   className?: string;
 }
 
-type AnchorType = 'project' | 'task' | 'fixedDate';
-type EventKey = 'started' | 'ended' | 'due' | 'completed';
+// Picker-internal type. 'healthCenterField' covers both the project's
+// Instantiation date and any catalog field, distinguished by the
+// composite reference string stored in `healthCenterFieldId`:
+//   'kickoff'         -> projectKickoff anchor (implicit center, resolves
+//                        against the task's own healthCenter)
+//   'field:<fieldId>' -> healthCenterField anchor
+// '' = no Type chosen yet (placeholder "Select…" in the dropdown);
+// the picker holds back the Reference/Event/Field rows until the user
+// picks a Type so the form starts visually empty.
+type AnchorType = '' | 'project' | 'task' | 'fixedDate' | 'healthCenterField';
+// '' = no Event chosen yet (placeholder "Select…").
+type EventKey = '' | 'started' | 'ended' | 'due' | 'completed';
 
 // Sentinel used in the Reference dropdown to mean "the project this task
 // already belongs to" (no projectId stored). Any number is fine as long as
@@ -81,14 +117,21 @@ function ruleToState(rule: DueDateRule | undefined): {
   event: EventKey;
   fixedMonth: number;
   fixedDay: number;
+  /** Composite reference for Type=Health Center Info:
+   *  'kickoff:<centerName>' or 'field:<fieldId>'. Empty = unset. */
+  healthCenterFieldId: string;
 } {
+  // All-unset defaults: every Trigger select starts at "Select…" so the
+  // user has to make a deliberate choice. Existing rules override these
+  // via the branches below.
   const defaults = {
-    type: 'project' as AnchorType,
+    type: '' as AnchorType,
     taskId: null,
-    projectRef: CURRENT_PROJECT_VALUE,
-    event: 'started' as EventKey,
+    projectRef: '',
+    event: '' as EventKey,
     fixedMonth: 1,
     fixedDay: 1,
+    healthCenterFieldId: '',
   };
   if (!rule) return defaults;
   const a = rule.anchor;
@@ -106,6 +149,23 @@ function ruleToState(rule: DueDateRule | undefined): {
       type: 'project',
       projectRef: a.projectId !== undefined ? String(a.projectId) : CURRENT_PROJECT_VALUE,
       event: 'ended',
+    };
+  }
+  if (a.kind === 'projectKickoff') {
+    // Both the new implicit form and legacy form (with explicit
+    // healthCenter pin) collapse to the single 'kickoff' sentinel here.
+    // Saving the rule produces the new implicit form.
+    return {
+      ...defaults,
+      type: 'healthCenterField',
+      healthCenterFieldId: 'kickoff',
+    };
+  }
+  if (a.kind === 'healthCenterField') {
+    return {
+      ...defaults,
+      type: 'healthCenterField',
+      healthCenterFieldId: `field:${a.fieldId}`,
     };
   }
   if (a.kind === 'fixedAnniversary') {
@@ -126,12 +186,28 @@ function buildAnchor(
   projectRef: string,
   event: EventKey,
   fixedMonth: number,
-  fixedDay: number
+  fixedDay: number,
+  healthCenterFieldId: string
 ): DueDateAnchor | null {
+  if (!type) return null;
   if (type === 'fixedDate') {
     if (!Number.isInteger(fixedMonth) || fixedMonth < 1 || fixedMonth > 12) return null;
     if (!Number.isInteger(fixedDay) || fixedDay < 1 || fixedDay > 31) return null;
     return { kind: 'fixedAnniversary', month: fixedMonth, day: fixedDay };
+  }
+  if (type === 'healthCenterField') {
+    if (!healthCenterFieldId) return null;
+    if (healthCenterFieldId === 'kickoff') {
+      // Implicit-center Instantiation anchor; resolver looks up the
+      // task's own healthCenter at compute time.
+      return { kind: 'projectKickoff' };
+    }
+    if (healthCenterFieldId.startsWith('field:')) {
+      const fieldId = healthCenterFieldId.slice('field:'.length);
+      if (!fieldId) return null;
+      return { kind: 'healthCenterField', fieldId };
+    }
+    return null;
   }
   if (type === 'project') {
     if (event !== 'started' && event !== 'ended') return null;
@@ -161,7 +237,7 @@ function eventOptionsFor(type: AnchorType): Array<{ value: EventKey; label: stri
       { value: 'ended', label: 'ended' },
     ];
   }
-  if (type === 'fixedDate') return [];
+  if (type === 'fixedDate' || type === 'healthCenterField') return [];
   return [
     { value: 'started', label: 'started' },
     { value: 'due', label: 'due date' },
@@ -177,6 +253,10 @@ export function RelativeDuePicker({
   excludeTaskId,
   currentProjectName = 'Current project',
   availableProjects,
+  assignedHealthCenters,
+  healthCenterFieldDefs,
+  healthCenters,
+  taskHealthCenter,
   onSave,
   saveLabel = 'Save rule',
   className,
@@ -188,33 +268,87 @@ export function RelativeDuePicker({
   );
   const projectOptions = availableProjects ?? [];
 
+  // When the initial rule points to a sibling task that no longer exists,
+  // surface a banner and force the user to pick a new reference. We
+  // null out the taskId so `buildAnchor` returns null (disabling Save)
+  // until they choose.
+  const initialReferenceMissing = useMemo(() => {
+    if (!initialRule) return false;
+    const a = initialRule.anchor;
+    if (a.kind !== 'taskStart' && a.kind !== 'taskDue' && a.kind !== 'taskCompleted') return false;
+    if (a.taskId === excludeTaskId) return false;
+    return !(siblingTasks ?? []).some((t) => t.id === a.taskId);
+  }, [initialRule, siblingTasks, excludeTaskId]);
+
+  const kickoffOptions = assignedHealthCenters ?? [];
+  const hcFieldOptions = healthCenterFieldDefs ?? [];
+
+  // Combined options shown in the Field dropdown when Type=Health Center
+  // Info. A single "Instantiation" row (implicit center -- resolves
+  // against the task's own healthCenter at compute time) is offered when
+  // the project is assigned to any center; the catalog fields follow.
+  // Values use a "kickoff" / "field:" prefix so buildAnchor can produce
+  // the right DueDateAnchor kind.
+  const healthCenterRefOptions = useMemo(
+    () => [
+      ...(kickoffOptions.length > 0
+        ? [{ value: 'kickoff', label: 'Instantiation' }]
+        : []),
+      ...hcFieldOptions.map((d) => ({
+        value: `field:${d.id}`,
+        label: d.label,
+      })),
+    ],
+    [kickoffOptions, hcFieldOptions]
+  );
+
+  // "Reference missing" only applies to the catalog-field case: deleting
+  // a field id from Settings strands any rule that referenced it. The
+  // implicit Instantiation anchor can't go "missing" -- if the project
+  // gets unassigned entirely it just becomes "unresolved" (waiting on a
+  // re-assignment), which is a normal state, not broken.
+  const initialHCFieldMissing = useMemo(() => {
+    if (!initialRule) return false;
+    const a = initialRule.anchor;
+    if (a.kind === 'healthCenterField') {
+      return !hcFieldOptions.some((d) => d.id === a.fieldId);
+    }
+    return false;
+  }, [initialRule, hcFieldOptions]);
+
   const [type, setType] = useState<AnchorType>(initial.type);
+  // taskId only pre-fills from an existing rule. Without an initial
+  // rule (or with a broken reference) it stays null so the Reference
+  // select shows "Select…".
   const [taskId, setTaskId] = useState<number | null>(
-    initial.taskId ?? taskOptions[0]?.id ?? null
+    initialReferenceMissing ? null : (initial.taskId ?? null)
   );
   const [projectRef, setProjectRef] = useState<string>(initial.projectRef);
   const [event, setEvent] = useState<EventKey>(initial.event);
   const [fixedMonth, setFixedMonth] = useState<number>(initial.fixedMonth);
   const [fixedDay, setFixedDay] = useState<number>(initial.fixedDay);
+  const [healthCenterFieldId, setHealthCenterFieldId] = useState<string>(
+    initialHCFieldMissing ? '' : initial.healthCenterFieldId
+  );
   const [amount, setAmount] = useState<number>(initialRule?.amount ?? 2);
   const [unit, setUnit] = useState<DueDateRule['unit']>(initialRule?.unit ?? 'weeks');
   const [direction, setDirection] = useState<DueDateRule['direction']>(initialRule?.direction ?? 'after');
 
-  // Snap event + reference to valid defaults when type changes.
+  // When the Type changes, clear any Event that's no longer valid for
+  // the new Type (e.g. Project-only "ended" with Type=Task). Otherwise
+  // leave everything else alone -- the user picks Reference/Event/Field
+  // explicitly, and "Select…" stays visible until they do.
   useEffect(() => {
     const validEvents = eventOptionsFor(type).map((o) => o.value);
-    if (validEvents.length > 0 && !validEvents.includes(event)) setEvent(validEvents[0]);
-    if (type === 'task' && taskId === null && taskOptions[0]) {
-      setTaskId(taskOptions[0].id);
-    }
+    if (event && !validEvents.includes(event)) setEvent('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
   const draftRule: DueDateRule | null = useMemo(() => {
-    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay);
+    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay, healthCenterFieldId);
     if (!anchor) return null;
     return { anchor, amount, unit, direction };
-  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, amount, unit, direction]);
+  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, healthCenterFieldId, amount, unit, direction]);
 
   const computedPreview = useMemo(() => {
     if (!draftRule) return null;
@@ -223,163 +357,269 @@ export function RelativeDuePicker({
       projectEndDate,
       tasks: siblingTasks ?? [],
       projects: projectOptions,
+      assignedHealthCenters: kickoffOptions,
+      healthCenters,
+      taskHealthCenter,
     });
-  }, [draftRule, projectStartDate, projectEndDate, siblingTasks, projectOptions]);
+  }, [draftRule, projectStartDate, projectEndDate, siblingTasks, projectOptions, kickoffOptions, healthCenters, taskHealthCenter]);
 
   const eventOptions = eventOptionsFor(type);
   const labelClasses = 'block text-[11px] font-medium text-[#71717a] mb-1';
 
+  // URL-driven open state for each dropdown so html.to.design (and shareable
+  // links) can capture each open select. Only one Select can be open at a
+  // time in this picker, so we use a single ?pick=<name> param. Closing the
+  // popover does NOT auto-clear this param (the consumer's existing
+  // ?datePicker scoping handles the broader popover lifetime); cleared
+  // implicitly when the user opens then closes the same select.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pick = searchParams.get('pick');
+  const setPick = useCallback(
+    (name: string | null) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          if (name) params.set('pick', name);
+          else params.delete('pick');
+          return params;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+  const pickHandler = useCallback(
+    (name: string) => (open: boolean) => setPick(open ? name : null),
+    [setPick]
+  );
+  const triggerCls = 'h-8 px-2.5 text-xs';
+  // Vertical-row layout for the Trigger section: label fixed-width on
+  // the left, control filling the remaining width on the right.
+  const rowCls = 'flex items-center gap-2';
+  const rowLabelCls = 'w-[88px] shrink-0 text-[12px] font-medium text-[#71717a]';
+
   return (
-    <div className={`p-4 w-[460px] flex flex-col gap-4 ${className ?? ''}`}>
+    <div className={`p-4 w-full flex flex-col gap-4 ${className ?? ''}`}>
       <div>
         <h3 className="text-sm font-semibold text-[#18181b] mb-2">Timing</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[#71717a]">Due</span>
-          <input
-            type="number"
-            min={1}
-            value={amount}
-            onChange={(e) => setAmount(Math.max(1, Number(e.target.value) || 1))}
-            className="w-16 h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
-          />
-          <div className="w-28">
-            <Select
-              size="sm"
-              value={unit}
-              onChange={(e) => setUnit(e.target.value as DueDateRule['unit'])}
-            >
-              <option value="days">{amount === 1 ? 'day' : 'days'}</option>
-              <option value="weeks">{amount === 1 ? 'week' : 'weeks'}</option>
-              <option value="months">{amount === 1 ? 'month' : 'months'}</option>
-            </Select>
-          </div>
-          <div className="w-24">
-            <Select
-              size="sm"
-              value={direction}
-              onChange={(e) => setDirection(e.target.value as DueDateRule['direction'])}
-            >
-              <option value="after">after</option>
-              <option value="before">before</option>
-            </Select>
+        <div className={rowCls}>
+          <label className={rowLabelCls}>Due</label>
+          <div className="flex-1 flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              value={amount}
+              onChange={(e) => setAmount(Math.max(1, Number(e.target.value) || 1))}
+              className="w-16 h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
+            />
+            <div className="w-28">
+              <UISelect
+                value={unit}
+                onValueChange={(v) => setUnit(v as DueDateRule['unit'])}
+                open={pick === 'unit'}
+                onOpenChange={pickHandler('unit')}
+              >
+                <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                <UISelectContent>
+                  <UISelectItem value="days">{amount === 1 ? 'day' : 'days'}</UISelectItem>
+                  <UISelectItem value="weeks">{amount === 1 ? 'week' : 'weeks'}</UISelectItem>
+                  <UISelectItem value="months">{amount === 1 ? 'month' : 'months'}</UISelectItem>
+                  <UISelectItem value="years">{amount === 1 ? 'year' : 'years'}</UISelectItem>
+                </UISelectContent>
+              </UISelect>
+            </div>
+            <div className="w-24">
+              <UISelect
+                value={direction}
+                onValueChange={(v) => setDirection(v as DueDateRule['direction'])}
+                open={pick === 'direction'}
+                onOpenChange={pickHandler('direction')}
+              >
+                <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                <UISelectContent>
+                  <UISelectItem value="after">after</UISelectItem>
+                  <UISelectItem value="before">before</UISelectItem>
+                </UISelectContent>
+              </UISelect>
+            </div>
           </div>
         </div>
       </div>
 
       <div>
         <h3 className="text-sm font-semibold text-[#18181b] mb-2">Trigger</h3>
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className={labelClasses}>Type</label>
-            <Select
-              size="sm"
-              value={type}
-              onChange={(e) => setType(e.target.value as AnchorType)}
-            >
-              <option value="project">Project</option>
-              <option value="task">Task</option>
-              <option value="fixedDate">Fixed Date</option>
-            </Select>
+        {initialReferenceMissing && (
+          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
+            The previously-selected task was removed. Pick a new reference or switch to a different type.
+          </div>
+        )}
+        {initialHCFieldMissing && (
+          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
+            The previously-selected health-center reference is no longer available. Pick a new one or switch to a different type.
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          <div className={rowCls}>
+            <label className={rowLabelCls}>Type</label>
+            <div className="flex-1">
+              <UISelect
+                value={type || undefined}
+                onValueChange={(v) => setType(v as AnchorType)}
+                open={pick === 'type'}
+                onOpenChange={pickHandler('type')}
+              >
+                <UISelectTrigger className={triggerCls}>
+                  <UISelectValue placeholder="Select…" />
+                </UISelectTrigger>
+                <UISelectContent>
+                  <UISelectItem value="project">Project</UISelectItem>
+                  <UISelectItem value="task">Task</UISelectItem>
+                  <UISelectItem value="fixedDate">Fixed Date</UISelectItem>
+                  <UISelectItem value="healthCenterField" disabled={healthCenterRefOptions.length === 0}>
+                    Health Center Info{healthCenterRefOptions.length === 0 ? ' (assign a center or add a field first)' : ''}
+                  </UISelectItem>
+                </UISelectContent>
+              </UISelect>
+            </div>
           </div>
 
-          {type === 'fixedDate' ? (
-            <>
-              <div>
-                <label className={labelClasses}>Month</label>
-                <Select
-                  size="sm"
-                  value={fixedMonth}
-                  onChange={(e) => setFixedMonth(Number(e.target.value))}
+          {type === 'healthCenterField' ? (
+            <div className={rowCls}>
+              <label className={rowLabelCls}>Field</label>
+              <div className="flex-1">
+                <UISelect
+                  value={healthCenterFieldId || undefined}
+                  onValueChange={(v) => setHealthCenterFieldId(v)}
+                  open={pick === 'reference'}
+                  onOpenChange={pickHandler('reference')}
+                  disabled={healthCenterRefOptions.length === 0}
                 >
-                  {MONTH_OPTIONS.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </Select>
+                  <UISelectTrigger className={triggerCls}>
+                    <UISelectValue placeholder={healthCenterRefOptions.length === 0 ? 'No references available' : 'Select a reference…'} />
+                  </UISelectTrigger>
+                  <UISelectContent>
+                    {healthCenterRefOptions.map((o) => (
+                      <UISelectItem key={o.value} value={o.value}>{o.label}</UISelectItem>
+                    ))}
+                  </UISelectContent>
+                </UISelect>
               </div>
-              <div>
-                <label className={labelClasses}>Day</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={fixedDay}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    if (Number.isInteger(n)) setFixedDay(Math.min(31, Math.max(1, n)));
-                  }}
-                  className="w-full h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
-                />
+            </div>
+          ) : !type ? null : type === 'fixedDate' ? (
+            <>
+              <div className={rowCls}>
+                <label className={rowLabelCls}>Month</label>
+                <div className="flex-1">
+                  <UISelect
+                    value={String(fixedMonth)}
+                    onValueChange={(v) => setFixedMonth(Number(v))}
+                    open={pick === 'month'}
+                    onOpenChange={pickHandler('month')}
+                  >
+                    <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                    <UISelectContent>
+                      {MONTH_OPTIONS.map((m) => (
+                        <UISelectItem key={m.value} value={String(m.value)}>{m.label}</UISelectItem>
+                      ))}
+                    </UISelectContent>
+                  </UISelect>
+                </div>
+              </div>
+              <div className={rowCls}>
+                <label className={rowLabelCls}>Day</label>
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={fixedDay}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      if (Number.isInteger(n)) setFixedDay(Math.min(31, Math.max(1, n)));
+                    }}
+                    className="w-full h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
+                  />
+                </div>
               </div>
             </>
           ) : (
             <>
-              <div>
-                <label className={labelClasses}>Reference</label>
-                <Select
-                  size="sm"
-                  value={type === 'project' ? projectRef : (taskId ?? '').toString()}
-                  onChange={(e) => {
-                    if (type === 'task') setTaskId(Number(e.target.value));
-                    else setProjectRef(e.target.value);
-                  }}
-                  disabled={type === 'task' && taskOptions.length === 0}
-                >
-                  {type === 'project' ? (
-                    <>
-                      <option value={CURRENT_PROJECT_VALUE}>{currentProjectName}</option>
-                      {projectOptions.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </>
-                  ) : taskOptions.length === 0 ? (
-                    <option value="">No other tasks</option>
-                  ) : (
-                    <>
-                      {/* Surface a missing-anchor placeholder when the saved
-                          taskId no longer exists in the project (defensive --
-                          AdminPage's delete cascade should clear these, but
-                          older data may still reference deleted ids). */}
-                      {taskId !== null && !taskOptions.some((t) => t.id === taskId) && (
-                        <option value={taskId}>(deleted task — pick another)</option>
+              <div className={rowCls}>
+                <label className={rowLabelCls}>Reference</label>
+                <div className="flex-1">
+                  <UISelect
+                    value={
+                      type === 'project'
+                        ? (projectRef || undefined)
+                        : taskId !== null
+                        ? String(taskId)
+                        : undefined
+                    }
+                    onValueChange={(v) => {
+                      if (type === 'task') setTaskId(Number(v));
+                      else setProjectRef(v);
+                    }}
+                    open={pick === 'reference'}
+                    onOpenChange={pickHandler('reference')}
+                    disabled={type === 'task' && taskOptions.length === 0}
+                  >
+                    <UISelectTrigger className={triggerCls}>
+                      <UISelectValue placeholder={type === 'task' && taskOptions.length === 0 ? 'No other tasks' : 'Select…'} />
+                    </UISelectTrigger>
+                    <UISelectContent>
+                      {type === 'project' ? (
+                        <>
+                          <UISelectItem value={CURRENT_PROJECT_VALUE}>{currentProjectName}</UISelectItem>
+                          {projectOptions.map((p) => (
+                            <UISelectItem key={p.id} value={String(p.id)}>{p.name}</UISelectItem>
+                          ))}
+                        </>
+                      ) : (
+                        <>
+                          {/* Defensive "(deleted task — pick another)" entry
+                              for legacy rules that reference a taskId no
+                              longer in this project's task list. The
+                              broken-reference banner above also flags it,
+                              but this keeps the Select's value valid so
+                              Radix doesn't re-render with an unknown value. */}
+                          {taskId !== null && !taskOptions.some((t) => t.id === taskId) && (
+                            <UISelectItem value={String(taskId)}>
+                              (deleted task — pick another)
+                            </UISelectItem>
+                          )}
+                          {taskOptions.map((t) => (
+                            <UISelectItem key={t.id} value={String(t.id)}>{t.title}</UISelectItem>
+                          ))}
+                        </>
                       )}
-                      {taskOptions.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.title}
-                        </option>
-                      ))}
-                    </>
-                  )}
-                </Select>
+                    </UISelectContent>
+                  </UISelect>
+                </div>
               </div>
 
-              <div>
-                <label className={labelClasses}>Event</label>
-                <Select
-                  size="sm"
-                  value={event}
-                  onChange={(e) => setEvent(e.target.value as EventKey)}
-                >
-                  {eventOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
+              <div className={rowCls}>
+                <label className={rowLabelCls}>Event</label>
+                <div className="flex-1">
+                  <UISelect
+                    value={event || undefined}
+                    onValueChange={(v) => setEvent(v as EventKey)}
+                    open={pick === 'event'}
+                    onOpenChange={pickHandler('event')}
+                  >
+                    <UISelectTrigger className={triggerCls}>
+                      <UISelectValue placeholder="Select…" />
+                    </UISelectTrigger>
+                    <UISelectContent>
+                      {eventOptions.map((o) => (
+                        <UISelectItem key={o.value} value={o.value}>{o.label}</UISelectItem>
+                      ))}
+                    </UISelectContent>
+                  </UISelect>
+                </div>
               </div>
             </>
           )}
         </div>
-      </div>
-
-      <div className="text-xs text-[#71717a] border-t border-[#f4f4f5] pt-2">
-        Computed:{' '}
-        <span className={computedPreview ? 'text-[#18181b] font-medium' : 'italic'}>
-          {computedPreview ?? 'trigger not set yet'}
-        </span>
       </div>
 
       <Button

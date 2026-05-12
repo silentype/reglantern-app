@@ -5,7 +5,7 @@ import collapsedSvgPaths from '../../imports/SecondaryMenuCollapsed/svg-g3ofy9be
 import myTasksIconPaths from '../../imports/Button/svg-itt5jgyi6c';
 
 interface SideNavigationProps {
-  pageType: 'tasks' | 'checklists' | 'admin';
+  pageType: 'tasks' | 'checklists' | 'admin' | 'settings';
   selectedItem?: string;
   onItemSelect?: (item: string) => void;
   isOpen: boolean;
@@ -18,7 +18,8 @@ const CHECKLISTS_ITEMS = [
   'Ryan White Part C/D',
   'FTCA Site Visit Protocol',
 ] as const;
-const ADMIN_ITEMS = ['Project Builder', 'Compliance Review'] as const;
+const ADMIN_ITEMS = ['Project Builder', 'Compliance Review', 'Health Center Information'] as const;
+const SETTINGS_ITEMS = ['Health Center Fields'] as const;
 
 const NavItem = memo(({ item, isSelected, onClick, isExpanded }: { item: string; isSelected: boolean; onClick: () => void; isExpanded: boolean }) => {
   const isMyTasks = item === 'My Tasks';
@@ -91,7 +92,17 @@ const UtilityButton = memo(({ icon, label, isExpanded }: { icon: string; label: 
 UtilityButton.displayName = 'UtilityButton';
 
 export const SideNavigation = memo(function SideNavigation({ pageType, selectedItem, onItemSelect, isOpen, onToggle }: SideNavigationProps) {
-  const navItems = useMemo(() => pageType === 'tasks' ? TASKS_ITEMS : pageType === 'admin' ? ADMIN_ITEMS : CHECKLISTS_ITEMS, [pageType]);
+  const navItems = useMemo(
+    () =>
+      pageType === 'tasks'
+        ? TASKS_ITEMS
+        : pageType === 'admin'
+        ? ADMIN_ITEMS
+        : pageType === 'settings'
+        ? SETTINGS_ITEMS
+        : CHECKLISTS_ITEMS,
+    [pageType]
+  );
 
   return (
     <div

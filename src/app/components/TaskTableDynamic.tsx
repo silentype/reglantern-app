@@ -13,6 +13,7 @@ import { Avatar } from "./design-system/Avatar";
 import { Tab, TabStrip } from "./design-system/Tab";
 import { Button } from "./design-system/Button";
 import { RelativeDuePicker } from "./RelativeDuePicker";
+import { shortDueDateRule } from "../utils/helpers";
 import { AVAILABLE_USERS, HEALTH_CENTERS, QUICK_DATE_OPTIONS } from "../constants";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -51,12 +52,30 @@ export type DueDateAnchor =
    * on or after today. Useful for annual deadlines (e.g. "Sept 30").
    * `month` is 1-12, `day` is 1-31.
    */
-  | { kind: 'fixedAnniversary'; month: number; day: number };
+  | { kind: 'fixedAnniversary'; month: number; day: number }
+  /**
+   * The project's instantiation (kickoff) date for the task's own
+   * assigned health center. The resolver looks up `assignedAt` in
+   * `ctx.assignedHealthCenters` using `ctx.taskHealthCenter`. Legacy
+   * rules may pin a specific center via the optional `healthCenter`
+   * field (kept for back-compat); new rules omit it so a single
+   * "Instantiation" template applies across centers.
+   */
+  | { kind: 'projectKickoff'; healthCenter?: string }
+  /**
+   * A date field on the task's currently-assigned health center, e.g.
+   * "Accreditation expires". The `fieldId` references a row in the
+   * global Health Center Fields catalog (Settings). The center itself
+   * is implicit: the task's own `healthCenter` selects the record;
+   * tasks with no `healthCenter` or pointing at a record with no value
+   * for the field flip to "Reference broken."
+   */
+  | { kind: 'healthCenterField'; fieldId: string };
 
 export interface DueDateRule {
   anchor: DueDateAnchor;
   amount: number; // positive integer
-  unit: 'days' | 'weeks' | 'months';
+  unit: 'days' | 'weeks' | 'months' | 'years';
   direction: 'before' | 'after';
 }
 
@@ -71,6 +90,12 @@ export interface Task {
   dueDate?: string;
   /** Optional rule that derives `dueDate` from a project anchor. */
   dueDateRule?: DueDateRule;
+  /**
+   * Transient flag stamped by `resolveTaskDueDates` when this task has a
+   * rule whose reference no longer exists (e.g. the source task was
+   * deleted). Drives the red "Reference broken" badge — never persisted.
+   */
+  dueDateBroken?: boolean;
   assignedTo?: { initials: string; name: string };
   healthCenter?: string;
   attention?: { type: 'needs' | 'missing'; count: number };
@@ -123,6 +148,31 @@ interface TaskTableDynamicProps {
   projectName?: string;
   /** Other projects available as Reference options for cross-project anchors. */
   availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
+  /**
+   * Current project's health-center assignments. Passed to the
+   * RelativeDuePicker so the "Kickoff" Type can offer those centers as
+   * anchor references.
+   */
+  assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+  /**
+   * Global catalog of health-center date fields. Passed to the
+   * RelativeDuePicker so the "Health Center Info" Type can offer those
+   * fields as anchor references.
+   */
+  healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  /**
+   * Per-center field values. Passed to the RelativeDuePicker so the
+   * "Health Center Info" preview can resolve against the task's health
+   * center.
+   */
+  healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+  /**
+   * When true, the completion checkbox is hidden and the row's "click
+   * to toggle" surface is removed. Used on the Project Builder detail
+   * page where the table edits the project's task template -- tasks
+   * are completed elsewhere (on the Tasks page).
+   */
+  disableCompletion?: boolean;
 }
 
 // ==================== UTILITIES ====================
@@ -253,7 +303,7 @@ const QuickDateButton = memo(({ label, onClick }: { label: string; onClick: () =
 ));
 QuickDateButton.displayName = 'QuickDateButton';
 
-const DueDateBadge = memo(({ dueDate, onOpenChange }: { dueDate?: string; onOpenChange: () => void }) => {
+const DueDateBadge = memo(({ dueDate, ruleBroken, ruleSummary, onOpenChange }: { dueDate?: string; ruleBroken?: boolean; ruleSummary?: string; onOpenChange: () => void }) => {
   // Treat unparseable dates (wrong format, missing, etc.) as "no due date" so
   // the badge falls through to the "Set Due Date" placeholder instead of
   // rendering "NaN/NaN/aN".
@@ -266,7 +316,32 @@ const DueDateBadge = memo(({ dueDate, onOpenChange }: { dueDate?: string; onOpen
       className="flex items-center justify-between w-full h-full relative z-10"
       onClick={(e) => { e.stopPropagation(); onOpenChange(); }}
     >
-      {relativeInfo && styles ? (
+      {ruleBroken ? (
+        <div
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[#fecaca] bg-[#fef2f2]"
+          title="The task this due date depended on was removed. Click to fix the rule."
+        >
+          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#b91c1c] text-[13px] leading-tight">
+            Reference broken
+          </span>
+          <ChevronDown className="size-[14px] text-[#b91c1c]" />
+        </div>
+      ) : ruleSummary ? (
+        // Task has a saved relative-date rule -- show the compact rule
+        // shortcode instead of the resolved date. The actual computed
+        // date is still in the tooltip for quick reference.
+        <>
+          <div
+            className={`inline-flex items-center px-2 py-0.5 rounded-md border ${styles?.bg ?? 'bg-[#f4f4f5]'} ${styles?.border ?? 'border-[#e4e4e7]'}`}
+            title={dueDate ? `Resolves to ${dueDate}` : 'Rule does not resolve yet'}
+          >
+            <span className={`font-['Geist:Medium',sans-serif] font-medium leading-tight ${relativeInfo?.color ?? 'text-[#18181b]'} text-[13px] whitespace-nowrap`}>
+              {ruleSummary}
+            </span>
+          </div>
+          <ChevronDown className="size-[16px] text-[#71717a] ml-1" />
+        </>
+      ) : relativeInfo && styles ? (
         <>
           <div className={`inline-flex items-center px-2 py-0.5 rounded-md border ${styles.bg} ${styles.border}`} title={dueDate}>
             <span className={`font-['Geist:Medium',sans-serif] font-medium leading-tight ${relativeInfo.color} text-[13px]`}>
@@ -278,7 +353,7 @@ const DueDateBadge = memo(({ dueDate, onOpenChange }: { dueDate?: string; onOpen
       ) : (
         <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[#e4e4e7] bg-white">
           <span className="font-['Geist:Regular',sans-serif] font-normal text-[#71717a] text-[13px] leading-tight">
-            Set Due Date
+            Select due date
           </span>
           <ChevronDown className="size-[14px] text-[#71717a]" />
         </div>
@@ -416,6 +491,10 @@ const TaskRow = memo(function TaskRow({
   projectName,
   availableProjects,
   siblingTasks,
+  assignedHealthCenters,
+  healthCenterFieldDefs,
+  healthCenters,
+  disableCompletion,
 }: {
   task: Task;
   onClick: () => void;
@@ -430,6 +509,10 @@ const TaskRow = memo(function TaskRow({
   projectName?: string;
   availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
   siblingTasks?: Task[];
+  assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+  healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+  disableCompletion?: boolean;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   // Mirror the inline date popover's open state in ?datePicker=task-<id> so
@@ -444,6 +527,12 @@ const TaskRow = memo(function TaskRow({
   }, [searchParams, setSearchParams, datePickerKey]);
   const [assignedToOpen, setAssignedToOpen] = useState(false);
   const [inputValue, setInputValue] = useState(task.dueDate || '');
+  // Keep the inline / Custom Date input in sync if the task's dueDate
+  // changes from outside this cell (calendar pick, rule resolution,
+  // sibling rename, etc.).
+  useEffect(() => {
+    setInputValue(task.dueDate || '');
+  }, [task.dueDate]);
   // Date picker mode -- in project-builder context (enableRelativeDates),
   // always default to 'relative' per user preference. Outside that context,
   // 'specific' is forced (relative mode isn't available anyway).
@@ -494,6 +583,30 @@ const TaskRow = memo(function TaskRow({
     }
   }, [task.id, onUpdateTask]);
 
+  // Inline-cell commit: validates MM/DD/YYYY, writes to the task, and
+  // clears any relative rule so the typed value isn't overwritten on
+  // the next resolve pass. Triggered by Enter or blur on the inline
+  // input.
+  const commitInlineDueDate = useCallback(() => {
+    const trimmed = inputValue.trim();
+    if (trimmed === '') {
+      if (task.dueDate) onUpdateTask(task.id, { dueDate: undefined, dueDateRule: undefined });
+      return;
+    }
+    if (!/^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(trimmed)) {
+      setInputValue(task.dueDate || '');
+      return;
+    }
+    const parsed = parse(trimmed, 'MM/dd/yyyy', new Date());
+    if (Number.isNaN(parsed.getTime())) {
+      setInputValue(task.dueDate || '');
+      return;
+    }
+    if (trimmed !== task.dueDate) {
+      onUpdateTask(task.id, { dueDate: trimmed, dueDateRule: undefined });
+    }
+  }, [inputValue, task.id, task.dueDate, onUpdateTask]);
+
   const handleSaveRelativeRule = useCallback(
     (rule: DueDateRule) => {
       onUpdateTask(task.id, { dueDateRule: rule });
@@ -515,13 +628,15 @@ const TaskRow = memo(function TaskRow({
   const isSelected = selectedTaskId === task.id;
   const outlineClass = `absolute border border-solid inset-[-1px] pointer-events-none rounded-[9px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-colors z-10 ${isSelected ? 'border-[#47515B]' : 'border-[#cdd7e1]'}`;
 
-  // Calculate minimum width for row to prevent background cutoff
+  // Calculate minimum width for row to prevent background cutoff. The
+  // checkbox column is dropped entirely (not just made invisible) when
+  // completion is disabled, so the title shifts hard left.
   const minRowWidth = useMemo(() => {
-    const checkboxWidth = 44;
+    const checkboxWidth = disableCompletion ? 0 : 44;
     const ellipsisWidth = 60;
     const columnsWidth = columns.reduce((sum, col) => sum + col.width, 0);
     return checkboxWidth + columnsWidth + ellipsisWidth;
-  }, [columns]);
+  }, [columns, disableCompletion]);
 
   // Create a map of column renderers
   const columnMap = useMemo(() => ({
@@ -539,13 +654,59 @@ const TaskRow = memo(function TaskRow({
         <div aria-hidden="true" className="absolute border-[#cdd7e1] border-r border-solid inset-0 pointer-events-none" />
         <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover/date:bg-[#f5f5f5] transition-colors" />
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <div className="w-full h-full">
-              <DueDateBadge dueDate={task.dueDate} onOpenChange={() => setCalendarOpen(true)} />
-            </div>
-          </PopoverTrigger>
+          {/* When a rule is in effect (shortcode) or broken, the whole cell
+              is the popover trigger and shows the existing badge. With no
+              rule, the cell is an editable input + chevron in the Assign-
+              User style: click the input to type a date, click anywhere
+              else in the cell to open the calendar/picker. */}
+          {task.dueDateRule || task.dueDateBroken ? (
+            <PopoverTrigger asChild>
+              <div className="w-full h-full">
+                <DueDateBadge
+                  dueDate={task.dueDate}
+                  ruleBroken={task.dueDateBroken}
+                  ruleSummary={
+                    task.dueDateRule
+                      ? shortDueDateRule(task.dueDateRule, {
+                          tasks: siblingTasks ?? [],
+                          healthCenterFieldDefs,
+                        })
+                      : undefined
+                  }
+                  onOpenChange={() => setCalendarOpen(true)}
+                />
+              </div>
+            </PopoverTrigger>
+          ) : (
+            <PopoverTrigger asChild>
+              <div className="flex items-center justify-between w-full h-full relative z-10 cursor-pointer">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      commitInlineDueDate();
+                      (e.currentTarget as HTMLInputElement).blur();
+                    } else if (e.key === 'Escape') {
+                      setInputValue(task.dueDate || '');
+                      (e.currentTarget as HTMLInputElement).blur();
+                    }
+                  }}
+                  onBlur={commitInlineDueDate}
+                  placeholder="Select due date"
+                  maxLength={10}
+                  className="flex-1 min-w-0 bg-transparent border-0 outline-none font-['Geist:Regular',sans-serif] font-normal text-[#18181b] placeholder:text-[#999] text-[14px]"
+                />
+                <ChevronDown className="size-[16px] text-[#18181B] shrink-0 ml-1" />
+              </div>
+            </PopoverTrigger>
+          )}
           <PopoverContent
-            className="w-auto p-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
+            className="w-[460px] p-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
             align="start"
             collisionPadding={16}
           >
@@ -609,6 +770,10 @@ const TaskRow = memo(function TaskRow({
                 excludeTaskId={task.id}
                 currentProjectName={projectName}
                 availableProjects={availableProjects}
+                assignedHealthCenters={assignedHealthCenters}
+                healthCenterFieldDefs={healthCenterFieldDefs}
+                healthCenters={healthCenters}
+                taskHealthCenter={task.healthCenter}
                 onSave={handleSaveRelativeRule}
               />
             )}
@@ -723,6 +888,7 @@ const TaskRow = memo(function TaskRow({
     // Relative-due-date picker state and derived values must invalidate the
     // memo so flipping tabs / editing the rule re-renders the popover.
     enableRelativeDates, projectStartDate, projectName, siblingTasks, availableProjects,
+    assignedHealthCenters, healthCenterFieldDefs, healthCenters,
     dateMode, handleSaveRelativeRule,
   ]);
 
@@ -733,19 +899,27 @@ const TaskRow = memo(function TaskRow({
         <div aria-hidden="true" className={outlineClass} />
         <div className="flex flex-row items-center size-full">
           <div className="content-stretch flex items-center relative size-full">
-            {/* Checkbox */}
-            <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px] cursor-pointer group" onClick={handleCheckboxClick}>
-              <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] group-active:bg-[#f5f5f5] rounded-l-[8px] transition-colors" />
-              <button className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer z-10">
-                <CheckboxIcon completed={task.completed} />
-              </button>
-            </div>
+            {/* Checkbox -- omitted entirely in views that can't complete
+                tasks (Project Builder detail edits the project's task
+                template only; completion happens on the Tasks page).
+                Dropping the column rather than leaving a 44px spacer
+                shifts the title cell hard left. */}
+            {!disableCompletion && (
+              <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px] cursor-pointer group" onClick={handleCheckboxClick}>
+                <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] group-active:bg-[#f5f5f5] rounded-l-[8px] transition-colors" />
+                <button className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer z-10">
+                  <CheckboxIcon completed={task.completed} />
+                </button>
+              </div>
+            )}
 
             {/* Dynamic Columns */}
             {columns.map((col) => columnMap[col.id](col))}
 
-            {/* Ellipsis Menu - Always Last */}
-            <div className="content-stretch flex h-full items-center justify-center relative shrink-0 w-[60px] group/ellipsis">
+            {/* Ellipsis Menu - Always Last, pushed to the right edge so
+                tables with few columns still anchor the kebab at the
+                right side of the row. */}
+            <div className="ml-auto content-stretch flex h-full items-center justify-center relative shrink-0 w-[60px] group/ellipsis">
               <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover/ellipsis:bg-[#f5f5f5] transition-colors rounded-r-[8px]" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -778,9 +952,11 @@ const TaskRow = memo(function TaskRow({
       <div className="lg:hidden bg-white relative rounded-[8px] shrink-0 w-full transition-colors p-4">
         <div aria-hidden="true" className={outlineClass} />
         <div className="flex items-start gap-3 mb-4">
-          <button onClick={handleCheckboxClick} className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer mt-1">
-            <CheckboxIcon completed={task.completed} />
-          </button>
+          {!disableCompletion && (
+            <button onClick={handleCheckboxClick} className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer mt-1">
+              <CheckboxIcon completed={task.completed} />
+            </button>
+          )}
           <div className="flex-1 min-w-0">
             <button onClick={onClick} className="font-['Geist:Regular',sans-serif] font-normal text-[#18181b] text-[14px] leading-[20px] text-left w-full overflow-hidden text-ellipsis" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
               {task.title}
@@ -871,7 +1047,7 @@ const TaskRow = memo(function TaskRow({
 });
 
 // ==================== MAIN COMPONENT ====================
-function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects }: TaskTableDynamicProps) {
+function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects, assignedHealthCenters, healthCenterFieldDefs, healthCenters, disableCompletion }: TaskTableDynamicProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -918,7 +1094,7 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
 
   const [columns, setColumns] = useState<ColumnConfig[]>([
     { id: 'title', label: 'Task Name', icon: null, width: 350, minWidth: 200 },
-    { id: 'dueDate', label: 'Due Date', icon: CalendarIcon, width: 150, minWidth: 150 },
+    { id: 'dueDate', label: 'Due Date', icon: CalendarIcon, width: 260, minWidth: 200 },
     { id: 'assignedTo', label: 'Assigned To', icon: User, width: 180, minWidth: 180 },
     { id: 'healthCenter', label: 'Health Center', icon: Building2, width: 220, minWidth: 220 },
     { id: 'subtasks', label: 'Subtasks', icon: null, width: 150, minWidth: 150 },
@@ -944,22 +1120,29 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
     return columns.filter(column => visibleColumns.includes(column.id));
   }, [columns, visibleColumns]);
 
-  // Calculate minimum width for header row to prevent background cutoff
+  // Calculate minimum width for header row to prevent background cutoff.
+  // When the completion column is dropped (disableCompletion), the 44px
+  // checkbox slot is removed and the headers shift left.
   const minHeaderWidth = useMemo(() => {
-    const checkboxWidth = 44;
+    const checkboxWidth = disableCompletion ? 0 : 44;
     const ellipsisWidth = 60;
     const columnsWidth = filteredColumns.reduce((sum, col) => sum + col.width, 0);
     const rightPadding = 24; // Add extra padding on the right
     return checkboxWidth + columnsWidth + ellipsisWidth + rightPadding;
-  }, [filteredColumns]);
+  }, [filteredColumns, disableCompletion]);
 
   return (
     <div className="content-stretch flex flex-col gap-[12px] items-start relative w-full" data-name="Task Table">
-      {/* Column Headers */}
-      <div className="hidden lg:block h-[40px] sticky top-0 z-20 shrink-0 w-[calc(100%+48px)] bg-white -mx-6 px-6">
-        <div className="flex flex-row items-center size-full border-b border-[#e4e4e7]" style={{ minWidth: `${minHeaderWidth}px` }}>
+      {/* Column Headers. The bottom border lives on the outermost
+          element so it spans the same width as the bleed (-mx-6 px-6)
+          -- i.e. fully across the page section, even past the table's
+          inner padding. */}
+      <div className="hidden lg:block h-[40px] sticky top-0 z-20 shrink-0 w-[calc(100%+48px)] bg-white -mx-6 px-6 border-b border-[#e4e4e7]">
+        <div className="flex flex-row items-center size-full" style={{ minWidth: `${minHeaderWidth}px` }}>
           <div className="content-stretch flex items-center relative bg-white" style={{ width: '100%', height: '100%' }}>
-            <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px]" />
+            {!disableCompletion && (
+              <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px]" />
+            )}
             {filteredColumns.map((column, index) => (
               <DraggableColumnHeader
                 key={column.id}
@@ -992,7 +1175,11 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
           projectEndDate={projectEndDate}
           projectName={projectName}
           availableProjects={availableProjects}
+          assignedHealthCenters={assignedHealthCenters}
+          healthCenterFieldDefs={healthCenterFieldDefs}
+          healthCenters={healthCenters}
           siblingTasks={tasks}
+          disableCompletion={disableCompletion}
         />
       ))}
     </div>

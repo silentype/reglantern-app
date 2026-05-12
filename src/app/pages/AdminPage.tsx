@@ -22,9 +22,9 @@ import {
   ChevronsUpDown,
   Check,
   Search,
-  User,
   Building2,
-  AlertCircle,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,7 +33,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '../components/ui/command';
@@ -50,17 +49,13 @@ import { SaveIndicator } from '../components/SaveIndicator';
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 
 import { Button } from '../components/design-system/Button';
-import { Avatar } from '../components/design-system/Avatar';
 
-import {
-  AVAILABLE_USERS,
-  HEALTH_CENTERS,
-  DATE_FILTER_PRESETS,
-} from '../constants';
-import { parseDueDateFilter, displayDueDateFilter, resolveTaskDueDates, findTasksAnchoredTo } from '../utils/helpers';
+import { HEALTH_CENTERS } from '../constants';
+import { resolveTaskDueDates, findTasksAnchoredTo } from '../utils/helpers';
 import searchFilterSvgPaths from '../../imports/svg-oo9u3g75ma';
 
 import { ComplianceReviewPage } from './ComplianceReviewPage';
+import type { HealthCenter, HealthCenterDateFieldDef } from '../data/healthCenters';
 
 export interface Project {
   id: number;
@@ -81,11 +76,14 @@ export interface Project {
   endDate?: string;
   tasks: Task[];
   /**
-   * Health centers this project is assigned to. When non-empty, the project's
-   * tasks bubble up into the main "My Tasks" list (see App.tsx's
-   * allTasksIncludingProjects merge).
+   * Health centers this project is assigned to, plus the date each
+   * assignment was made (the project's "kickoff date" for that center).
+   * The kickoff date anchors any task whose dueDateRule uses
+   * `{ kind: 'projectKickoff', healthCenter }`. When the list is
+   * non-empty the project's tasks bubble up into the main "My Tasks"
+   * list (see App.tsx's allTasksIncludingProjects merge).
    */
-  assignedHealthCenters?: string[];
+  assignedHealthCenters?: Array<{ name: string; assignedAt: string /* MM/dd/yyyy */ }>;
 }
 
 export function AdminPage({
@@ -99,7 +97,9 @@ export function AdminPage({
   selectedProjectId,
   onSelectProject,
   onAddTaskToProject,
-  onOpenProjectTask
+  onOpenProjectTask,
+  healthCenters: healthCenterRecords,
+  healthCenterFieldDefs,
 }: {
   onToggleSideNav: () => void;
   sideNavOpen: boolean;
@@ -112,11 +112,40 @@ export function AdminPage({
   onSelectProject: (projectId: number | null) => void;
   onAddTaskToProject: (projectId: number) => void;
   onOpenProjectTask: (projectId: number, taskId: number, taskTitle: string) => void;
+  /**
+   * Global catalog of health-center records + their date-field values
+   * (authored in Settings + Admin > Health Center Information). Threaded
+   * down to TaskTableDynamic so the RelativeDuePicker can offer the
+   * "Health Center Info" Type and the resolver can produce dates.
+   */
+  healthCenters?: HealthCenter[];
+  healthCenterFieldDefs?: HealthCenterDateFieldDef[];
 }) {
   // All hooks must be called unconditionally before any early return.
   // (The selectedNavItem === 'Compliance Review' branch is handled below;
   // splitting AdminPage into ProjectBuilder + ComplianceReview is Phase 5.)
+  // In-progress form contents stay local; only the form's visibility (path
+  // /admin/project-builder/new) and the open/closed state of popovers/selects
+  // are URL-driven.
   const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
+  // Pending assign-to-health-center selection. Only one project can have
+  // a pending selection at a time; opening another card's popover wipes
+  // any previous in-progress state. The selection persists across
+  // popover close so the user can click off, then come back and click
+  // Send (which now sits inside the card whenever pending is non-empty).
+  const [pendingAssign, setPendingAssign] = useState<
+    { projectId: number; centers: string[]; search: string } | null
+  >(null);
+  // Confirmation-modal state for "Delete project". Stored as a boolean
+  // (not a project id) because only the currently-selected project can
+  // be deleted from the detail view.
+  const [confirmDeleteProjectOpen, setConfirmDeleteProjectOpen] = useState(false);
+  // Edit-project modal: holds a working copy of name / description /
+  // category while open. `null` = modal closed. Discarded on Cancel,
+  // written back to the project on Save.
+  const [editProjectDraft, setEditProjectDraft] = useState<
+    { name: string; description: string; category: string } | null
+  >(null);
   // selectedProject is derived from URL (selectedProjectId prop) so it survives
   // refresh and is shareable. Mutations to the projects array auto-flow through.
   const selectedProject = useMemo(
@@ -124,166 +153,25 @@ export function AdminPage({
     [projects, selectedProjectId]
   );
   const [tableSaveStatus, setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [projectCardAssignOpen, setProjectCardAssignOpen] = useState<number | null>(null);
-  const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
-  const [projectCardCenterSearch, setProjectCardCenterSearch] = useState('');
 
-  // Filter state for project tasks lives in URL search params so each
-  // filtered view is shareable / refresh-safe:
-  //   ?q=safety                            free-text search
-  //   ?status=incomplete,complete          omit -> ['all']
-  //   ?due=this-week | 05/30/2026 | none   omit -> '' (no date filter)
-  //   ?assignedTo=Sarah Kim,Michael ...    omit -> ['all']
-  //   ?healthCenter=Main Campus,...        omit -> ['All Health Centers']
-  //   ?attention=missing,needs             omit -> ['all']
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const statusFilter = useMemo<string[]>(
-    () => searchParams.get('status')?.split(',').filter(Boolean) || ['all'],
-    [searchParams]
-  );
-  const dueDateFilter = searchParams.get('due') ?? '';
-  const assignedToFilter = useMemo<string[]>(
-    () => searchParams.get('assignedTo')?.split(',').filter(Boolean) || ['all'],
-    [searchParams]
-  );
-  const healthCenterFilter = useMemo<string[]>(
-    () => searchParams.get('healthCenter')?.split(',').filter(Boolean) || ['All Health Centers'],
-    [searchParams]
-  );
-  const needsAttentionFilter = useMemo<string[]>(
-    () => searchParams.get('attention')?.split(',').filter(Boolean) || ['all'],
-    [searchParams]
-  );
-  const searchQuery = searchParams.get('q') ?? '';
+  // popover: tracks which popover/select is open across the page. Values:
+  // 'projectStart' | 'newCat' | 'assign:<projectId>' | 'kickoff:<pid>:<center>'.
+  const popover = searchParams.get('popover');
 
-  const setSearchQuery = useCallback((next: string) => {
+  const setPopover = useCallback((next: string | null) => {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
-      if (next) params.set('q', next);
-      else params.delete('q');
+      if (next) params.set('popover', next);
+      else params.delete('popover');
       return params;
     }, { replace: true });
   }, [setSearchParams]);
-
-  const setDueDateFilter = useCallback((next: string) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      if (next) params.set('due', next);
-      else params.delete('due');
-      return params;
-    }, { replace: true });
-  }, [setSearchParams]);
-
-  // Project tasks intentionally show only Task Name + Due Date.
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(['title', 'dueDate']);
-  const [customDateInput, setCustomDateInput] = useState('');
-  const [assignedToOpen, setAssignedToOpen] = useState(false);
-  const [healthCenterOpen, setHealthCenterOpen] = useState(false);
-  const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
-  const [columnVisibilityOpen, setColumnVisibilityOpen] = useState(false);
 
   const categories = ['Compliance', 'Documentation', 'Training', 'Quality Assurance', 'Operational'];
 
-  // Project tasks deliberately offer only Task Name + Due Date as columns
-  // (assigned to / health center / needs attention live on the project itself,
-  // not per task here). The Tasks page keeps its full set independently.
-  const availableColumns = [
-    { id: 'title', label: 'Task Name' },
-    { id: 'dueDate', label: 'Due Date' },
-  ];
-
-  const toggleColumnVisibility = useCallback((columnId: string) => {
-    setVisibleColumns(prev => {
-      if (prev.includes(columnId)) {
-        // Don't allow removing the title column
-        if (columnId === 'title') return prev;
-        return prev.filter(id => id !== columnId);
-      }
-      return [...prev, columnId];
-    });
-  }, []);
-  const availableUsers = AVAILABLE_USERS;
   const healthCenters = HEALTH_CENTERS;
-
-  // Toggle helpers: compute the next filter array using the same rules
-  // as before, then write it to the URL (or remove the param when default).
-  const writeListParam = useCallback(
-    (key: string, defaultValue: string, next: string[]) => {
-      setSearchParams((prev) => {
-        const params = new URLSearchParams(prev);
-        const isDefault =
-          next.length === 0 || (next.length === 1 && next[0] === defaultValue);
-        if (isDefault) params.delete(key);
-        else params.set(key, next.join(','));
-        return params;
-      }, { replace: true });
-    },
-    [setSearchParams]
-  );
-
-  const toggleStatusFilter = useCallback((status: string) => {
-    let next: string[];
-    if (status === 'all') next = ['all'];
-    else if (statusFilter.includes('all')) next = [status];
-    else if (statusFilter.includes(status)) {
-      const filtered = statusFilter.filter(f => f !== status);
-      next = filtered.length === 0 ? ['all'] : filtered;
-    } else {
-      next = [...statusFilter, status];
-    }
-    writeListParam('status', 'all', next);
-  }, [statusFilter, writeListParam]);
-
-  const toggleAssignedToFilter = useCallback((userName: string) => {
-    let next: string[];
-    if (userName === 'all') next = ['all'];
-    else if (assignedToFilter.includes('all')) next = [userName];
-    else if (assignedToFilter.includes(userName)) {
-      const filtered = assignedToFilter.filter(name => name !== userName);
-      next = filtered.length === 0 ? ['all'] : filtered;
-    } else {
-      next = [...assignedToFilter, userName];
-    }
-    writeListParam('assignedTo', 'all', next);
-  }, [assignedToFilter, writeListParam]);
-
-  const toggleHealthCenterFilter = useCallback((center: string) => {
-    let next: string[];
-    if (center === 'All Health Centers') next = ['All Health Centers'];
-    else if (healthCenterFilter.includes('All Health Centers')) next = [center];
-    else if (healthCenterFilter.includes(center)) {
-      const filtered = healthCenterFilter.filter(c => c !== center);
-      next = filtered.length === 0 ? ['All Health Centers'] : filtered;
-    } else {
-      next = [...healthCenterFilter, center];
-    }
-    writeListParam('healthCenter', 'All Health Centers', next);
-  }, [healthCenterFilter, writeListParam]);
-
-  const toggleNeedsAttentionFilter = useCallback((filter: string) => {
-    let next: string[];
-    if (filter === 'all') next = ['all'];
-    else if (needsAttentionFilter.includes('all')) next = [filter];
-    else if (needsAttentionFilter.includes(filter)) {
-      const filtered = needsAttentionFilter.filter(f => f !== filter);
-      next = filtered.length === 0 ? ['all'] : filtered;
-    } else {
-      next = [...needsAttentionFilter, filter];
-    }
-    writeListParam('attention', 'all', next);
-  }, [needsAttentionFilter, writeListParam]);
-
-  // Count active filters
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (!statusFilter.includes('all')) count++;
-    if (dueDateFilter) count++;
-    if (!assignedToFilter.includes('all')) count++;
-    if (!healthCenterFilter.includes('All Health Centers')) count++;
-    if (!needsAttentionFilter.includes('all')) count++;
-    return count;
-  }, [statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter]);
 
   const handleProjectTaskClick = useCallback((taskId: number, taskTitle: string) => {
     if (selectedProject) {
@@ -381,6 +269,51 @@ export function AdminPage({
     }
   }, [selectedProject]);
 
+  // Edit-project modal: open seeds the draft from the current project,
+  // save commits the draft, cancel just clears.
+  const handleOpenEditProject = useCallback(() => {
+    if (!selectedProject) return;
+    setEditProjectDraft({
+      name: selectedProject.name,
+      description: selectedProject.description,
+      category: selectedProject.category,
+    });
+  }, [selectedProject]);
+
+  const handleSaveEditProject = useCallback(() => {
+    if (!selectedProject || !editProjectDraft) return;
+    if (!editProjectDraft.name.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === selectedProject.id
+          ? {
+              ...p,
+              name: editProjectDraft.name.trim(),
+              description: editProjectDraft.description,
+              category: editProjectDraft.category,
+            }
+          : p
+      )
+    );
+    setEditProjectDraft(null);
+    toast.success('Project updated');
+  }, [selectedProject, editProjectDraft, setProjects]);
+
+  const handleConfirmDeleteProject = useCallback(() => {
+    if (!selectedProject) return;
+    const removedName = selectedProject.name;
+    setProjects((prev) => prev.filter((p) => p.id !== selectedProject.id));
+    setConfirmDeleteProjectOpen(false);
+    onSelectProject(null);
+    toast.success(`Deleted "${removedName}"`);
+  }, [selectedProject, setProjects, onSelectProject]);
+
+  // Task delete with cascade-clear: if any sibling rules anchor to this
+  // task, route through a confirmation modal before wiping both the
+  // task and the dependent rules.
   const handleDeleteProjectTask = useCallback((taskId: number) => {
     if (!selectedProject) return;
     const target = selectedProject.tasks.find(t => t.id === taskId);
@@ -402,78 +335,23 @@ export function AdminPage({
         .map((p) => ({ id: p.id, name: p.name, startDate: p.startDate, endDate: p.endDate })),
     [projects, selectedProject]
   );
+  const healthCenterFieldIds = useMemo(
+    () => (healthCenterFieldDefs ?? []).map((d) => d.id),
+    [healthCenterFieldDefs]
+  );
   const resolvedProjectTasks = useMemo(
     () =>
       selectedProject
         ? resolveTaskDueDates(selectedProject.tasks, selectedProject.startDate, {
             projectEndDate: selectedProject.endDate,
             projects: otherProjects,
+            assignedHealthCenters: selectedProject.assignedHealthCenters,
+            healthCenters: healthCenterRecords,
+            healthCenterFieldIds,
           })
         : [],
-    [selectedProject, otherProjects]
+    [selectedProject, otherProjects, healthCenterRecords, healthCenterFieldIds]
   );
-
-  // Filter project tasks
-  const filteredProjectTasks = useMemo(() => {
-    if (!selectedProject) return [];
-
-    return resolvedProjectTasks.filter(task => {
-      // Status filter
-      if (!statusFilter.includes('all')) {
-        const matchesStatus = statusFilter.some(filter => {
-          if (filter === 'complete' && !task.completed) return false;
-          if (filter === 'incomplete' && task.completed) return false;
-          return true;
-        });
-        if (!matchesStatus) return false;
-      }
-
-      // Date filter
-      if (dueDateFilter) {
-        if (dueDateFilter === 'none') {
-          if (task.dueDate) return false;
-        } else if (task.dueDate) {
-          const targetDate = parseDueDateFilter(dueDateFilter);
-          if (targetDate) {
-            const taskDate = parse(task.dueDate, 'MM/dd/yyyy', new Date());
-            taskDate.setHours(0, 0, 0, 0);
-            if (taskDate > targetDate) return false;
-          }
-        } else {
-          return false;
-        }
-      }
-
-      // Assigned To filter
-      if (!assignedToFilter.includes('all')) {
-        if (!task.assignedTo || !assignedToFilter.includes(task.assignedTo.name)) return false;
-      }
-
-      // Health Center filter
-      if (!healthCenterFilter.includes('All Health Centers')) {
-        if (!task.healthCenter || !healthCenterFilter.includes(task.healthCenter)) return false;
-      }
-
-      // Needs Attention filter
-      if (!needsAttentionFilter.includes('all')) {
-        if (!task.attention) return false;
-        const matchesFilter = needsAttentionFilter.some(filter => {
-          if (filter === 'needs') return task.attention?.type === 'needs';
-          if (filter === 'missing') return task.attention?.type === 'missing';
-          return false;
-        });
-        if (!matchesFilter) return false;
-      }
-
-      // Search filter
-      if (searchQuery) {
-        const lowerCaseQuery = searchQuery.toLowerCase();
-        if (!task.title.toLowerCase().includes(lowerCaseQuery)) return false;
-      }
-
-      return true;
-    });
-  }, [selectedProject, resolvedProjectTasks, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery]);
 
   const handleCreateProject = () => {
     if (!newProject.name || !newProject.category) {
@@ -505,10 +383,12 @@ export function AdminPage({
   if (selectedProject) {
     return (
       <div className="h-full flex flex-col">
-        {/* Sticky Top Section - Header */}
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
+        {/* Sticky Top Section - Header. No bottom border here -- the
+            table section runs straight into the header on the same
+            page background. */}
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px]">
           <div className="mb-4 flex items-end justify-between gap-6">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <button
                 onClick={() => onSelectProject(null)}
                 className="bg-white h-[40px] px-[16px] py-[8px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#f9fafb] transition-colors mb-3 flex items-center gap-2"
@@ -518,52 +398,44 @@ export function AdminPage({
                 </svg>
                 Back to Projects
               </button>
-              <div className="mb-2">
-                <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px]">{selectedProject.name}</h1>
-              </div>
-              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-                {selectedProject.description}
-              </p>
+              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
+                {selectedProject.name}
+              </h1>
+              {selectedProject.description && (
+                <p className="text-sm font-medium text-[#71717a] leading-[20px]">
+                  {selectedProject.description}
+                </p>
+              )}
               <div className="mt-3 flex items-center gap-2">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] bg-[#f4f4f5] text-[#18181b] text-[12px] font-medium">
                   {selectedProject.category}
                 </span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] border border-[#e4e4e7] bg-white text-[12px] font-medium cursor-pointer hover:border-[#cdd7e1] transition-colors">
-                      <CalendarIcon className="w-3.5 h-3.5 text-[#71717a]" />
-                      <span className={selectedProject.startDate ? 'text-[#18181b]' : 'text-[#71717a]'}>
-                        {selectedProject.startDate
-                          ? `Starts ${format(parse(selectedProject.startDate, 'MM/dd/yyyy', new Date()), 'MMM d, yyyy')}`
-                          : 'Set start date'}
-                      </span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={
-                        selectedProject.startDate
-                          ? parse(selectedProject.startDate, 'MM/dd/yyyy', new Date())
-                          : undefined
-                      }
-                      onSelect={(date) => {
-                        if (!date) return;
-                        const formatted = format(date, 'MM/dd/yyyy');
-                        setProjects((prev) =>
-                          prev.map((p) =>
-                            p.id === selectedProject.id ? { ...p, startDate: formatted } : p
-                          )
-                        );
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
               </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <SaveIndicator status={tableSaveStatus} />
+            {/* Header actions: Edit + Trash pair sits in its own row
+                above Add Task, so the destructive actions are visually
+                grouped and separated from the primary CTA. */}
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <SaveIndicator status={tableSaveStatus} />
+                <button
+                  onClick={handleOpenEditProject}
+                  className="h-[36px] px-[12px] py-[6px] flex items-center justify-center gap-2 rounded-[6px] border border-[#e4e4e7] bg-white text-[#18181b] text-[13px] font-medium hover:bg-[#f9fafb] transition-colors shadow-sm hover:shadow active:shadow-none"
+                  aria-label="Edit project"
+                  title="Edit project"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteProjectOpen(true)}
+                  className="h-[36px] w-[36px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] bg-white text-[#71717a] hover:bg-[#fef2f2] hover:text-[#b91c1c] hover:border-[#fecaca] transition-colors shadow-sm hover:shadow active:shadow-none"
+                  aria-label="Delete project"
+                  title="Delete project"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
               <Button onClick={() => onAddTaskToProject(selectedProject.id)}>
                 Add Task
                 <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
@@ -572,405 +444,152 @@ export function AdminPage({
               </Button>
             </div>
           </div>
-
         </div>
 
-        {/* Tasks Table Section */}
-        <div className="h-full flex flex-col bg-white">
-          {/* Filter Bar - Only show if there are tasks */}
-          {selectedProject.tasks.length > 0 && (
-            <div className="px-[24px] py-[16px]">
-              <div className="bg-white border border-[#e4e4e7] rounded-lg px-[16px] py-[12px]">
-                <div className="flex items-center gap-2 flex-wrap">
-                {/* Search Input */}
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717a]" />
+        {/* Edit-project modal -- mirrors the Delete confirmation style. */}
+        {editProjectDraft && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setEditProjectDraft(null)}
+          >
+            <div
+              className="bg-white rounded-[8px] shadow-xl max-w-[480px] w-full p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-[18px] font-semibold text-[#18181b] mb-4">
+                Edit project
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Project name <span className="text-[#dc2626]">*</span>
+                  </label>
                   <input
                     type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-[#f9fafb] border border-[#e4e4e7] rounded-md pl-8 pr-10 py-1.5 text-sm hover:bg-white transition-colors focus:outline-none focus:border-[#fc6] w-[320px]"
+                    value={editProjectDraft.name}
+                    onChange={(e) =>
+                      setEditProjectDraft((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                    }
+                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    placeholder="Project name"
+                    autoFocus
                   />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[#e5e5e5] rounded transition-colors"
-                      aria-label="Clear search"
-                    >
-                      <X className="w-4 h-4 text-[#71717a]" />
-                    </button>
-                  )}
                 </div>
-
-                {/* Divider */}
-                <div className="h-6 w-px bg-[#e4e4e7]"></div>
-
-                {/* Status Filter Pills */}
-                <button
-                  onClick={() => toggleStatusFilter('all')}
-                  className={`px-3 py-1.5 rounded-full font-medium transition-colors ${statusFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}
-                >
-                  All Tasks
-                </button>
-                <button
-                  onClick={() => toggleStatusFilter('incomplete')}
-                  className={`px-3 py-1.5 rounded-full font-medium transition-colors ${statusFilter.includes('incomplete') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}
-                >
-                  Incomplete
-                </button>
-                <button
-                  onClick={() => toggleStatusFilter('complete')}
-                  className={`px-3 py-1.5 rounded-full font-medium transition-colors ${statusFilter.includes('complete') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}
-                >
-                  Complete
-                </button>
-
-                {/* Divider */}
-                <div className="h-6 w-px bg-[#e4e4e7]"></div>
-
-                {/* Date Filter Chip */}
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${dueDateFilter ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
-                      <CalendarIcon className="h-3.5 w-3.5" />
-                      {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <div className="flex">
-                      {/* Left Side - Quick Select */}
-                      <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
-                        <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
-                        <div className="flex flex-col gap-1">
-                          {DATE_FILTER_PRESETS.map((preset) => (
-                            <button
-                              key={preset.value}
-                              className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
-                              onClick={() => {
-                                setDueDateFilter(preset.value);
-                              }}
-                            >
-                              {preset.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Right Side - Type Date & Calendar */}
-                      <div className="flex flex-col">
-                        {/* Manual Input */}
-                        <div className="p-3 border-b border-[#e4e4e7]">
-                          <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
-                          <input
-                            type="text"
-                            value={customDateInput}
-                            onChange={(e) => setCustomDateInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
-                                if (customDateInput && dateRegex.test(customDateInput)) {
-                                  const parsedDate = parse(customDateInput, 'MM/dd/yyyy', new Date());
-                                  if (isValid(parsedDate)) {
-                                    setDueDateFilter(customDateInput);
-                                    setCustomDateInput('');
-                                  }
-                                }
-                              }
-                            }}
-                            placeholder="mm/dd/yyyy"
-                            maxLength={10}
-                            className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
-                          />
-                        </div>
-
-                        {/* Calendar */}
-                        <Calendar
-                          mode="single"
-                          selected={dueDateFilter && /^\d{2}\/\d{2}\/\d{4}$/.test(dueDateFilter) ? parse(dueDateFilter, 'MM/dd/yyyy', new Date()) : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              const formattedDate = format(date, 'MM/dd/yyyy');
-                              setDueDateFilter(formattedDate);
-                              setCustomDateInput('');
-                            }
-                          }}
-                          initialFocus
-                        />
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Assigned To Chip */}
-                <Popover open={assignedToOpen} onOpenChange={setAssignedToOpen}>
-                  <PopoverTrigger asChild>
-                    <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!assignedToFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
-                      <User className="h-3.5 w-3.5" />
-                      Assigned {!assignedToFilter.includes('all') && `(${assignedToFilter.length})`}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search users..." />
-                      <CommandList>
-                        <CommandEmpty>No users found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value="all"
-                            onSelect={() => {
-                              toggleAssignedToFilter('all');
-                              setAssignedToOpen(false);
-                            }}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              assignedToFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {assignedToFilter.includes('all') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            All Users
-                          </CommandItem>
-                          {availableUsers.map((user) => (
-                            <CommandItem
-                              key={user.name}
-                              value={user.name}
-                              onSelect={() => {
-                                toggleAssignedToFilter(user.name);
-                              }}
-                            >
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                                assignedToFilter.includes(user.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                              }`}>
-                                {assignedToFilter.includes(user.name) && (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Avatar initials={user.initials} name={user.name} size="sm" />
-                                <span>{user.name}</span>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Health Center Chip */}
-                <Popover open={healthCenterOpen} onOpenChange={setHealthCenterOpen}>
-                  <PopoverTrigger asChild>
-                    <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
-                      <Building2 className="h-3.5 w-3.5" />
-                      Health Center {!healthCenterFilter.includes('All Health Centers') && `(${healthCenterFilter.length})`}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search health centers..." />
-                      <CommandList>
-                        <CommandEmpty>No health centers found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value="all"
-                            onSelect={() => {
-                              toggleHealthCenterFilter('All Health Centers');
-                              setHealthCenterOpen(false);
-                            }}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {healthCenterFilter.includes('All Health Centers') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            All Health Centers
-                          </CommandItem>
-                          {healthCenters.map((center) => (
-                            <CommandItem
-                              key={center}
-                              value={center}
-                              onSelect={() => {
-                                toggleHealthCenterFilter(center);
-                              }}
-                            >
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                                healthCenterFilter.includes(center) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                              }`}>
-                                {healthCenterFilter.includes(center) && (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </div>
-                              {center}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Needs Attention Chip */}
-                <Popover open={needsAttentionOpen} onOpenChange={setNeedsAttentionOpen}>
-                  <PopoverTrigger asChild>
-                    <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!needsAttentionFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      Attention
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="start">
-                    <Command>
-                      <CommandList>
-                        <CommandGroup>
-                          <CommandItem
-                            value="all"
-                            onSelect={() => {
-                              toggleNeedsAttentionFilter('all');
-                              setNeedsAttentionOpen(false);
-                            }}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              needsAttentionFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {needsAttentionFilter.includes('all') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            All
-                          </CommandItem>
-                          <CommandItem
-                            value="needs"
-                            onSelect={() => toggleNeedsAttentionFilter('needs')}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              needsAttentionFilter.includes('needs') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {needsAttentionFilter.includes('needs') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            Files need attention
-                          </CommandItem>
-                          <CommandItem
-                            value="missing"
-                            onSelect={() => toggleNeedsAttentionFilter('missing')}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              needsAttentionFilter.includes('missing') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {needsAttentionFilter.includes('missing') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            Missing Files
-                          </CommandItem>
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Column Visibility Button */}
-                <Popover open={columnVisibilityOpen} onOpenChange={setColumnVisibilityOpen}>
-                  <PopoverTrigger asChild>
-                    <button className="px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5] text-[12px] ml-auto">
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
-                        <path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      Columns
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="start">
-                    <Command>
-                      <CommandList>
-                        <CommandGroup>
-                          {availableColumns.map((column) => (
-                            <CommandItem
-                              key={column.id}
-                              value={column.id}
-                              onSelect={() => {
-                                if (column.id !== 'title') {
-                                  toggleColumnVisibility(column.id);
-                                }
-                              }}
-                              disabled={column.id === 'title'}
-                              className={column.id === 'title' ? 'opacity-50 cursor-not-allowed' : ''}
-                            >
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                                visibleColumns.includes(column.id) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                              }`}>
-                                {visibleColumns.includes(column.id) && (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </div>
-                              {column.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Clear All Filters */}
-                {activeFilterCount > 0 && (
-                  <button
-                    onClick={() => {
-                      setSearchParams((prev) => {
-                        const params = new URLSearchParams(prev);
-                        params.delete('status');
-                        params.delete('due');
-                        params.delete('assignedTo');
-                        params.delete('healthCenter');
-                        params.delete('attention');
-                        params.delete('q');
-                        return params;
-                      }, { replace: true });
-                    }}
-                    className="px-3 py-1.5 text-sm text-[#3b82f6] hover:text-[#2563eb] font-medium transition-colors ml-auto"
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    value={editProjectDraft.description}
+                    onChange={(e) =>
+                      setEditProjectDraft((prev) => (prev ? { ...prev, description: e.target.value } : prev))
+                    }
+                    className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    placeholder="Add a description"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Category <span className="text-[#dc2626]">*</span>
+                  </label>
+                  <Select
+                    value={editProjectDraft.category}
+                    onValueChange={(value) =>
+                      setEditProjectDraft((prev) => (prev ? { ...prev, category: value } : prev))
+                    }
                   >
-                    Clear All
-                  </button>
-                )}
+                    <SelectTrigger className="w-full h-[40px] focus:border-[#fc6]">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-5">
+                <Button variant="secondary" onClick={() => setEditProjectDraft(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEditProject}>Save changes</Button>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Delete-project confirmation modal */}
+        {confirmDeleteProjectOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setConfirmDeleteProjectOpen(false)}
+          >
+            <div
+              className="bg-white rounded-[8px] shadow-xl max-w-[420px] w-full p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-[18px] font-semibold text-[#18181b] mb-2">
+                Delete this project?
+              </h2>
+              <p className="text-[14px] text-[#52525b] mb-5">
+                <span className="font-medium text-[#18181b]">"{selectedProject.name}"</span>{' '}
+                and its {selectedProject.tasks.length} task
+                {selectedProject.tasks.length === 1 ? '' : 's'} will be permanently removed. This can't be undone.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={() => setConfirmDeleteProjectOpen(false)}>
+                  Cancel
+                </Button>
+                <button
+                  onClick={handleConfirmDeleteProject}
+                  className="h-[40px] px-[16px] py-[8px] rounded-[6px] bg-[#dc2626] text-white text-[14px] font-medium hover:bg-[#b91c1c] transition-colors inline-flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete project
+                </button>
+              </div>
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Tasks Table Section -- transparent so the app's gray bg shows
+            through, matching the Tasks page. */}
+        <div className="h-full flex flex-col">
+          {/* No filter bar on the project-detail view: this page is for
+              shaping the project's task template, not running it. Completing
+              tasks and filtering "what's mine to do" happens on the Tasks
+              page. */}
 
           {/* Table Content */}
-          {filteredProjectTasks.length === 0 && selectedProject.tasks.length === 0 ? (
+          {resolvedProjectTasks.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <p className="text-[#71717a] text-[14px]">No tasks added to this project yet.</p>
                 <p className="text-[#71717a] text-[14px] mt-1">Click "Add Task" to create your first custom task.</p>
               </div>
             </div>
-          ) : filteredProjectTasks.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-[#71717a] text-[14px]">No tasks match the current filters.</p>
-                <p className="text-[#71717a] text-[14px] mt-1">Try adjusting your filters.</p>
-              </div>
-            </div>
           ) : (
             <div className="flex-1 overflow-y-auto overflow-x-auto px-[24px] pb-6">
               <TaskTableDynamic
-                tasks={filteredProjectTasks}
+                tasks={resolvedProjectTasks}
                 onTaskClick={handleProjectTaskClick}
                 handleToggleTaskComplete={handleToggleProjectTaskComplete}
                 handleUpdateTaskStatus={handleUpdateProjectTaskStatus}
                 selectedTaskId={null}
                 onUpdateTask={handleUpdateProjectTask}
                 onDeleteTask={handleDeleteProjectTask}
-                visibleColumns={visibleColumns}
+                visibleColumns={['title', 'dueDate']}
                 enableRelativeDates={true}
                 projectStartDate={selectedProject.startDate}
                 projectEndDate={selectedProject.endDate}
                 projectName={selectedProject.name}
                 availableProjects={otherProjects}
+                assignedHealthCenters={selectedProject.assignedHealthCenters}
+                healthCenterFieldDefs={healthCenterFieldDefs}
+                healthCenters={healthCenterRecords}
+                disableCompletion={true}
               />
             </div>
           )}
@@ -1065,7 +684,12 @@ export function AdminPage({
               </div>
               <div>
                 <label className="block text-[14px] font-medium text-[#18181b] mb-1.5">Category *</label>
-                <Select value={newProject.category} onValueChange={(value) => setNewProject({ ...newProject, category: value })}>
+                <Select
+                  value={newProject.category}
+                  onValueChange={(value) => setNewProject({ ...newProject, category: value })}
+                  open={popover === 'newCat'}
+                  onOpenChange={(o) => setPopover(o ? 'newCat' : null)}
+                >
                   <SelectTrigger className="w-full h-[40px] focus:border-[#fc6]">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
@@ -1126,152 +750,257 @@ export function AdminPage({
                   {/* Currently assigned health centers (if any) */}
                   {project.assignedHealthCenters && project.assignedHealthCenters.length > 0 && (
                     <div className="mb-3 flex flex-wrap gap-1.5">
-                      {project.assignedHealthCenters.map((center) => (
-                        <span
-                          key={center}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-[6px] bg-[#fef3c7] text-[#92400e] text-[12px] font-medium"
-                        >
-                          <Building2 className="w-3 h-3" />
-                          {center}
-                        </span>
-                      ))}
+                      {project.assignedHealthCenters.map((center) => {
+                        const kickoffPopoverName = `kickoff:${project.id}:${center.name}`;
+                        const parsedAssignedAt = center.assignedAt
+                          ? parse(center.assignedAt, 'MM/dd/yyyy', new Date())
+                          : null;
+                        const kickoffLabel = parsedAssignedAt && isValid(parsedAssignedAt)
+                          ? format(parsedAssignedAt, 'MMM d, yyyy')
+                          : 'Set kickoff';
+                        return (
+                          <span
+                            key={center.name}
+                            className="inline-flex items-stretch rounded-[6px] bg-[#fef3c7] text-[#92400e] text-[12px] font-medium overflow-hidden"
+                          >
+                            <Popover
+                              open={popover === kickoffPopoverName}
+                              onOpenChange={(open) =>
+                                setPopover(open ? kickoffPopoverName : null)
+                              }
+                            >
+                              <PopoverTrigger asChild>
+                                <button
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1 px-2 py-1 hover:bg-[#fde68a] transition-colors"
+                                  title={`Kickoff ${kickoffLabel}`}
+                                >
+                                  <Building2 className="w-3 h-3" />
+                                  <span>{center.name}</span>
+                                  <span className="text-[#a16207]">·</span>
+                                  <CalendarIcon className="w-3 h-3" />
+                                  <span>{kickoffLabel}</span>
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={parsedAssignedAt && isValid(parsedAssignedAt) ? parsedAssignedAt : undefined}
+                                  onSelect={(date) => {
+                                    if (!date) return;
+                                    const formatted = format(date, 'MM/dd/yyyy');
+                                    setProjects((prev) =>
+                                      prev.map((p) => {
+                                        if (p.id !== project.id) return p;
+                                        return {
+                                          ...p,
+                                          assignedHealthCenters: (p.assignedHealthCenters || []).map((c) =>
+                                            c.name === center.name ? { ...c, assignedAt: formatted } : c
+                                          ),
+                                        };
+                                      })
+                                    );
+                                    setPopover(null);
+                                  }}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setProjects((prev) =>
+                                  prev.map((p) => {
+                                    if (p.id !== project.id) return p;
+                                    return {
+                                      ...p,
+                                      assignedHealthCenters: (p.assignedHealthCenters || []).filter(
+                                        (c) => c.name !== center.name
+                                      ),
+                                    };
+                                  })
+                                );
+                                toast.success(`Unassigned from ${center.name}`);
+                              }}
+                              className="px-1.5 hover:bg-[#fde68a] transition-colors border-l border-[#fde68a]"
+                              title={`Unassign from ${center.name}`}
+                              aria-label={`Unassign from ${center.name}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
                     </div>
                   )}
 
-                  {/* Assign to Health Center */}
-                  <div className="mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <Popover
-                        open={projectCardAssignOpen === project.id}
-                        onOpenChange={(open) => {
-                          setProjectCardAssignOpen(open ? project.id : null);
-                          if (!open) {
-                            setProjectCardSelectedCenters([]);
-                            setProjectCardCenterSearch('');
-                          }
-                        }}
-                      >
-                        <PopoverTrigger asChild>
-                          <button
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-white border border-[#e4e4e7] rounded-[6px] text-[12px] hover:border-[#d4d4d8] transition-colors h-[36px]"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <Building2 className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
-                              <span className="text-[#71717a] truncate">
-                                {projectCardSelectedCenters.length === 0
-                                  ? 'Assign to health center...'
-                                  : projectCardSelectedCenters.length === 1
-                                  ? projectCardSelectedCenters[0]
-                                  : `${projectCardSelectedCenters.length} health centers selected`}
-                              </span>
-                            </div>
-                            <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-[280px] p-0"
-                          align="start"
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => e.stopPropagation()}
+                  {/* Assign to Health Center.
+                      Pending selection (which centers the user has ticked
+                      but not yet Sent) lives in `pendingAssign` and is
+                      scoped to a single project at a time. The X / Send
+                      row sits below the trigger and stays visible after
+                      the popover closes, so the user can click off the
+                      popover, come back, and confirm. */}
+                  {(() => {
+                    const isThisCardPending = pendingAssign?.projectId === project.id;
+                    const pendingCenters = isThisCardPending ? pendingAssign.centers : [];
+                    const pendingSearch = isThisCardPending ? pendingAssign.search : '';
+                    return (
+                      <div className="mb-3">
+                        <Popover
+                          open={popover === `assign:${project.id}`}
+                          onOpenChange={(open) => {
+                            setPopover(open ? `assign:${project.id}` : null);
+                            if (open && !isThisCardPending) {
+                              // Switching to a new card -- start a fresh
+                              // pending record, discarding any other card's
+                              // in-progress selection.
+                              setPendingAssign({ projectId: project.id, centers: [], search: '' });
+                            }
+                          }}
                         >
-                          <Command>
-                            <div className="flex items-center border-b px-3">
-                              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                              <input
-                                placeholder="Search health centers..."
-                                value={projectCardCenterSearch}
-                                onChange={(e) => setProjectCardCenterSearch(e.target.value)}
-                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#71717a]"
-                              />
-                            </div>
-                            <CommandList>
-                              <CommandEmpty>No health centers found.</CommandEmpty>
-                              <CommandGroup>
-                                {healthCenters
-                                  .filter((center) =>
-                                    projectCardCenterSearch === '' ||
-                                    center.toLowerCase().includes(projectCardCenterSearch.toLowerCase())
-                                  )
-                                  .map((center) => {
-                                    const isSelected = projectCardSelectedCenters.includes(center);
-                                    return (
-                                      <CommandItem
-                                        key={center}
-                                        onSelect={() => {
-                                          setProjectCardSelectedCenters((prev) =>
-                                            prev.includes(center)
-                                              ? prev.filter((c) => c !== center)
-                                              : [...prev, center]
-                                          );
-                                        }}
-                                        className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                                      >
-                                        <div
-                                          className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                                            isSelected
-                                              ? 'bg-[#fc6] border-[#fc6]'
-                                              : 'border-[#d4d4d8]'
-                                          }`}
+                          <PopoverTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border border-[#e4e4e7] rounded-[6px] text-[12px] hover:border-[#d4d4d8] transition-colors h-[36px]"
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Building2 className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
+                                <span className="text-[#71717a] truncate">
+                                  {pendingCenters.length > 0
+                                    ? pendingCenters.length === 1
+                                      ? pendingCenters[0]
+                                      : `${pendingCenters.length} health centers selected`
+                                    : 'Assign to health center...'}
+                                </span>
+                              </div>
+                              <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-[280px] p-0"
+                            align="start"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            <Command>
+                              <div className="flex items-center border-b px-3">
+                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                <input
+                                  placeholder="Search health centers..."
+                                  value={pendingSearch}
+                                  onChange={(e) =>
+                                    setPendingAssign((prev) =>
+                                      prev?.projectId === project.id
+                                        ? { ...prev, search: e.target.value }
+                                        : { projectId: project.id, centers: [], search: e.target.value }
+                                    )
+                                  }
+                                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#71717a]"
+                                />
+                              </div>
+                              <CommandList>
+                                <CommandEmpty>No health centers found.</CommandEmpty>
+                                <CommandGroup>
+                                  {healthCenters
+                                    .filter((center) =>
+                                      pendingSearch === '' ||
+                                      center.toLowerCase().includes(pendingSearch.toLowerCase())
+                                    )
+                                    .map((center) => {
+                                      const isSelected = pendingCenters.includes(center);
+                                      return (
+                                        <CommandItem
+                                          key={center}
+                                          onSelect={() => {
+                                            setPendingAssign((prev) => {
+                                              const base = prev?.projectId === project.id
+                                                ? prev
+                                                : { projectId: project.id, centers: [], search: '' };
+                                              return {
+                                                ...base,
+                                                centers: base.centers.includes(center)
+                                                  ? base.centers.filter((c) => c !== center)
+                                                  : [...base.centers, center],
+                                              };
+                                            });
+                                          }}
+                                          className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                                         >
-                                          {isSelected && <Check className="w-3 h-3 text-[#18181b]" />}
-                                        </div>
-                                        <Building2 className="w-4 h-4 text-[#71717a]" />
-                                        <span className="text-[14px]">{center}</span>
-                                      </CommandItem>
-                                    );
-                                  })}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                                          <div
+                                            className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
+                                              isSelected
+                                                ? 'bg-[#fc6] border-[#fc6]'
+                                                : 'border-[#d4d4d8]'
+                                            }`}
+                                          >
+                                            {isSelected && <Check className="w-3 h-3 text-[#18181b]" />}
+                                          </div>
+                                          <span className="text-[14px]">{center}</span>
+                                        </CommandItem>
+                                      );
+                                    })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
 
-                      {projectCardSelectedCenters.length > 0 && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setProjectCardSelectedCenters([]);
-                              setProjectCardCenterSearch('');
-                            }}
-                            className="h-[36px] w-[36px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
-                            title="Clear selection"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-
-                          <Button
-                            size="sm"
-                            className="shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const newCenters = [...projectCardSelectedCenters];
-                              setProjects((prev) =>
-                                prev.map((p) => {
-                                  if (p.id !== project.id) return p;
-                                  const current = p.assignedHealthCenters || [];
-                                  const merged = [
-                                    ...current,
-                                    ...newCenters.filter((c) => !current.includes(c)),
-                                  ];
-                                  return { ...p, assignedHealthCenters: merged };
-                                })
-                              );
-                              setProjectCardSelectedCenters([]);
-                              setProjectCardCenterSearch('');
-                              setProjectCardAssignOpen(null);
-                              toast.success(
-                                `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`
-                              );
-                            }}
-                          >
-                            Send
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                        {/* Confirm row -- stays visible even after the
+                            popover closes so the user can step away and
+                            still hit Send. Sits inside the card. */}
+                        {isThisCardPending && pendingCenters.length > 0 && (
+                          <div className="mt-2 flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPendingAssign(null);
+                              }}
+                              className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
+                              title="Clear selection"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                            <Button
+                              size="sm"
+                              className="shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newCenters = [...pendingCenters];
+                                const assignedAt = format(new Date(), 'MM/dd/yyyy');
+                                setProjects((prev) =>
+                                  prev.map((p) => {
+                                    if (p.id !== project.id) return p;
+                                    const current = p.assignedHealthCenters || [];
+                                    const existingNames = new Set(current.map((c) => c.name));
+                                    const merged = [
+                                      ...current,
+                                      ...newCenters
+                                        .filter((c) => !existingNames.has(c))
+                                        .map((name) => ({ name, assignedAt })),
+                                    ];
+                                    return { ...p, assignedHealthCenters: merged };
+                                  })
+                                );
+                                setPendingAssign(null);
+                                setPopover(null);
+                                toast.success(
+                                  `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`
+                                );
+                              }}
+                            >
+                              Send
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex items-center justify-between text-[12px] text-[#71717a] pt-3 border-t border-[#f4f4f5]">
                     <span className="font-medium">

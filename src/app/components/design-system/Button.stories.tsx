@@ -11,6 +11,14 @@ const meta: Meta<typeof Button> = {
     size: { control: 'select', options: ['sm', 'md', 'lg'] },
     disabled: { control: 'boolean' },
   },
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Primary / secondary / danger surfaces carry a subtle drop shadow (`shadow-sm`) at rest, lift slightly on hover (`shadow`), and flatten on active (`shadow-none`) to read as a press. Ghost stays shadow-free -- a shadow on a transparent surface reads as a stray outline. Disabled buttons drop the shadow regardless of variant.',
+      },
+    },
+  },
 };
 export default meta;
 type Story = StoryObj<typeof Button>;
@@ -40,6 +48,33 @@ export const WithIcon: Story = {
 };
 
 export const Disabled: Story = { args: { disabled: true } };
+
+export const ElevationStates: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The three shadow states stacked so you can compare them without having to hover/press. Resting button uses shadow-sm; the middle one fakes hover by holding shadow-md; the right one fakes active by removing the shadow entirely.',
+      },
+    },
+  },
+  render: () => (
+    <div className="flex items-center gap-6">
+      <div className="flex flex-col items-center gap-2">
+        <Button className="shadow-sm">Resting</Button>
+        <span className="text-xs text-[#71717a] font-mono">shadow-sm</span>
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <Button className="shadow-md">Hover</Button>
+        <span className="text-xs text-[#71717a] font-mono">shadow</span>
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <Button className="shadow-none">Active</Button>
+        <span className="text-xs text-[#71717a] font-mono">shadow-none</span>
+      </div>
+    </div>
+  ),
+};
 
 export const AllVariants: Story = {
   render: () => (

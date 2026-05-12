@@ -266,6 +266,23 @@ export function computeDueDate(
     projectEndDate?: string;
     tasks: Task[];
     projects?: Array<{ id: number; startDate?: string; endDate?: string }>;
+    /**
+     * Health-center assignments for the *current* project. Source for
+     * `projectKickoff` anchors. Each entry's `assignedAt` is the kickoff
+     * date for that center.
+     */
+    assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+    /**
+     * Global catalog of health-center records and their date-field
+     * values. Source for `healthCenterField` anchors -- the resolver
+     * looks up the task's own `healthCenter` against this catalog.
+     */
+    healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+    /**
+     * The `healthCenter` of the task currently being resolved. Used as
+     * the implicit "which center" in `healthCenterField` anchors.
+     */
+    taskHealthCenter?: string;
   }
 ): string | null {
   let anchorDate: Date | null = null;
@@ -285,6 +302,20 @@ export function computeDueDate(
     } else {
       anchorDate = tryParse(ctx.projectEndDate);
     }
+  } else if (anchor.kind === 'projectKickoff') {
+    // Resolve the assignment using the anchor's explicit healthCenter
+    // (legacy form) or fall back to the task's own healthCenter
+    // (implicit form -- new "Instantiation" anchor template).
+    const centerName = anchor.healthCenter ?? ctx.taskHealthCenter;
+    const assignment = centerName
+      ? (ctx.assignedHealthCenters ?? []).find((c) => c.name === centerName)
+      : undefined;
+    anchorDate = tryParse(assignment?.assignedAt);
+  } else if (anchor.kind === 'healthCenterField') {
+    const record = ctx.taskHealthCenter
+      ? (ctx.healthCenters ?? []).find((h) => h.name === ctx.taskHealthCenter)
+      : undefined;
+    anchorDate = tryParse(record?.dateFields?.[anchor.fieldId]);
   } else if (anchor.kind === 'taskStart') {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
     anchorDate = tryParse(t?.startedAt);
@@ -320,9 +351,84 @@ export function computeDueDate(
   if (rule.unit === 'days') result = addDays(anchorDate, offset);
   else if (rule.unit === 'weeks') result = addWeeks(anchorDate, offset);
   else if (rule.unit === 'months') result = addMonths(anchorDate, offset);
+  else if (rule.unit === 'years') result = addYears(anchorDate, offset);
   else return null;
 
   return format(result, DATE_FMT);
+}
+
+/**
+ * Whether a rule resolves cleanly today, can't resolve because its
+ * reference is gone, or can't resolve because the anchor hasn't reached
+ * a date yet (e.g. "when complete" but the task isn't complete).
+ *
+ * The badge UI shows a red "Reference broken" pill only for
+ * `missingReference`; `unresolved` is a normal waiting state (the rule
+ * will start producing a date once the anchor becomes available).
+ */
+export type RuleStatus = 'ok' | 'missingReference' | 'unresolved' | 'invalid';
+
+export function getRuleStatus(
+  rule: DueDateRule,
+  ctx: {
+    tasks: Task[];
+    assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+    healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+    taskHealthCenter?: string;
+    /** Catalog of field ids that currently exist (Settings). */
+    healthCenterFieldIds?: string[];
+  }
+): RuleStatus {
+  const anchor = rule.anchor;
+  if (anchor.kind === 'taskStart' || anchor.kind === 'taskDue' || anchor.kind === 'taskCompleted') {
+    const t = ctx.tasks.find((x) => x.id === anchor.taskId);
+    if (!t) return 'missingReference';
+    const src =
+      anchor.kind === 'taskStart' ? t.startedAt :
+      anchor.kind === 'taskDue' ? t.dueDate :
+      t.completedAt;
+    return tryParse(src) ? 'ok' : 'unresolved';
+  }
+  if (anchor.kind === 'projectKickoff') {
+    // Legacy form pins a specific center; new "Instantiation" form
+    // resolves implicitly against the task's own center.
+    if (anchor.healthCenter) {
+      const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === anchor.healthCenter);
+      // Unassigning that specific center => reference is gone.
+      if (!assignment) return 'missingReference';
+      return tryParse(assignment.assignedAt) ? 'ok' : 'unresolved';
+    }
+    // Implicit form: missing task-center or unassigned project-for-this-
+    // center is normal "waiting" state (the user can assign it). Don't
+    // flip to broken just because the field's unfilled.
+    if (!ctx.taskHealthCenter) return 'unresolved';
+    const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === ctx.taskHealthCenter);
+    return tryParse(assignment?.assignedAt) ? 'ok' : 'unresolved';
+  }
+  if (anchor.kind === 'healthCenterField') {
+    // The field itself being removed from the global catalog => the rule's
+    // reference is gone. The task lacking a healthCenter OR the record
+    // having no value for this field => just unresolved (not broken):
+    // assigning a center or filling in the date makes the rule resolve
+    // again.
+    if (ctx.healthCenterFieldIds && !ctx.healthCenterFieldIds.includes(anchor.fieldId)) {
+      return 'missingReference';
+    }
+    if (!ctx.taskHealthCenter) return 'unresolved';
+    const record = (ctx.healthCenters ?? []).find((h) => h.name === ctx.taskHealthCenter);
+    return tryParse(record?.dateFields?.[anchor.fieldId]) ? 'ok' : 'unresolved';
+  }
+  if (anchor.kind === 'fixedAnniversary') {
+    const m = anchor.month;
+    const d = anchor.day;
+    if (!Number.isInteger(m) || m < 1 || m > 12) return 'invalid';
+    if (!Number.isInteger(d) || d < 1 || d > 31) return 'invalid';
+    return 'ok';
+  }
+  // projectStart / projectEnd: 'unresolved' covers both "no project pick"
+  // and "project has no start/end date set" — both look the same to the
+  // user (waiting for someone to fill in a date) and neither is "broken."
+  return 'ok';
 }
 
 /**
@@ -332,7 +438,10 @@ export function computeDueDate(
  */
 export function describeDueDateRule(
   rule: DueDateRule,
-  ctx: { tasks: Task[] }
+  ctx: {
+    tasks: Task[];
+    healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  }
 ): string {
   const unitLabel = rule.amount === 1 ? rule.unit.replace(/s$/, '') : rule.unit;
   const offsetText = `${rule.amount} ${unitLabel} ${rule.direction}`;
@@ -343,6 +452,11 @@ export function describeDueDateRule(
     anchorText = 'Project start';
   } else if (anchor.kind === 'projectEnd') {
     anchorText = 'Project end';
+  } else if (anchor.kind === 'projectKickoff') {
+    anchorText = anchor.healthCenter ? `Instantiation at ${anchor.healthCenter}` : 'Instantiation';
+  } else if (anchor.kind === 'healthCenterField') {
+    const def = (ctx.healthCenterFieldDefs ?? []).find((d) => d.id === anchor.fieldId);
+    anchorText = def ? def.label : `a removed health-center field`;
   } else if (anchor.kind === 'fixedAnniversary') {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                         'July', 'August', 'September', 'October', 'November', 'December'];
@@ -350,13 +464,64 @@ export function describeDueDateRule(
     anchorText = `${m} ${anchor.day} (next occurrence)`;
   } else {
     const t = ctx.tasks.find((x) => x.id === anchor.taskId);
-    const name = t ? t.title : `task #${anchor.taskId}`;
+    if (!t) {
+      return `${offsetText} a removed task`;
+    }
+    const name = t.title;
     if (anchor.kind === 'taskStart') anchorText = `${name} starts`;
     else if (anchor.kind === 'taskDue') anchorText = `${name}'s due date`;
     else anchorText = `${name} is complete`;
   }
 
   return `${offsetText} ${anchorText}`;
+}
+
+/**
+ * Compact, badge-friendly rendering of a rule -- shown in the task table
+ * instead of the resolved date once a relative rule is saved. Example
+ * outputs:
+ *   "2w after start"   "30d before end"   "1y after instantiation"
+ *   "3d after Verify Patient Demographics"
+ *   "30d before Accreditation expires"
+ *   "2w after Jan 15"
+ *
+ * Returns "Reference broken" when the rule's anchor target no longer
+ * exists, so the badge can render the same red pill it already shows
+ * for a broken rule.
+ */
+export function shortDueDateRule(
+  rule: DueDateRule,
+  ctx: {
+    tasks: Task[];
+    healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  }
+): string {
+  const unitChar =
+    rule.unit === 'days' ? 'd' :
+    rule.unit === 'weeks' ? 'w' :
+    rule.unit === 'months' ? 'mo' :
+    'y';
+  const offset = `${rule.amount}${unitChar} ${rule.direction}`;
+  const anchor = rule.anchor;
+
+  let anchorText: string;
+  if (anchor.kind === 'projectStart') anchorText = 'start';
+  else if (anchor.kind === 'projectEnd') anchorText = 'end';
+  else if (anchor.kind === 'projectKickoff') anchorText = 'instantiation';
+  else if (anchor.kind === 'fixedAnniversary') {
+    const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const m = anchor.month >= 1 && anchor.month <= 12 ? monthShort[anchor.month - 1] : '?';
+    anchorText = `${m} ${anchor.day}`;
+  } else if (anchor.kind === 'healthCenterField') {
+    const def = (ctx.healthCenterFieldDefs ?? []).find((d) => d.id === anchor.fieldId);
+    if (!def) return 'Reference broken';
+    anchorText = def.label;
+  } else {
+    const t = ctx.tasks.find((x) => x.id === anchor.taskId);
+    if (!t) return 'Reference broken';
+    anchorText = t.title;
+  }
+  return `${offset} ${anchorText}`;
 }
 
 /**
@@ -383,7 +548,13 @@ export function findTasksAnchoredTo(taskId: number, tasks: Task[]): Task[] {
 export function resolveTaskDueDates(
   tasks: Task[],
   projectStartDate?: string,
-  opts?: { projectEndDate?: string; projects?: Array<{ id: number; startDate?: string; endDate?: string }> }
+  opts?: {
+    projectEndDate?: string;
+    projects?: Array<{ id: number; startDate?: string; endDate?: string }>;
+    assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
+    healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+    healthCenterFieldIds?: string[];
+  }
 ): Task[] {
   return tasks.map((task) => {
     if (!task.dueDateRule) return task;
@@ -392,7 +563,30 @@ export function resolveTaskDueDates(
       projectEndDate: opts?.projectEndDate,
       tasks,
       projects: opts?.projects,
+      assignedHealthCenters: opts?.assignedHealthCenters,
+      healthCenters: opts?.healthCenters,
+      taskHealthCenter: task.healthCenter,
     });
-    return computed ? { ...task, dueDate: computed } : task;
+    if (computed) return { ...task, dueDate: computed, dueDateBroken: false };
+    // The rule's reference is gone (e.g. the anchor task was deleted,
+    // the health center this task's kickoff anchor pointed to was
+    // unassigned, or a referenced health-center field was removed from
+    // the catalog). Clear any previously-computed date so the row
+    // doesn't show a stale value and stamp a transient flag so the
+    // badge can render the "Reference broken" state.
+    const status = getRuleStatus(task.dueDateRule, {
+      tasks,
+      assignedHealthCenters: opts?.assignedHealthCenters,
+      healthCenters: opts?.healthCenters,
+      taskHealthCenter: task.healthCenter,
+      healthCenterFieldIds: opts?.healthCenterFieldIds,
+    });
+    if (status === 'missingReference') {
+      return { ...task, dueDate: undefined, dueDateBroken: true };
+    }
+    // 'unresolved' / 'invalid' / project anchors without dates: leave the
+    // task as-is (caller's existing behavior). The rule will start
+    // producing a date once the anchor is filled in.
+    return task;
   });
 }
