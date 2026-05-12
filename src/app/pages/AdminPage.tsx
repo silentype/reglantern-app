@@ -696,11 +696,15 @@ export function AdminPage({
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               <Building2 className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
                               <span className="text-[#71717a] truncate">
-                                {projectCardSelectedCenters.length === 0
-                                  ? 'Assign to health center...'
-                                  : projectCardSelectedCenters.length === 1
-                                  ? projectCardSelectedCenters[0]
-                                  : `${projectCardSelectedCenters.length} health centers selected`}
+                                {/* In-progress selection only shows on the card whose
+                                    popover is actually open; other cards keep the
+                                    default label so the shared state doesn't leak
+                                    across cards. */}
+                                {popover === `assign:${project.id}` && projectCardSelectedCenters.length > 0
+                                  ? projectCardSelectedCenters.length === 1
+                                    ? projectCardSelectedCenters[0]
+                                    : `${projectCardSelectedCenters.length} health centers selected`
+                                  : 'Assign to health center...'}
                               </span>
                             </div>
                             <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
@@ -753,7 +757,6 @@ export function AdminPage({
                                         >
                                           {isSelected && <Check className="w-3 h-3 text-[#18181b]" />}
                                         </div>
-                                        <Building2 className="w-4 h-4 text-[#71717a]" />
                                         <span className="text-[14px]">{center}</span>
                                       </CommandItem>
                                     );
@@ -764,7 +767,10 @@ export function AdminPage({
                         </PopoverContent>
                       </Popover>
 
-                      {projectCardSelectedCenters.length > 0 && (
+                      {/* X / Send only show on the active card so the
+                          shared selection state doesn't surface on
+                          other cards. */}
+                      {popover === `assign:${project.id}` && projectCardSelectedCenters.length > 0 && (
                         <>
                           <button
                             onClick={(e) => {

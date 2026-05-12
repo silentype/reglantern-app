@@ -1069,12 +1069,13 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
 
   return (
     <div className="content-stretch flex flex-col gap-[12px] items-start relative w-full" data-name="Task Table">
-      {/* Column Headers. The bottom border lives on the inner flex so it
-          spans the same 100% width as the row content -- guaranteeing
-          the top line of the table runs edge-to-edge. */}
-      <div className="hidden lg:block h-[40px] sticky top-0 z-20 shrink-0 w-[calc(100%+48px)] bg-white -mx-6 px-6">
+      {/* Column Headers. The bottom border lives on the outermost
+          element so it spans the same width as the bleed (-mx-6 px-6)
+          -- i.e. fully across the page section, even past the table's
+          inner padding. */}
+      <div className="hidden lg:block h-[40px] sticky top-0 z-20 shrink-0 w-[calc(100%+48px)] bg-white -mx-6 px-6 border-b border-[#e4e4e7]">
         <div className="flex flex-row items-center size-full" style={{ minWidth: `${minHeaderWidth}px` }}>
-          <div className="content-stretch flex items-center relative bg-white border-b border-[#e4e4e7]" style={{ width: '100%', height: '100%' }}>
+          <div className="content-stretch flex items-center relative bg-white" style={{ width: '100%', height: '100%' }}>
             {!disableCompletion && (
               <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px]" />
             )}
