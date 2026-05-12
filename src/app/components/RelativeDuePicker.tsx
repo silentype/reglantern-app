@@ -575,9 +575,22 @@ export function RelativeDuePicker({
                           ))}
                         </>
                       ) : (
-                        taskOptions.map((t) => (
-                          <UISelectItem key={t.id} value={String(t.id)}>{t.title}</UISelectItem>
-                        ))
+                        <>
+                          {/* Defensive "(deleted task — pick another)" entry
+                              for legacy rules that reference a taskId no
+                              longer in this project's task list. The
+                              broken-reference banner above also flags it,
+                              but this keeps the Select's value valid so
+                              Radix doesn't re-render with an unknown value. */}
+                          {taskId !== null && !taskOptions.some((t) => t.id === taskId) && (
+                            <UISelectItem value={String(taskId)}>
+                              (deleted task — pick another)
+                            </UISelectItem>
+                          )}
+                          {taskOptions.map((t) => (
+                            <UISelectItem key={t.id} value={String(t.id)}>{t.title}</UISelectItem>
+                          ))}
+                        </>
                       )}
                     </UISelectContent>
                   </UISelect>

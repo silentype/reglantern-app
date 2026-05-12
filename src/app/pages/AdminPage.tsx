@@ -51,7 +51,7 @@ import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 import { Button } from '../components/design-system/Button';
 
 import { HEALTH_CENTERS } from '../constants';
-import { resolveTaskDueDates } from '../utils/helpers';
+import { resolveTaskDueDates, findTasksAnchoredTo } from '../utils/helpers';
 import searchFilterSvgPaths from '../../imports/svg-oo9u3g75ma';
 
 import { ComplianceReviewPage } from './ComplianceReviewPage';
@@ -243,21 +243,30 @@ export function AdminPage({
     );
   }, [selectedProject]);
 
-  const handleDeleteProjectTask = useCallback((taskId: number) => {
-    if (!selectedProject) return;
+  // Pending delete with cascade: when a task being deleted is anchored to by
+  // other tasks' dueDateRules, surface a confirmation listing the dependents
+  // before wiping both the task AND the dependents' rules.
+  const [pendingDelete, setPendingDelete] = useState<{ task: Task; dependents: Task[] } | null>(null);
 
+  const performDeleteProjectTask = useCallback((taskId: number, dependentIds: number[]) => {
+    if (!selectedProject) return;
     setProjects(prevProjects =>
       prevProjects.map(project => {
-        if (project.id === selectedProject.id) {
-          return {
-            ...project,
-            tasks: project.tasks.filter(task => task.id !== taskId)
-          };
-        }
-        return project;
+        if (project.id !== selectedProject.id) return project;
+        const dependentSet = new Set(dependentIds);
+        return {
+          ...project,
+          tasks: project.tasks
+            .filter(task => task.id !== taskId)
+            .map(task => dependentSet.has(task.id) ? { ...task, dueDateRule: undefined } : task),
+        };
       })
     );
-    toast.success('Task deleted successfully');
+    if (dependentIds.length > 0) {
+      toast.success(`Task deleted; cleared due-date rules on ${dependentIds.length} dependent task${dependentIds.length === 1 ? '' : 's'}`);
+    } else {
+      toast.success('Task deleted successfully');
+    }
   }, [selectedProject]);
 
   // Edit-project modal: open seeds the draft from the current project,
@@ -301,6 +310,21 @@ export function AdminPage({
     onSelectProject(null);
     toast.success(`Deleted "${removedName}"`);
   }, [selectedProject, setProjects, onSelectProject]);
+
+  // Task delete with cascade-clear: if any sibling rules anchor to this
+  // task, route through a confirmation modal before wiping both the
+  // task and the dependent rules.
+  const handleDeleteProjectTask = useCallback((taskId: number) => {
+    if (!selectedProject) return;
+    const target = selectedProject.tasks.find(t => t.id === taskId);
+    if (!target) return;
+    const dependents = findTasksAnchoredTo(taskId, selectedProject.tasks);
+    if (dependents.length === 0) {
+      performDeleteProjectTask(taskId, []);
+      return;
+    }
+    setPendingDelete({ task: target, dependents });
+  }, [selectedProject, performDeleteProjectTask]);
 
   // Resolve rule-driven dueDates first (so each task's `dueDate` reflects its
   // dueDateRule against the project's startDate + sibling tasks). Then filter.
@@ -570,6 +594,39 @@ export function AdminPage({
             </div>
           )}
         </div>
+
+        {pendingDelete && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setPendingDelete(null)}>
+            <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-[#09090b] mb-2">Delete task with dependents</h3>
+              <p className="text-[14px] text-[#71717a] mb-3">
+                <span className="font-medium text-[#18181b]">{pendingDelete.task.title}</span> is the anchor for {pendingDelete.dependents.length} other task{pendingDelete.dependents.length === 1 ? '' : 's'}. Deleting it will clear those due-date rules.
+              </p>
+              <ul className="text-[13px] text-[#18181b] mb-6 list-disc pl-5 space-y-0.5 max-h-40 overflow-y-auto">
+                {pendingDelete.dependents.map((d) => (
+                  <li key={d.id}>{d.title}</li>
+                ))}
+              </ul>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setPendingDelete(null)}
+                  className="px-4 py-2 text-sm font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md hover:bg-[#f9fafb] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    performDeleteProjectTask(pendingDelete.task.id, pendingDelete.dependents.map((d) => d.id));
+                    setPendingDelete(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#dc2626] rounded-md hover:bg-[#b91c1c] transition-colors"
+                >
+                  Delete and clear rules
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

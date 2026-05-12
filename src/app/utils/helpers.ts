@@ -525,6 +525,21 @@ export function shortDueDateRule(
 }
 
 /**
+ * Find every task in `tasks` whose dueDateRule anchors to `taskId`. Used
+ * before deleting a task so the UI can warn about (and detach) the dependent
+ * rules that would otherwise resolve to null. The check covers all three
+ * task-event anchors: taskStart, taskDue, taskCompleted.
+ */
+export function findTasksAnchoredTo(taskId: number, tasks: Task[]): Task[] {
+  return tasks.filter((t) => {
+    const a = t.dueDateRule?.anchor;
+    if (!a) return false;
+    if (a.kind !== 'taskStart' && a.kind !== 'taskDue' && a.kind !== 'taskCompleted') return false;
+    return a.taskId === taskId;
+  });
+}
+
+/**
  * Apply rules across an entire project's tasks, producing a new array where
  * each rule-driven task's `dueDate` is replaced with the computed value.
  * Tasks without a rule are returned unchanged. Single-pass resolution; see
