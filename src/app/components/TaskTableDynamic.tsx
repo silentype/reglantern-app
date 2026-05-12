@@ -53,15 +53,14 @@ export type DueDateAnchor =
    */
   | { kind: 'fixedAnniversary'; month: number; day: number }
   /**
-   * The kickoff date for a specific health-center assignment on the
-   * current project. Resolves to `assignedAt` from the matching entry
-   * in the project's `assignedHealthCenters`. Unassigning the center
-   * breaks the rule (resolveTaskDueDates flips the row to "Reference
-   * broken"). One rule per center -- a task that should anchor on
-   * whichever center it's individually assigned to needs a separate
-   * future anchor kind.
+   * The project's instantiation (kickoff) date for the task's own
+   * assigned health center. The resolver looks up `assignedAt` in
+   * `ctx.assignedHealthCenters` using `ctx.taskHealthCenter`. Legacy
+   * rules may pin a specific center via the optional `healthCenter`
+   * field (kept for back-compat); new rules omit it so a single
+   * "Instantiation" template applies across centers.
    */
-  | { kind: 'projectKickoff'; healthCenter: string }
+  | { kind: 'projectKickoff'; healthCenter?: string }
   /**
    * A date field on the task's currently-assigned health center, e.g.
    * "Accreditation expires". The `fieldId` references a row in the
@@ -604,7 +603,7 @@ const TaskRow = memo(function TaskRow({
             </div>
           </PopoverTrigger>
           <PopoverContent
-            className="w-auto p-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
+            className="w-[460px] p-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
             align="start"
             collisionPadding={16}
           >

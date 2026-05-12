@@ -303,7 +303,13 @@ export function computeDueDate(
       anchorDate = tryParse(ctx.projectEndDate);
     }
   } else if (anchor.kind === 'projectKickoff') {
-    const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === anchor.healthCenter);
+    // Resolve the assignment using the anchor's explicit healthCenter
+    // (legacy form) or fall back to the task's own healthCenter
+    // (implicit form -- new "Instantiation" anchor template).
+    const centerName = anchor.healthCenter ?? ctx.taskHealthCenter;
+    const assignment = centerName
+      ? (ctx.assignedHealthCenters ?? []).find((c) => c.name === centerName)
+      : undefined;
     anchorDate = tryParse(assignment?.assignedAt);
   } else if (anchor.kind === 'healthCenterField') {
     const record = ctx.taskHealthCenter
@@ -384,10 +390,20 @@ export function getRuleStatus(
     return tryParse(src) ? 'ok' : 'unresolved';
   }
   if (anchor.kind === 'projectKickoff') {
-    const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === anchor.healthCenter);
-    // Unassigning the center entirely => the rule's reference is gone.
-    if (!assignment) return 'missingReference';
-    return tryParse(assignment.assignedAt) ? 'ok' : 'unresolved';
+    // Legacy form pins a specific center; new "Instantiation" form
+    // resolves implicitly against the task's own center.
+    if (anchor.healthCenter) {
+      const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === anchor.healthCenter);
+      // Unassigning that specific center => reference is gone.
+      if (!assignment) return 'missingReference';
+      return tryParse(assignment.assignedAt) ? 'ok' : 'unresolved';
+    }
+    // Implicit form: missing task-center or unassigned project-for-this-
+    // center is normal "waiting" state (the user can assign it). Don't
+    // flip to broken just because the field's unfilled.
+    if (!ctx.taskHealthCenter) return 'unresolved';
+    const assignment = (ctx.assignedHealthCenters ?? []).find((c) => c.name === ctx.taskHealthCenter);
+    return tryParse(assignment?.assignedAt) ? 'ok' : 'unresolved';
   }
   if (anchor.kind === 'healthCenterField') {
     // The field itself being removed from the global catalog => the rule's
@@ -437,7 +453,7 @@ export function describeDueDateRule(
   } else if (anchor.kind === 'projectEnd') {
     anchorText = 'Project end';
   } else if (anchor.kind === 'projectKickoff') {
-    anchorText = `Kickoff at ${anchor.healthCenter}`;
+    anchorText = anchor.healthCenter ? `Instantiation at ${anchor.healthCenter}` : 'Instantiation';
   } else if (anchor.kind === 'healthCenterField') {
     const def = (ctx.healthCenterFieldDefs ?? []).find((d) => d.id === anchor.fieldId);
     anchorText = def ? def.label : `a removed health-center field`;

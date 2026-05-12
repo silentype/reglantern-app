@@ -77,11 +77,12 @@ export interface RelativeDuePickerProps {
   className?: string;
 }
 
-// Picker-internal type. 'healthCenterField' covers both the per-center
-// Kickoff anchor and any catalog field, distinguished by the composite
-// reference string stored in `healthCenterFieldId`:
-//   'kickoff:<centerName>' -> projectKickoff anchor
-//   'field:<fieldId>'      -> healthCenterField anchor
+// Picker-internal type. 'healthCenterField' covers both the project's
+// Instantiation date and any catalog field, distinguished by the
+// composite reference string stored in `healthCenterFieldId`:
+//   'kickoff'         -> projectKickoff anchor (implicit center, resolves
+//                        against the task's own healthCenter)
+//   'field:<fieldId>' -> healthCenterField anchor
 type AnchorType = 'project' | 'task' | 'fixedDate' | 'healthCenterField';
 type EventKey = 'started' | 'ended' | 'due' | 'completed';
 
@@ -144,10 +145,13 @@ function ruleToState(rule: DueDateRule | undefined): {
     };
   }
   if (a.kind === 'projectKickoff') {
+    // Both the new implicit form and legacy form (with explicit
+    // healthCenter pin) collapse to the single 'kickoff' sentinel here.
+    // Saving the rule produces the new implicit form.
     return {
       ...defaults,
       type: 'healthCenterField',
-      healthCenterFieldId: `kickoff:${a.healthCenter}`,
+      healthCenterFieldId: 'kickoff',
     };
   }
   if (a.kind === 'healthCenterField') {
@@ -185,10 +189,10 @@ function buildAnchor(
   }
   if (type === 'healthCenterField') {
     if (!healthCenterFieldId) return null;
-    if (healthCenterFieldId.startsWith('kickoff:')) {
-      const center = healthCenterFieldId.slice('kickoff:'.length);
-      if (!center) return null;
-      return { kind: 'projectKickoff', healthCenter: center };
+    if (healthCenterFieldId === 'kickoff') {
+      // Implicit-center Instantiation anchor; resolver looks up the
+      // task's own healthCenter at compute time.
+      return { kind: 'projectKickoff' };
     }
     if (healthCenterFieldId.startsWith('field:')) {
       const fieldId = healthCenterFieldId.slice('field:'.length);
@@ -272,15 +276,16 @@ export function RelativeDuePicker({
   const hcFieldOptions = healthCenterFieldDefs ?? [];
 
   // Combined options shown in the Field dropdown when Type=Health Center
-  // Info. Kickoff entries come first (one per assigned center), then the
-  // global field catalog. Values use a "kickoff:" / "field:" prefix so
-  // buildAnchor can produce the right DueDateAnchor kind.
+  // Info. A single "Instantiation" row (implicit center -- resolves
+  // against the task's own healthCenter at compute time) is offered when
+  // the project is assigned to any center; the catalog fields follow.
+  // Values use a "kickoff" / "field:" prefix so buildAnchor can produce
+  // the right DueDateAnchor kind.
   const healthCenterRefOptions = useMemo(
     () => [
-      ...kickoffOptions.map((c) => ({
-        value: `kickoff:${c.name}`,
-        label: `Kickoff — ${c.name}`,
-      })),
+      ...(kickoffOptions.length > 0
+        ? [{ value: 'kickoff', label: 'Instantiation' }]
+        : []),
       ...hcFieldOptions.map((d) => ({
         value: `field:${d.id}`,
         label: d.label,
@@ -289,20 +294,19 @@ export function RelativeDuePicker({
     [kickoffOptions, hcFieldOptions]
   );
 
-  // "Reference missing" detection for the combined Health Center Info
-  // dropdown: covers both the kickoff-was-unassigned case and the
-  // field-was-removed-from-catalog case in one banner.
+  // "Reference missing" only applies to the catalog-field case: deleting
+  // a field id from Settings strands any rule that referenced it. The
+  // implicit Instantiation anchor can't go "missing" -- if the project
+  // gets unassigned entirely it just becomes "unresolved" (waiting on a
+  // re-assignment), which is a normal state, not broken.
   const initialHCFieldMissing = useMemo(() => {
     if (!initialRule) return false;
     const a = initialRule.anchor;
-    if (a.kind === 'projectKickoff') {
-      return !kickoffOptions.some((c) => c.name === a.healthCenter);
-    }
     if (a.kind === 'healthCenterField') {
       return !hcFieldOptions.some((d) => d.id === a.fieldId);
     }
     return false;
-  }, [initialRule, kickoffOptions, hcFieldOptions]);
+  }, [initialRule, hcFieldOptions]);
 
   const [type, setType] = useState<AnchorType>(initial.type);
   const [taskId, setTaskId] = useState<number | null>(
@@ -385,9 +389,13 @@ export function RelativeDuePicker({
     [setPick]
   );
   const triggerCls = 'h-8 px-2.5 text-xs';
+  // Vertical-row layout for the Trigger section: label fixed-width on
+  // the left, control filling the remaining width on the right.
+  const rowCls = 'flex items-center gap-2';
+  const rowLabelCls = 'w-[88px] shrink-0 text-[12px] font-medium text-[#71717a]';
 
   return (
-    <div className={`p-4 w-[460px] flex flex-col gap-4 ${className ?? ''}`}>
+    <div className={`p-4 w-full flex flex-col gap-4 ${className ?? ''}`}>
       <div>
         <h3 className="text-sm font-semibold text-[#18181b] mb-2">Timing</h3>
         <div className="flex items-center gap-2">
@@ -444,135 +452,147 @@ export function RelativeDuePicker({
             The previously-selected health-center reference is no longer available. Pick a new one or switch to a different type.
           </div>
         )}
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className={labelClasses}>Type</label>
-            <UISelect
-              value={type}
-              onValueChange={(v) => setType(v as AnchorType)}
-              open={pick === 'type'}
-              onOpenChange={pickHandler('type')}
-            >
-              <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
-              <UISelectContent>
-                <UISelectItem value="project">Project</UISelectItem>
-                <UISelectItem value="task">Task</UISelectItem>
-                <UISelectItem value="fixedDate">Fixed Date</UISelectItem>
-                <UISelectItem value="healthCenterField" disabled={healthCenterRefOptions.length === 0}>
-                  Health Center Info{healthCenterRefOptions.length === 0 ? ' (assign a center or add a field first)' : ''}
-                </UISelectItem>
-              </UISelectContent>
-            </UISelect>
-          </div>
-
-          {type === 'healthCenterField' ? (
-            <div className="col-span-2">
-              <label className={labelClasses}>Field</label>
+        <div className="flex flex-col gap-2">
+          <div className={rowCls}>
+            <label className={rowLabelCls}>Type</label>
+            <div className="flex-1">
               <UISelect
-                value={healthCenterFieldId || undefined}
-                onValueChange={(v) => setHealthCenterFieldId(v)}
-                open={pick === 'reference'}
-                onOpenChange={pickHandler('reference')}
-                disabled={healthCenterRefOptions.length === 0}
+                value={type}
+                onValueChange={(v) => setType(v as AnchorType)}
+                open={pick === 'type'}
+                onOpenChange={pickHandler('type')}
               >
-                <UISelectTrigger className={triggerCls}>
-                  <UISelectValue placeholder={healthCenterRefOptions.length === 0 ? 'No references available' : 'Select a reference…'} />
-                </UISelectTrigger>
+                <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
                 <UISelectContent>
-                  {healthCenterRefOptions.map((o) => (
-                    <UISelectItem key={o.value} value={o.value}>{o.label}</UISelectItem>
-                  ))}
+                  <UISelectItem value="project">Project</UISelectItem>
+                  <UISelectItem value="task">Task</UISelectItem>
+                  <UISelectItem value="fixedDate">Fixed Date</UISelectItem>
+                  <UISelectItem value="healthCenterField" disabled={healthCenterRefOptions.length === 0}>
+                    Health Center Info{healthCenterRefOptions.length === 0 ? ' (assign a center or add a field first)' : ''}
+                  </UISelectItem>
                 </UISelectContent>
               </UISelect>
             </div>
-          ) : type === 'fixedDate' ? (
-            <>
-              <div>
-                <label className={labelClasses}>Month</label>
+          </div>
+
+          {type === 'healthCenterField' ? (
+            <div className={rowCls}>
+              <label className={rowLabelCls}>Field</label>
+              <div className="flex-1">
                 <UISelect
-                  value={String(fixedMonth)}
-                  onValueChange={(v) => setFixedMonth(Number(v))}
-                  open={pick === 'month'}
-                  onOpenChange={pickHandler('month')}
-                >
-                  <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
-                  <UISelectContent>
-                    {MONTH_OPTIONS.map((m) => (
-                      <UISelectItem key={m.value} value={String(m.value)}>{m.label}</UISelectItem>
-                    ))}
-                  </UISelectContent>
-                </UISelect>
-              </div>
-              <div>
-                <label className={labelClasses}>Day</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={31}
-                  value={fixedDay}
-                  onChange={(e) => {
-                    const n = Number(e.target.value);
-                    if (Number.isInteger(n)) setFixedDay(Math.min(31, Math.max(1, n)));
-                  }}
-                  className="w-full h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
-                />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label className={labelClasses}>Reference</label>
-                <UISelect
-                  value={
-                    type === 'project'
-                      ? projectRef
-                      : taskId !== null
-                      ? String(taskId)
-                      : undefined
-                  }
-                  onValueChange={(v) => {
-                    if (type === 'task') setTaskId(Number(v));
-                    else setProjectRef(v);
-                  }}
+                  value={healthCenterFieldId || undefined}
+                  onValueChange={(v) => setHealthCenterFieldId(v)}
                   open={pick === 'reference'}
                   onOpenChange={pickHandler('reference')}
-                  disabled={type === 'task' && taskOptions.length === 0}
+                  disabled={healthCenterRefOptions.length === 0}
                 >
                   <UISelectTrigger className={triggerCls}>
-                    <UISelectValue placeholder={type === 'task' && taskOptions.length === 0 ? 'No other tasks' : 'Select…'} />
+                    <UISelectValue placeholder={healthCenterRefOptions.length === 0 ? 'No references available' : 'Select a reference…'} />
                   </UISelectTrigger>
                   <UISelectContent>
-                    {type === 'project' ? (
-                      <>
-                        <UISelectItem value={CURRENT_PROJECT_VALUE}>{currentProjectName}</UISelectItem>
-                        {projectOptions.map((p) => (
-                          <UISelectItem key={p.id} value={String(p.id)}>{p.name}</UISelectItem>
-                        ))}
-                      </>
-                    ) : (
-                      taskOptions.map((t) => (
-                        <UISelectItem key={t.id} value={String(t.id)}>{t.title}</UISelectItem>
-                      ))
-                    )}
-                  </UISelectContent>
-                </UISelect>
-              </div>
-
-              <div>
-                <label className={labelClasses}>Event</label>
-                <UISelect
-                  value={event}
-                  onValueChange={(v) => setEvent(v as EventKey)}
-                  open={pick === 'event'}
-                  onOpenChange={pickHandler('event')}
-                >
-                  <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
-                  <UISelectContent>
-                    {eventOptions.map((o) => (
+                    {healthCenterRefOptions.map((o) => (
                       <UISelectItem key={o.value} value={o.value}>{o.label}</UISelectItem>
                     ))}
                   </UISelectContent>
                 </UISelect>
+              </div>
+            </div>
+          ) : type === 'fixedDate' ? (
+            <>
+              <div className={rowCls}>
+                <label className={rowLabelCls}>Month</label>
+                <div className="flex-1">
+                  <UISelect
+                    value={String(fixedMonth)}
+                    onValueChange={(v) => setFixedMonth(Number(v))}
+                    open={pick === 'month'}
+                    onOpenChange={pickHandler('month')}
+                  >
+                    <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                    <UISelectContent>
+                      {MONTH_OPTIONS.map((m) => (
+                        <UISelectItem key={m.value} value={String(m.value)}>{m.label}</UISelectItem>
+                      ))}
+                    </UISelectContent>
+                  </UISelect>
+                </div>
+              </div>
+              <div className={rowCls}>
+                <label className={rowLabelCls}>Day</label>
+                <div className="flex-1">
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={fixedDay}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      if (Number.isInteger(n)) setFixedDay(Math.min(31, Math.max(1, n)));
+                    }}
+                    className="w-full h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className={rowCls}>
+                <label className={rowLabelCls}>Reference</label>
+                <div className="flex-1">
+                  <UISelect
+                    value={
+                      type === 'project'
+                        ? projectRef
+                        : taskId !== null
+                        ? String(taskId)
+                        : undefined
+                    }
+                    onValueChange={(v) => {
+                      if (type === 'task') setTaskId(Number(v));
+                      else setProjectRef(v);
+                    }}
+                    open={pick === 'reference'}
+                    onOpenChange={pickHandler('reference')}
+                    disabled={type === 'task' && taskOptions.length === 0}
+                  >
+                    <UISelectTrigger className={triggerCls}>
+                      <UISelectValue placeholder={type === 'task' && taskOptions.length === 0 ? 'No other tasks' : 'Select…'} />
+                    </UISelectTrigger>
+                    <UISelectContent>
+                      {type === 'project' ? (
+                        <>
+                          <UISelectItem value={CURRENT_PROJECT_VALUE}>{currentProjectName}</UISelectItem>
+                          {projectOptions.map((p) => (
+                            <UISelectItem key={p.id} value={String(p.id)}>{p.name}</UISelectItem>
+                          ))}
+                        </>
+                      ) : (
+                        taskOptions.map((t) => (
+                          <UISelectItem key={t.id} value={String(t.id)}>{t.title}</UISelectItem>
+                        ))
+                      )}
+                    </UISelectContent>
+                  </UISelect>
+                </div>
+              </div>
+
+              <div className={rowCls}>
+                <label className={rowLabelCls}>Event</label>
+                <div className="flex-1">
+                  <UISelect
+                    value={event}
+                    onValueChange={(v) => setEvent(v as EventKey)}
+                    open={pick === 'event'}
+                    onOpenChange={pickHandler('event')}
+                  >
+                    <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                    <UISelectContent>
+                      {eventOptions.map((o) => (
+                        <UISelectItem key={o.value} value={o.value}>{o.label}</UISelectItem>
+                      ))}
+                    </UISelectContent>
+                  </UISelect>
+                </div>
               </div>
             </>
           )}
