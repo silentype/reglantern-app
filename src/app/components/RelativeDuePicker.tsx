@@ -83,8 +83,12 @@ export interface RelativeDuePickerProps {
 //   'kickoff'         -> projectKickoff anchor (implicit center, resolves
 //                        against the task's own healthCenter)
 //   'field:<fieldId>' -> healthCenterField anchor
-type AnchorType = 'project' | 'task' | 'fixedDate' | 'healthCenterField';
-type EventKey = 'started' | 'ended' | 'due' | 'completed';
+// '' = no Type chosen yet (placeholder "Select…" in the dropdown);
+// the picker holds back the Reference/Event/Field rows until the user
+// picks a Type so the form starts visually empty.
+type AnchorType = '' | 'project' | 'task' | 'fixedDate' | 'healthCenterField';
+// '' = no Event chosen yet (placeholder "Select…").
+type EventKey = '' | 'started' | 'ended' | 'due' | 'completed';
 
 // Sentinel used in the Reference dropdown to mean "the project this task
 // already belongs to" (no projectId stored). Any number is fine as long as
@@ -117,11 +121,14 @@ function ruleToState(rule: DueDateRule | undefined): {
    *  'kickoff:<centerName>' or 'field:<fieldId>'. Empty = unset. */
   healthCenterFieldId: string;
 } {
+  // All-unset defaults: every Trigger select starts at "Select…" so the
+  // user has to make a deliberate choice. Existing rules override these
+  // via the branches below.
   const defaults = {
-    type: 'project' as AnchorType,
+    type: '' as AnchorType,
     taskId: null,
-    projectRef: CURRENT_PROJECT_VALUE,
-    event: 'started' as EventKey,
+    projectRef: '',
+    event: '' as EventKey,
     fixedMonth: 1,
     fixedDay: 1,
     healthCenterFieldId: '',
@@ -182,6 +189,7 @@ function buildAnchor(
   fixedDay: number,
   healthCenterFieldId: string
 ): DueDateAnchor | null {
+  if (!type) return null;
   if (type === 'fixedDate') {
     if (!Number.isInteger(fixedMonth) || fixedMonth < 1 || fixedMonth > 12) return null;
     if (!Number.isInteger(fixedDay) || fixedDay < 1 || fixedDay > 31) return null;
@@ -309,8 +317,11 @@ export function RelativeDuePicker({
   }, [initialRule, hcFieldOptions]);
 
   const [type, setType] = useState<AnchorType>(initial.type);
+  // taskId only pre-fills from an existing rule. Without an initial
+  // rule (or with a broken reference) it stays null so the Reference
+  // select shows "Select…".
   const [taskId, setTaskId] = useState<number | null>(
-    initialReferenceMissing ? null : (initial.taskId ?? taskOptions[0]?.id ?? null)
+    initialReferenceMissing ? null : (initial.taskId ?? null)
   );
   const [projectRef, setProjectRef] = useState<string>(initial.projectRef);
   const [event, setEvent] = useState<EventKey>(initial.event);
@@ -323,20 +334,13 @@ export function RelativeDuePicker({
   const [unit, setUnit] = useState<DueDateRule['unit']>(initialRule?.unit ?? 'weeks');
   const [direction, setDirection] = useState<DueDateRule['direction']>(initialRule?.direction ?? 'after');
 
-  // Snap event + reference to valid defaults when type changes. When the
-  // initial reference is missing we deliberately leave taskId/kickoffCenter
-  // null until the user explicitly picks a new sibling/center (or changes
-  // type), so Save stays disabled — otherwise this effect would silently
-  // swap the rule to point at the first available sibling/center.
+  // When the Type changes, clear any Event that's no longer valid for
+  // the new Type (e.g. Project-only "ended" with Type=Task). Otherwise
+  // leave everything else alone -- the user picks Reference/Event/Field
+  // explicitly, and "Select…" stays visible until they do.
   useEffect(() => {
     const validEvents = eventOptionsFor(type).map((o) => o.value);
-    if (validEvents.length > 0 && !validEvents.includes(event)) setEvent(validEvents[0]);
-    if (type === 'task' && taskId === null && taskOptions[0] && !initialReferenceMissing) {
-      setTaskId(taskOptions[0].id);
-    }
-    if (type === 'healthCenterField' && !healthCenterFieldId && healthCenterRefOptions[0] && !initialHCFieldMissing) {
-      setHealthCenterFieldId(healthCenterRefOptions[0].value);
-    }
+    if (event && !validEvents.includes(event)) setEvent('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
@@ -459,12 +463,14 @@ export function RelativeDuePicker({
             <label className={rowLabelCls}>Type</label>
             <div className="flex-1">
               <UISelect
-                value={type}
+                value={type || undefined}
                 onValueChange={(v) => setType(v as AnchorType)}
                 open={pick === 'type'}
                 onOpenChange={pickHandler('type')}
               >
-                <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                <UISelectTrigger className={triggerCls}>
+                  <UISelectValue placeholder="Select…" />
+                </UISelectTrigger>
                 <UISelectContent>
                   <UISelectItem value="project">Project</UISelectItem>
                   <UISelectItem value="task">Task</UISelectItem>
@@ -499,7 +505,7 @@ export function RelativeDuePicker({
                 </UISelect>
               </div>
             </div>
-          ) : type === 'fixedDate' ? (
+          ) : !type ? null : type === 'fixedDate' ? (
             <>
               <div className={rowCls}>
                 <label className={rowLabelCls}>Month</label>
@@ -544,7 +550,7 @@ export function RelativeDuePicker({
                   <UISelect
                     value={
                       type === 'project'
-                        ? projectRef
+                        ? (projectRef || undefined)
                         : taskId !== null
                         ? String(taskId)
                         : undefined
@@ -582,12 +588,14 @@ export function RelativeDuePicker({
                 <label className={rowLabelCls}>Event</label>
                 <div className="flex-1">
                   <UISelect
-                    value={event}
+                    value={event || undefined}
                     onValueChange={(v) => setEvent(v as EventKey)}
                     open={pick === 'event'}
                     onOpenChange={pickHandler('event')}
                   >
-                    <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                    <UISelectTrigger className={triggerCls}>
+                      <UISelectValue placeholder="Select…" />
+                    </UISelectTrigger>
                     <UISelectContent>
                       {eventOptions.map((o) => (
                         <UISelectItem key={o.value} value={o.value}>{o.label}</UISelectItem>

@@ -1009,7 +1009,7 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
 
   const [columns, setColumns] = useState<ColumnConfig[]>([
     { id: 'title', label: 'Task Name', icon: null, width: 350, minWidth: 200 },
-    { id: 'dueDate', label: 'Due Date', icon: CalendarIcon, width: 150, minWidth: 150 },
+    { id: 'dueDate', label: 'Due Date', icon: CalendarIcon, width: 260, minWidth: 200 },
     { id: 'assignedTo', label: 'Assigned To', icon: User, width: 180, minWidth: 180 },
     { id: 'healthCenter', label: 'Health Center', icon: Building2, width: 220, minWidth: 220 },
     { id: 'subtasks', label: 'Subtasks', icon: null, width: 150, minWidth: 150 },
