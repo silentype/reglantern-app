@@ -527,6 +527,12 @@ const TaskRow = memo(function TaskRow({
   }, [searchParams, setSearchParams, datePickerKey]);
   const [assignedToOpen, setAssignedToOpen] = useState(false);
   const [inputValue, setInputValue] = useState(task.dueDate || '');
+  // Keep the inline / Custom Date input in sync if the task's dueDate
+  // changes from outside this cell (calendar pick, rule resolution,
+  // sibling rename, etc.).
+  useEffect(() => {
+    setInputValue(task.dueDate || '');
+  }, [task.dueDate]);
   // Date picker mode -- in project-builder context (enableRelativeDates),
   // always default to 'relative' per user preference. Outside that context,
   // 'specific' is forced (relative mode isn't available anyway).
@@ -577,6 +583,30 @@ const TaskRow = memo(function TaskRow({
     }
   }, [task.id, onUpdateTask]);
 
+  // Inline-cell commit: validates MM/DD/YYYY, writes to the task, and
+  // clears any relative rule so the typed value isn't overwritten on
+  // the next resolve pass. Triggered by Enter or blur on the inline
+  // input.
+  const commitInlineDueDate = useCallback(() => {
+    const trimmed = inputValue.trim();
+    if (trimmed === '') {
+      if (task.dueDate) onUpdateTask(task.id, { dueDate: undefined, dueDateRule: undefined });
+      return;
+    }
+    if (!/^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(trimmed)) {
+      setInputValue(task.dueDate || '');
+      return;
+    }
+    const parsed = parse(trimmed, 'MM/dd/yyyy', new Date());
+    if (Number.isNaN(parsed.getTime())) {
+      setInputValue(task.dueDate || '');
+      return;
+    }
+    if (trimmed !== task.dueDate) {
+      onUpdateTask(task.id, { dueDate: trimmed, dueDateRule: undefined });
+    }
+  }, [inputValue, task.id, task.dueDate, onUpdateTask]);
+
   const handleSaveRelativeRule = useCallback(
     (rule: DueDateRule) => {
       onUpdateTask(task.id, { dueDateRule: rule });
@@ -624,23 +654,57 @@ const TaskRow = memo(function TaskRow({
         <div aria-hidden="true" className="absolute border-[#cdd7e1] border-r border-solid inset-0 pointer-events-none" />
         <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover/date:bg-[#f5f5f5] transition-colors" />
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-          <PopoverTrigger asChild>
-            <div className="w-full h-full">
-              <DueDateBadge
-                dueDate={task.dueDate}
-                ruleBroken={task.dueDateBroken}
-                ruleSummary={
-                  task.dueDateRule
-                    ? shortDueDateRule(task.dueDateRule, {
-                        tasks: siblingTasks ?? [],
-                        healthCenterFieldDefs,
-                      })
-                    : undefined
-                }
-                onOpenChange={() => setCalendarOpen(true)}
-              />
-            </div>
-          </PopoverTrigger>
+          {/* When a rule is in effect (shortcode) or broken, the whole cell
+              is the popover trigger and shows the existing badge. With no
+              rule, the cell is an editable input + chevron in the Assign-
+              User style: click the input to type a date, click anywhere
+              else in the cell to open the calendar/picker. */}
+          {task.dueDateRule || task.dueDateBroken ? (
+            <PopoverTrigger asChild>
+              <div className="w-full h-full">
+                <DueDateBadge
+                  dueDate={task.dueDate}
+                  ruleBroken={task.dueDateBroken}
+                  ruleSummary={
+                    task.dueDateRule
+                      ? shortDueDateRule(task.dueDateRule, {
+                          tasks: siblingTasks ?? [],
+                          healthCenterFieldDefs,
+                        })
+                      : undefined
+                  }
+                  onOpenChange={() => setCalendarOpen(true)}
+                />
+              </div>
+            </PopoverTrigger>
+          ) : (
+            <PopoverTrigger asChild>
+              <div className="flex items-center justify-between w-full h-full relative z-10 cursor-pointer">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      commitInlineDueDate();
+                      (e.currentTarget as HTMLInputElement).blur();
+                    } else if (e.key === 'Escape') {
+                      setInputValue(task.dueDate || '');
+                      (e.currentTarget as HTMLInputElement).blur();
+                    }
+                  }}
+                  onBlur={commitInlineDueDate}
+                  placeholder="Select due date"
+                  maxLength={10}
+                  className="flex-1 min-w-0 bg-transparent border-0 outline-none font-['Geist:Regular',sans-serif] font-normal text-[#18181b] placeholder:text-[#999] text-[14px]"
+                />
+                <ChevronDown className="size-[16px] text-[#18181B] shrink-0 ml-1" />
+              </div>
+            </PopoverTrigger>
+          )}
           <PopoverContent
             className="w-[460px] p-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto"
             align="start"

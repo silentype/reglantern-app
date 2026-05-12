@@ -127,8 +127,14 @@ export function AdminPage({
   // /admin/project-builder/new) and the open/closed state of popovers/selects
   // are URL-driven.
   const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
-  const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
-  const [projectCardCenterSearch, setProjectCardCenterSearch] = useState('');
+  // Pending assign-to-health-center selection. Only one project can have
+  // a pending selection at a time; opening another card's popover wipes
+  // any previous in-progress state. The selection persists across
+  // popover close so the user can click off, then come back and click
+  // Send (which now sits inside the card whenever pending is non-empty).
+  const [pendingAssign, setPendingAssign] = useState<
+    { projectId: number; centers: string[]; search: string } | null
+  >(null);
   // Confirmation-modal state for "Delete project". Stored as a boolean
   // (not a project id) because only the currently-selected project can
   // be deleted from the detail view.
@@ -675,150 +681,168 @@ export function AdminPage({
                     </div>
                   )}
 
-                  {/* Assign to Health Center */}
-                  <div className="mb-3">
-                    <div className="flex items-center gap-1.5">
-                      <Popover
-                        open={popover === `assign:${project.id}`}
-                        onOpenChange={(open) => {
-                          setPopover(open ? `assign:${project.id}` : null);
-                          if (!open) {
-                            setProjectCardSelectedCenters([]);
-                            setProjectCardCenterSearch('');
-                          }
-                        }}
-                      >
-                        <PopoverTrigger asChild>
-                          <button
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex-1 flex items-center justify-between gap-2 px-3 py-2 bg-white border border-[#e4e4e7] rounded-[6px] text-[12px] hover:border-[#d4d4d8] transition-colors h-[36px]"
-                          >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <Building2 className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
-                              <span className="text-[#71717a] truncate">
-                                {/* In-progress selection only shows on the card whose
-                                    popover is actually open; other cards keep the
-                                    default label so the shared state doesn't leak
-                                    across cards. */}
-                                {popover === `assign:${project.id}` && projectCardSelectedCenters.length > 0
-                                  ? projectCardSelectedCenters.length === 1
-                                    ? projectCardSelectedCenters[0]
-                                    : `${projectCardSelectedCenters.length} health centers selected`
-                                  : 'Assign to health center...'}
-                              </span>
-                            </div>
-                            <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-[280px] p-0"
-                          align="start"
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => e.stopPropagation()}
+                  {/* Assign to Health Center.
+                      Pending selection (which centers the user has ticked
+                      but not yet Sent) lives in `pendingAssign` and is
+                      scoped to a single project at a time. The X / Send
+                      row sits below the trigger and stays visible after
+                      the popover closes, so the user can click off the
+                      popover, come back, and confirm. */}
+                  {(() => {
+                    const isThisCardPending = pendingAssign?.projectId === project.id;
+                    const pendingCenters = isThisCardPending ? pendingAssign.centers : [];
+                    const pendingSearch = isThisCardPending ? pendingAssign.search : '';
+                    return (
+                      <div className="mb-3">
+                        <Popover
+                          open={popover === `assign:${project.id}`}
+                          onOpenChange={(open) => {
+                            setPopover(open ? `assign:${project.id}` : null);
+                            if (open && !isThisCardPending) {
+                              // Switching to a new card -- start a fresh
+                              // pending record, discarding any other card's
+                              // in-progress selection.
+                              setPendingAssign({ projectId: project.id, centers: [], search: '' });
+                            }
+                          }}
                         >
-                          <Command>
-                            <div className="flex items-center border-b px-3">
-                              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                              <input
-                                placeholder="Search health centers..."
-                                value={projectCardCenterSearch}
-                                onChange={(e) => setProjectCardCenterSearch(e.target.value)}
-                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#71717a]"
-                              />
-                            </div>
-                            <CommandList>
-                              <CommandEmpty>No health centers found.</CommandEmpty>
-                              <CommandGroup>
-                                {healthCenters
-                                  .filter((center) =>
-                                    projectCardCenterSearch === '' ||
-                                    center.toLowerCase().includes(projectCardCenterSearch.toLowerCase())
-                                  )
-                                  .map((center) => {
-                                    const isSelected = projectCardSelectedCenters.includes(center);
-                                    return (
-                                      <CommandItem
-                                        key={center}
-                                        onSelect={() => {
-                                          setProjectCardSelectedCenters((prev) =>
-                                            prev.includes(center)
-                                              ? prev.filter((c) => c !== center)
-                                              : [...prev, center]
-                                          );
-                                        }}
-                                        className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                                      >
-                                        <div
-                                          className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                                            isSelected
-                                              ? 'bg-[#fc6] border-[#fc6]'
-                                              : 'border-[#d4d4d8]'
-                                          }`}
+                          <PopoverTrigger asChild>
+                            <button
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border border-[#e4e4e7] rounded-[6px] text-[12px] hover:border-[#d4d4d8] transition-colors h-[36px]"
+                            >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                <Building2 className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
+                                <span className="text-[#71717a] truncate">
+                                  {pendingCenters.length > 0
+                                    ? pendingCenters.length === 1
+                                      ? pendingCenters[0]
+                                      : `${pendingCenters.length} health centers selected`
+                                    : 'Assign to health center...'}
+                                </span>
+                              </div>
+                              <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-[280px] p-0"
+                            align="start"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          >
+                            <Command>
+                              <div className="flex items-center border-b px-3">
+                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                <input
+                                  placeholder="Search health centers..."
+                                  value={pendingSearch}
+                                  onChange={(e) =>
+                                    setPendingAssign((prev) =>
+                                      prev?.projectId === project.id
+                                        ? { ...prev, search: e.target.value }
+                                        : { projectId: project.id, centers: [], search: e.target.value }
+                                    )
+                                  }
+                                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#71717a]"
+                                />
+                              </div>
+                              <CommandList>
+                                <CommandEmpty>No health centers found.</CommandEmpty>
+                                <CommandGroup>
+                                  {healthCenters
+                                    .filter((center) =>
+                                      pendingSearch === '' ||
+                                      center.toLowerCase().includes(pendingSearch.toLowerCase())
+                                    )
+                                    .map((center) => {
+                                      const isSelected = pendingCenters.includes(center);
+                                      return (
+                                        <CommandItem
+                                          key={center}
+                                          onSelect={() => {
+                                            setPendingAssign((prev) => {
+                                              const base = prev?.projectId === project.id
+                                                ? prev
+                                                : { projectId: project.id, centers: [], search: '' };
+                                              return {
+                                                ...base,
+                                                centers: base.centers.includes(center)
+                                                  ? base.centers.filter((c) => c !== center)
+                                                  : [...base.centers, center],
+                                              };
+                                            });
+                                          }}
+                                          className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                                         >
-                                          {isSelected && <Check className="w-3 h-3 text-[#18181b]" />}
-                                        </div>
-                                        <span className="text-[14px]">{center}</span>
-                                      </CommandItem>
-                                    );
-                                  })}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                                          <div
+                                            className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
+                                              isSelected
+                                                ? 'bg-[#fc6] border-[#fc6]'
+                                                : 'border-[#d4d4d8]'
+                                            }`}
+                                          >
+                                            {isSelected && <Check className="w-3 h-3 text-[#18181b]" />}
+                                          </div>
+                                          <span className="text-[14px]">{center}</span>
+                                        </CommandItem>
+                                      );
+                                    })}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
 
-                      {/* X / Send only show on the active card so the
-                          shared selection state doesn't surface on
-                          other cards. */}
-                      {popover === `assign:${project.id}` && projectCardSelectedCenters.length > 0 && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setProjectCardSelectedCenters([]);
-                              setProjectCardCenterSearch('');
-                            }}
-                            className="h-[36px] w-[36px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
-                            title="Clear selection"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-
-                          <Button
-                            size="sm"
-                            className="shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const newCenters = [...projectCardSelectedCenters];
-                              const assignedAt = format(new Date(), 'MM/dd/yyyy');
-                              setProjects((prev) =>
-                                prev.map((p) => {
-                                  if (p.id !== project.id) return p;
-                                  const current = p.assignedHealthCenters || [];
-                                  const existingNames = new Set(current.map((c) => c.name));
-                                  const merged = [
-                                    ...current,
-                                    ...newCenters
-                                      .filter((c) => !existingNames.has(c))
-                                      .map((name) => ({ name, assignedAt })),
-                                  ];
-                                  return { ...p, assignedHealthCenters: merged };
-                                })
-                              );
-                              setProjectCardSelectedCenters([]);
-                              setProjectCardCenterSearch('');
-                              setPopover(null);
-                              toast.success(
-                                `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`
-                              );
-                            }}
-                          >
-                            Send
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                        {/* Confirm row -- stays visible even after the
+                            popover closes so the user can step away and
+                            still hit Send. Sits inside the card. */}
+                        {isThisCardPending && pendingCenters.length > 0 && (
+                          <div className="mt-2 flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPendingAssign(null);
+                              }}
+                              className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
+                              title="Clear selection"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                            <Button
+                              size="sm"
+                              className="shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const newCenters = [...pendingCenters];
+                                const assignedAt = format(new Date(), 'MM/dd/yyyy');
+                                setProjects((prev) =>
+                                  prev.map((p) => {
+                                    if (p.id !== project.id) return p;
+                                    const current = p.assignedHealthCenters || [];
+                                    const existingNames = new Set(current.map((c) => c.name));
+                                    const merged = [
+                                      ...current,
+                                      ...newCenters
+                                        .filter((c) => !existingNames.has(c))
+                                        .map((name) => ({ name, assignedAt })),
+                                    ];
+                                    return { ...p, assignedHealthCenters: merged };
+                                  })
+                                );
+                                setPendingAssign(null);
+                                setPopover(null);
+                                toast.success(
+                                  `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`
+                                );
+                              }}
+                            >
+                              Send
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <div className="flex items-center justify-between text-[12px] text-[#71717a] pt-3 border-t border-[#f4f4f5]">
                     <span className="font-medium">
