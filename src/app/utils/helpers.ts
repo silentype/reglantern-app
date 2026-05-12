@@ -345,6 +345,7 @@ export function computeDueDate(
   if (rule.unit === 'days') result = addDays(anchorDate, offset);
   else if (rule.unit === 'weeks') result = addWeeks(anchorDate, offset);
   else if (rule.unit === 'months') result = addMonths(anchorDate, offset);
+  else if (rule.unit === 'years') result = addYears(anchorDate, offset);
   else return null;
 
   return format(result, DATE_FMT);

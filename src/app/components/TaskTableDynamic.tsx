@@ -75,7 +75,7 @@ export type DueDateAnchor =
 export interface DueDateRule {
   anchor: DueDateAnchor;
   amount: number; // positive integer
-  unit: 'days' | 'weeks' | 'months';
+  unit: 'days' | 'weeks' | 'months' | 'years';
   direction: 'before' | 'after';
 }
 

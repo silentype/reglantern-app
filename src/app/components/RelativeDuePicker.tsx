@@ -17,9 +17,16 @@
  * (TaskTableDynamic) and the side panel (MultiFileUploadPanel).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { Button } from './design-system/Button';
-import { Select } from './design-system/Select';
+import {
+  Select as UISelect,
+  SelectContent as UISelectContent,
+  SelectItem as UISelectItem,
+  SelectTrigger as UISelectTrigger,
+  SelectValue as UISelectValue,
+} from './ui/select';
 import { computeDueDate } from '../utils/helpers';
 import type {
   DueDateAnchor,
@@ -319,6 +326,34 @@ export function RelativeDuePicker({
   const eventOptions = eventOptionsFor(type);
   const labelClasses = 'block text-[11px] font-medium text-[#71717a] mb-1';
 
+  // URL-driven open state for each dropdown so html.to.design (and shareable
+  // links) can capture each open select. Only one Select can be open at a
+  // time in this picker, so we use a single ?pick=<name> param. Closing the
+  // popover does NOT auto-clear this param (the consumer's existing
+  // ?datePicker scoping handles the broader popover lifetime); cleared
+  // implicitly when the user opens then closes the same select.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pick = searchParams.get('pick');
+  const setPick = useCallback(
+    (name: string | null) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          if (name) params.set('pick', name);
+          else params.delete('pick');
+          return params;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+  const pickHandler = useCallback(
+    (name: string) => (open: boolean) => setPick(open ? name : null),
+    [setPick]
+  );
+  const triggerCls = 'h-8 px-2.5 text-xs';
+
   return (
     <div className={`p-4 w-[460px] flex flex-col gap-4 ${className ?? ''}`}>
       <div>
@@ -333,25 +368,34 @@ export function RelativeDuePicker({
             className="w-16 h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
           />
           <div className="w-28">
-            <Select
-              size="sm"
+            <UISelect
               value={unit}
-              onChange={(e) => setUnit(e.target.value as DueDateRule['unit'])}
+              onValueChange={(v) => setUnit(v as DueDateRule['unit'])}
+              open={pick === 'unit'}
+              onOpenChange={pickHandler('unit')}
             >
-              <option value="days">{amount === 1 ? 'day' : 'days'}</option>
-              <option value="weeks">{amount === 1 ? 'week' : 'weeks'}</option>
-              <option value="months">{amount === 1 ? 'month' : 'months'}</option>
-            </Select>
+              <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+              <UISelectContent>
+                <UISelectItem value="days">{amount === 1 ? 'day' : 'days'}</UISelectItem>
+                <UISelectItem value="weeks">{amount === 1 ? 'week' : 'weeks'}</UISelectItem>
+                <UISelectItem value="months">{amount === 1 ? 'month' : 'months'}</UISelectItem>
+                <UISelectItem value="years">{amount === 1 ? 'year' : 'years'}</UISelectItem>
+              </UISelectContent>
+            </UISelect>
           </div>
           <div className="w-24">
-            <Select
-              size="sm"
+            <UISelect
               value={direction}
-              onChange={(e) => setDirection(e.target.value as DueDateRule['direction'])}
+              onValueChange={(v) => setDirection(v as DueDateRule['direction'])}
+              open={pick === 'direction'}
+              onOpenChange={pickHandler('direction')}
             >
-              <option value="after">after</option>
-              <option value="before">before</option>
-            </Select>
+              <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+              <UISelectContent>
+                <UISelectItem value="after">after</UISelectItem>
+                <UISelectItem value="before">before</UISelectItem>
+              </UISelectContent>
+            </UISelect>
           </div>
         </div>
       </div>
@@ -376,84 +420,84 @@ export function RelativeDuePicker({
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className={labelClasses}>Type</label>
-            <Select
-              size="sm"
+            <UISelect
               value={type}
-              onChange={(e) => setType(e.target.value as AnchorType)}
+              onValueChange={(v) => setType(v as AnchorType)}
+              open={pick === 'type'}
+              onOpenChange={pickHandler('type')}
             >
-              <option value="project">Project</option>
-              <option value="task">Task</option>
-              <option value="fixedDate">Fixed Date</option>
-              <option value="kickoff" disabled={kickoffOptions.length === 0}>
-                Kickoff{kickoffOptions.length === 0 ? ' (assign a center first)' : ''}
-              </option>
-              <option value="healthCenterField" disabled={hcFieldOptions.length === 0}>
-                Health Center Info{hcFieldOptions.length === 0 ? ' (add a field first)' : ''}
-              </option>
-            </Select>
+              <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+              <UISelectContent>
+                <UISelectItem value="project">Project</UISelectItem>
+                <UISelectItem value="task">Task</UISelectItem>
+                <UISelectItem value="fixedDate">Fixed Date</UISelectItem>
+                <UISelectItem value="kickoff" disabled={kickoffOptions.length === 0}>
+                  Kickoff{kickoffOptions.length === 0 ? ' (assign a center first)' : ''}
+                </UISelectItem>
+                <UISelectItem value="healthCenterField" disabled={hcFieldOptions.length === 0}>
+                  Health Center Info{hcFieldOptions.length === 0 ? ' (add a field first)' : ''}
+                </UISelectItem>
+              </UISelectContent>
+            </UISelect>
           </div>
 
           {type === 'healthCenterField' ? (
             <div className="col-span-2">
               <label className={labelClasses}>Field</label>
-              <Select
-                size="sm"
-                value={healthCenterFieldId}
-                onChange={(e) => setHealthCenterFieldId(e.target.value)}
+              <UISelect
+                value={healthCenterFieldId || undefined}
+                onValueChange={(v) => setHealthCenterFieldId(v)}
+                open={pick === 'reference'}
+                onOpenChange={pickHandler('reference')}
                 disabled={hcFieldOptions.length === 0}
               >
-                {hcFieldOptions.length === 0 ? (
-                  <option value="">No fields configured</option>
-                ) : (
-                  <>
-                    {initialHCFieldMissing && <option value="">Select a field…</option>}
-                    {hcFieldOptions.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.label}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </Select>
+                <UISelectTrigger className={triggerCls}>
+                  <UISelectValue placeholder={hcFieldOptions.length === 0 ? 'No fields configured' : 'Select a field…'} />
+                </UISelectTrigger>
+                <UISelectContent>
+                  {hcFieldOptions.map((d) => (
+                    <UISelectItem key={d.id} value={d.id}>{d.label}</UISelectItem>
+                  ))}
+                </UISelectContent>
+              </UISelect>
             </div>
           ) : type === 'kickoff' ? (
             <div className="col-span-2">
               <label className={labelClasses}>Health Center</label>
-              <Select
-                size="sm"
-                value={kickoffCenter}
-                onChange={(e) => setKickoffCenter(e.target.value)}
+              <UISelect
+                value={kickoffCenter || undefined}
+                onValueChange={(v) => setKickoffCenter(v)}
+                open={pick === 'reference'}
+                onOpenChange={pickHandler('reference')}
                 disabled={kickoffOptions.length === 0}
               >
-                {kickoffOptions.length === 0 ? (
-                  <option value="">No health centers assigned</option>
-                ) : (
-                  <>
-                    {initialKickoffMissing && <option value="">Select a center…</option>}
-                    {kickoffOptions.map((c) => (
-                      <option key={c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </>
-                )}
-              </Select>
+                <UISelectTrigger className={triggerCls}>
+                  <UISelectValue placeholder={kickoffOptions.length === 0 ? 'No health centers assigned' : 'Select a center…'} />
+                </UISelectTrigger>
+                <UISelectContent>
+                  {kickoffOptions.map((c) => (
+                    <UISelectItem key={c.name} value={c.name}>{c.name}</UISelectItem>
+                  ))}
+                </UISelectContent>
+              </UISelect>
             </div>
           ) : type === 'fixedDate' ? (
             <>
               <div>
                 <label className={labelClasses}>Month</label>
-                <Select
-                  size="sm"
-                  value={fixedMonth}
-                  onChange={(e) => setFixedMonth(Number(e.target.value))}
+                <UISelect
+                  value={String(fixedMonth)}
+                  onValueChange={(v) => setFixedMonth(Number(v))}
+                  open={pick === 'month'}
+                  onOpenChange={pickHandler('month')}
                 >
-                  {MONTH_OPTIONS.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </Select>
+                  <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                  <UISelectContent>
+                    {MONTH_OPTIONS.map((m) => (
+                      <UISelectItem key={m.value} value={String(m.value)}>{m.label}</UISelectItem>
+                    ))}
+                  </UISelectContent>
+                </UISelect>
               </div>
               <div>
                 <label className={labelClasses}>Day</label>
@@ -474,49 +518,57 @@ export function RelativeDuePicker({
             <>
               <div>
                 <label className={labelClasses}>Reference</label>
-                <Select
-                  size="sm"
-                  value={type === 'project' ? projectRef : (taskId ?? '').toString()}
-                  onChange={(e) => {
-                    if (type === 'task') setTaskId(Number(e.target.value));
-                    else setProjectRef(e.target.value);
+                <UISelect
+                  value={
+                    type === 'project'
+                      ? projectRef
+                      : taskId !== null
+                      ? String(taskId)
+                      : undefined
+                  }
+                  onValueChange={(v) => {
+                    if (type === 'task') setTaskId(Number(v));
+                    else setProjectRef(v);
                   }}
+                  open={pick === 'reference'}
+                  onOpenChange={pickHandler('reference')}
                   disabled={type === 'task' && taskOptions.length === 0}
                 >
-                  {type === 'project' ? (
-                    <>
-                      <option value={CURRENT_PROJECT_VALUE}>{currentProjectName}</option>
-                      {projectOptions.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </>
-                  ) : taskOptions.length === 0 ? (
-                    <option value="">No other tasks</option>
-                  ) : (
-                    taskOptions.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.title}
-                      </option>
-                    ))
-                  )}
-                </Select>
+                  <UISelectTrigger className={triggerCls}>
+                    <UISelectValue placeholder={type === 'task' && taskOptions.length === 0 ? 'No other tasks' : 'Select…'} />
+                  </UISelectTrigger>
+                  <UISelectContent>
+                    {type === 'project' ? (
+                      <>
+                        <UISelectItem value={CURRENT_PROJECT_VALUE}>{currentProjectName}</UISelectItem>
+                        {projectOptions.map((p) => (
+                          <UISelectItem key={p.id} value={String(p.id)}>{p.name}</UISelectItem>
+                        ))}
+                      </>
+                    ) : (
+                      taskOptions.map((t) => (
+                        <UISelectItem key={t.id} value={String(t.id)}>{t.title}</UISelectItem>
+                      ))
+                    )}
+                  </UISelectContent>
+                </UISelect>
               </div>
 
               <div>
                 <label className={labelClasses}>Event</label>
-                <Select
-                  size="sm"
+                <UISelect
                   value={event}
-                  onChange={(e) => setEvent(e.target.value as EventKey)}
+                  onValueChange={(v) => setEvent(v as EventKey)}
+                  open={pick === 'event'}
+                  onOpenChange={pickHandler('event')}
                 >
-                  {eventOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </Select>
+                  <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                  <UISelectContent>
+                    {eventOptions.map((o) => (
+                      <UISelectItem key={o.value} value={o.value}>{o.label}</UISelectItem>
+                    ))}
+                  </UISelectContent>
+                </UISelect>
               </div>
             </>
           )}
