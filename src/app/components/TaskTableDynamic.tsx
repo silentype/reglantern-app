@@ -598,13 +598,15 @@ const TaskRow = memo(function TaskRow({
   const isSelected = selectedTaskId === task.id;
   const outlineClass = `absolute border border-solid inset-[-1px] pointer-events-none rounded-[9px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-colors z-10 ${isSelected ? 'border-[#47515B]' : 'border-[#cdd7e1]'}`;
 
-  // Calculate minimum width for row to prevent background cutoff
+  // Calculate minimum width for row to prevent background cutoff. The
+  // checkbox column is dropped entirely (not just made invisible) when
+  // completion is disabled, so the title shifts hard left.
   const minRowWidth = useMemo(() => {
-    const checkboxWidth = 44;
+    const checkboxWidth = disableCompletion ? 0 : 44;
     const ellipsisWidth = 60;
     const columnsWidth = columns.reduce((sum, col) => sum + col.width, 0);
     return checkboxWidth + columnsWidth + ellipsisWidth;
-  }, [columns]);
+  }, [columns, disableCompletion]);
 
   // Create a map of column renderers
   const columnMap = useMemo(() => ({
@@ -833,14 +835,12 @@ const TaskRow = memo(function TaskRow({
         <div aria-hidden="true" className={outlineClass} />
         <div className="flex flex-row items-center size-full">
           <div className="content-stretch flex items-center relative size-full">
-            {/* Checkbox -- hidden in views that can't complete tasks
-                (Project Builder detail edits the project's task template
-                only; completion happens on the Tasks page). The left
-                margin stays via the same w-[44px] spacer so columns
-                stay aligned with the header. */}
-            {disableCompletion ? (
-              <div className="shrink-0 w-[44px] h-full" />
-            ) : (
+            {/* Checkbox -- omitted entirely in views that can't complete
+                tasks (Project Builder detail edits the project's task
+                template only; completion happens on the Tasks page).
+                Dropping the column rather than leaving a 44px spacer
+                shifts the title cell hard left. */}
+            {!disableCompletion && (
               <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px] cursor-pointer group" onClick={handleCheckboxClick}>
                 <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] group-active:bg-[#f5f5f5] rounded-l-[8px] transition-colors" />
                 <button className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer z-10">
@@ -1056,22 +1056,28 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
     return columns.filter(column => visibleColumns.includes(column.id));
   }, [columns, visibleColumns]);
 
-  // Calculate minimum width for header row to prevent background cutoff
+  // Calculate minimum width for header row to prevent background cutoff.
+  // When the completion column is dropped (disableCompletion), the 44px
+  // checkbox slot is removed and the headers shift left.
   const minHeaderWidth = useMemo(() => {
-    const checkboxWidth = 44;
+    const checkboxWidth = disableCompletion ? 0 : 44;
     const ellipsisWidth = 60;
     const columnsWidth = filteredColumns.reduce((sum, col) => sum + col.width, 0);
     const rightPadding = 24; // Add extra padding on the right
     return checkboxWidth + columnsWidth + ellipsisWidth + rightPadding;
-  }, [filteredColumns]);
+  }, [filteredColumns, disableCompletion]);
 
   return (
     <div className="content-stretch flex flex-col gap-[12px] items-start relative w-full" data-name="Task Table">
-      {/* Column Headers */}
+      {/* Column Headers. The bottom border lives on the inner flex so it
+          spans the same 100% width as the row content -- guaranteeing
+          the top line of the table runs edge-to-edge. */}
       <div className="hidden lg:block h-[40px] sticky top-0 z-20 shrink-0 w-[calc(100%+48px)] bg-white -mx-6 px-6">
-        <div className="flex flex-row items-center size-full border-b border-[#e4e4e7]" style={{ minWidth: `${minHeaderWidth}px` }}>
-          <div className="content-stretch flex items-center relative bg-white" style={{ width: '100%', height: '100%' }}>
-            <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px]" />
+        <div className="flex flex-row items-center size-full" style={{ minWidth: `${minHeaderWidth}px` }}>
+          <div className="content-stretch flex items-center relative bg-white border-b border-[#e4e4e7]" style={{ width: '100%', height: '100%' }}>
+            {!disableCompletion && (
+              <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px]" />
+            )}
             {filteredColumns.map((column, index) => (
               <DraggableColumnHeader
                 key={column.id}
