@@ -22,9 +22,7 @@ import {
   ChevronsUpDown,
   Check,
   Search,
-  User,
   Building2,
-  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,7 +31,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '../components/ui/command';
@@ -50,14 +47,9 @@ import { SaveIndicator } from '../components/SaveIndicator';
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 
 import { Button } from '../components/design-system/Button';
-import { Avatar } from '../components/design-system/Avatar';
 
-import {
-  AVAILABLE_USERS,
-  HEALTH_CENTERS,
-  DATE_FILTER_PRESETS,
-} from '../constants';
-import { parseDueDateFilter, displayDueDateFilter, resolveTaskDueDates } from '../utils/helpers';
+import { HEALTH_CENTERS } from '../constants';
+import { resolveTaskDueDates } from '../utils/helpers';
 import searchFilterSvgPaths from '../../imports/svg-oo9u3g75ma';
 
 import { ComplianceReviewPage } from './ComplianceReviewPage';
@@ -136,7 +128,6 @@ export function AdminPage({
   const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
   const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
   const [projectCardCenterSearch, setProjectCardCenterSearch] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(['title', 'dueDate']);
   // selectedProject is derived from URL (selectedProjectId prop) so it survives
   // refresh and is shareable. Mutations to the projects array auto-flow through.
   const selectedProject = useMemo(
@@ -145,57 +136,11 @@ export function AdminPage({
   );
   const [tableSaveStatus, setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
-  // Filter state for project tasks lives in URL search params so each
-  // filtered view is shareable / refresh-safe:
-  //   ?q=safety                            free-text search
-  //   ?status=incomplete,complete          omit -> ['all']
-  //   ?due=this-week | 05/30/2026 | none   omit -> '' (no date filter)
-  //   ?assignedTo=Sarah Kim,Michael ...    omit -> ['all']
-  //   ?healthCenter=Main Campus,...        omit -> ['All Health Centers']
-  //   ?attention=missing,needs             omit -> ['all']
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const statusFilter = useMemo<string[]>(
-    () => searchParams.get('status')?.split(',').filter(Boolean) || ['all'],
-    [searchParams]
-  );
-  const dueDateFilter = searchParams.get('due') ?? '';
-  const assignedToFilter = useMemo<string[]>(
-    () => searchParams.get('assignedTo')?.split(',').filter(Boolean) || ['all'],
-    [searchParams]
-  );
-  const healthCenterFilter = useMemo<string[]>(
-    () => searchParams.get('healthCenter')?.split(',').filter(Boolean) || ['All Health Centers'],
-    [searchParams]
-  );
-  const needsAttentionFilter = useMemo<string[]>(
-    () => searchParams.get('attention')?.split(',').filter(Boolean) || ['all'],
-    [searchParams]
-  );
-  const searchQuery = searchParams.get('q') ?? '';
-
-  // popover: only one popover/select is open at a time across the page, so we
-  // use a single URL param. Values: 'assignedTo' | 'healthCenter' | 'attention'
-  // | 'columns' | 'due' | 'projectStart' | 'newCat' | 'assign:<projectId>'.
+  // popover: tracks which popover/select is open across the page. Values:
+  // 'projectStart' | 'newCat' | 'assign:<projectId>' | 'kickoff:<pid>:<center>'.
   const popover = searchParams.get('popover');
-
-  const setSearchQuery = useCallback((next: string) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      if (next) params.set('q', next);
-      else params.delete('q');
-      return params;
-    }, { replace: true });
-  }, [setSearchParams]);
-
-  const setDueDateFilter = useCallback((next: string) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      if (next) params.set('due', next);
-      else params.delete('due');
-      return params;
-    }, { replace: true });
-  }, [setSearchParams]);
 
   const setPopover = useCallback((next: string | null) => {
     setSearchParams((prev) => {
@@ -206,109 +151,9 @@ export function AdminPage({
     }, { replace: true });
   }, [setSearchParams]);
 
-  const [customDateInput, setCustomDateInput] = useState('');
-
   const categories = ['Compliance', 'Documentation', 'Training', 'Quality Assurance', 'Operational'];
 
-  // Project tasks deliberately offer only Task Name + Due Date as columns
-  // (assigned to / health center / needs attention live on the project itself,
-  // not per task here). The Tasks page keeps its full set independently.
-  const availableColumns = [
-    { id: 'title', label: 'Task Name' },
-    { id: 'dueDate', label: 'Due Date' },
-  ];
-
-  const toggleColumnVisibility = useCallback((columnId: string) => {
-    setVisibleColumns(prev => {
-      if (prev.includes(columnId)) {
-        // Don't allow removing the title column
-        if (columnId === 'title') return prev;
-        return prev.filter(id => id !== columnId);
-      }
-      return [...prev, columnId];
-    });
-  }, []);
-  const availableUsers = AVAILABLE_USERS;
   const healthCenters = HEALTH_CENTERS;
-
-  // Toggle helpers: compute the next filter array using the same rules
-  // as before, then write it to the URL (or remove the param when default).
-  const writeListParam = useCallback(
-    (key: string, defaultValue: string, next: string[]) => {
-      setSearchParams((prev) => {
-        const params = new URLSearchParams(prev);
-        const isDefault =
-          next.length === 0 || (next.length === 1 && next[0] === defaultValue);
-        if (isDefault) params.delete(key);
-        else params.set(key, next.join(','));
-        return params;
-      }, { replace: true });
-    },
-    [setSearchParams]
-  );
-
-  const toggleStatusFilter = useCallback((status: string) => {
-    let next: string[];
-    if (status === 'all') next = ['all'];
-    else if (statusFilter.includes('all')) next = [status];
-    else if (statusFilter.includes(status)) {
-      const filtered = statusFilter.filter(f => f !== status);
-      next = filtered.length === 0 ? ['all'] : filtered;
-    } else {
-      next = [...statusFilter, status];
-    }
-    writeListParam('status', 'all', next);
-  }, [statusFilter, writeListParam]);
-
-  const toggleAssignedToFilter = useCallback((userName: string) => {
-    let next: string[];
-    if (userName === 'all') next = ['all'];
-    else if (assignedToFilter.includes('all')) next = [userName];
-    else if (assignedToFilter.includes(userName)) {
-      const filtered = assignedToFilter.filter(name => name !== userName);
-      next = filtered.length === 0 ? ['all'] : filtered;
-    } else {
-      next = [...assignedToFilter, userName];
-    }
-    writeListParam('assignedTo', 'all', next);
-  }, [assignedToFilter, writeListParam]);
-
-  const toggleHealthCenterFilter = useCallback((center: string) => {
-    let next: string[];
-    if (center === 'All Health Centers') next = ['All Health Centers'];
-    else if (healthCenterFilter.includes('All Health Centers')) next = [center];
-    else if (healthCenterFilter.includes(center)) {
-      const filtered = healthCenterFilter.filter(c => c !== center);
-      next = filtered.length === 0 ? ['All Health Centers'] : filtered;
-    } else {
-      next = [...healthCenterFilter, center];
-    }
-    writeListParam('healthCenter', 'All Health Centers', next);
-  }, [healthCenterFilter, writeListParam]);
-
-  const toggleNeedsAttentionFilter = useCallback((filter: string) => {
-    let next: string[];
-    if (filter === 'all') next = ['all'];
-    else if (needsAttentionFilter.includes('all')) next = [filter];
-    else if (needsAttentionFilter.includes(filter)) {
-      const filtered = needsAttentionFilter.filter(f => f !== filter);
-      next = filtered.length === 0 ? ['all'] : filtered;
-    } else {
-      next = [...needsAttentionFilter, filter];
-    }
-    writeListParam('attention', 'all', next);
-  }, [needsAttentionFilter, writeListParam]);
-
-  // Count active filters
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (!statusFilter.includes('all')) count++;
-    if (dueDateFilter) count++;
-    if (!assignedToFilter.includes('all')) count++;
-    if (!healthCenterFilter.includes('All Health Centers')) count++;
-    if (!needsAttentionFilter.includes('all')) count++;
-    return count;
-  }, [statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter]);
 
   const handleProjectTaskClick = useCallback((taskId: number, taskTitle: string) => {
     if (selectedProject) {
@@ -424,68 +269,6 @@ export function AdminPage({
     [selectedProject, otherProjects, healthCenterRecords, healthCenterFieldIds]
   );
 
-  // Filter project tasks
-  const filteredProjectTasks = useMemo(() => {
-    if (!selectedProject) return [];
-
-    return resolvedProjectTasks.filter(task => {
-      // Status filter
-      if (!statusFilter.includes('all')) {
-        const matchesStatus = statusFilter.some(filter => {
-          if (filter === 'complete' && !task.completed) return false;
-          if (filter === 'incomplete' && task.completed) return false;
-          return true;
-        });
-        if (!matchesStatus) return false;
-      }
-
-      // Date filter
-      if (dueDateFilter) {
-        if (dueDateFilter === 'none') {
-          if (task.dueDate) return false;
-        } else if (task.dueDate) {
-          const targetDate = parseDueDateFilter(dueDateFilter);
-          if (targetDate) {
-            const taskDate = parse(task.dueDate, 'MM/dd/yyyy', new Date());
-            taskDate.setHours(0, 0, 0, 0);
-            if (taskDate > targetDate) return false;
-          }
-        } else {
-          return false;
-        }
-      }
-
-      // Assigned To filter
-      if (!assignedToFilter.includes('all')) {
-        if (!task.assignedTo || !assignedToFilter.includes(task.assignedTo.name)) return false;
-      }
-
-      // Health Center filter
-      if (!healthCenterFilter.includes('All Health Centers')) {
-        if (!task.healthCenter || !healthCenterFilter.includes(task.healthCenter)) return false;
-      }
-
-      // Needs Attention filter
-      if (!needsAttentionFilter.includes('all')) {
-        if (!task.attention) return false;
-        const matchesFilter = needsAttentionFilter.some(filter => {
-          if (filter === 'needs') return task.attention?.type === 'needs';
-          if (filter === 'missing') return task.attention?.type === 'missing';
-          return false;
-        });
-        if (!matchesFilter) return false;
-      }
-
-      // Search filter
-      if (searchQuery) {
-        const lowerCaseQuery = searchQuery.toLowerCase();
-        if (!task.title.toLowerCase().includes(lowerCaseQuery)) return false;
-      }
-
-      return true;
-    });
-  }, [selectedProject, resolvedProjectTasks, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery]);
-
   const handleCreateProject = () => {
     if (!newProject.name || !newProject.category) {
       toast.error('Please fill in all required fields');
@@ -591,410 +374,30 @@ export function AdminPage({
 
         {/* Tasks Table Section */}
         <div className="h-full flex flex-col bg-white">
-          {/* Filter Bar - Only show if there are tasks */}
-          {selectedProject.tasks.length > 0 && (
-            <div className="px-[24px] py-[16px]">
-              <div className="bg-white border border-[#e4e4e7] rounded-lg px-[16px] py-[12px]">
-                <div className="flex items-center gap-2 flex-wrap">
-                {/* Search Input */}
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717a]" />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-[#f9fafb] border border-[#e4e4e7] rounded-md pl-8 pr-10 py-1.5 text-sm hover:bg-white transition-colors focus:outline-none focus:border-[#fc6] w-[320px]"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[#e5e5e5] rounded transition-colors"
-                      aria-label="Clear search"
-                    >
-                      <X className="w-4 h-4 text-[#71717a]" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Divider */}
-                <div className="h-6 w-px bg-[#e4e4e7]"></div>
-
-                {/* Status Filter Pills */}
-                <button
-                  onClick={() => toggleStatusFilter('all')}
-                  className={`px-3 py-1.5 rounded-full font-medium transition-colors ${statusFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}
-                >
-                  All Tasks
-                </button>
-                <button
-                  onClick={() => toggleStatusFilter('incomplete')}
-                  className={`px-3 py-1.5 rounded-full font-medium transition-colors ${statusFilter.includes('incomplete') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}
-                >
-                  Incomplete
-                </button>
-                <button
-                  onClick={() => toggleStatusFilter('complete')}
-                  className={`px-3 py-1.5 rounded-full font-medium transition-colors ${statusFilter.includes('complete') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}
-                >
-                  Complete
-                </button>
-
-                {/* Divider */}
-                <div className="h-6 w-px bg-[#e4e4e7]"></div>
-
-                {/* Date Filter Chip */}
-                <Popover
-                  open={popover === 'due'}
-                  onOpenChange={(o) => setPopover(o ? 'due' : null)}
-                >
-                  <PopoverTrigger asChild>
-                    <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${dueDateFilter ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
-                      <CalendarIcon className="h-3.5 w-3.5" />
-                      {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <div className="flex">
-                      {/* Left Side - Quick Select */}
-                      <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
-                        <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
-                        <div className="flex flex-col gap-1">
-                          {DATE_FILTER_PRESETS.map((preset) => (
-                            <button
-                              key={preset.value}
-                              className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
-                              onClick={() => {
-                                setDueDateFilter(preset.value);
-                              }}
-                            >
-                              {preset.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Right Side - Type Date & Calendar */}
-                      <div className="flex flex-col">
-                        {/* Manual Input */}
-                        <div className="p-3 border-b border-[#e4e4e7]">
-                          <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
-                          <input
-                            type="text"
-                            value={customDateInput}
-                            onChange={(e) => setCustomDateInput(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
-                                if (customDateInput && dateRegex.test(customDateInput)) {
-                                  const parsedDate = parse(customDateInput, 'MM/dd/yyyy', new Date());
-                                  if (isValid(parsedDate)) {
-                                    setDueDateFilter(customDateInput);
-                                    setCustomDateInput('');
-                                  }
-                                }
-                              }
-                            }}
-                            placeholder="mm/dd/yyyy"
-                            maxLength={10}
-                            className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
-                          />
-                        </div>
-
-                        {/* Calendar */}
-                        <Calendar
-                          mode="single"
-                          selected={dueDateFilter && /^\d{2}\/\d{2}\/\d{4}$/.test(dueDateFilter) ? parse(dueDateFilter, 'MM/dd/yyyy', new Date()) : undefined}
-                          onSelect={(date) => {
-                            if (date) {
-                              const formattedDate = format(date, 'MM/dd/yyyy');
-                              setDueDateFilter(formattedDate);
-                              setCustomDateInput('');
-                            }
-                          }}
-                          initialFocus
-                        />
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Assigned To Chip */}
-                <Popover
-                  open={popover === 'assignedTo'}
-                  onOpenChange={(o) => setPopover(o ? 'assignedTo' : null)}
-                >
-                  <PopoverTrigger asChild>
-                    <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!assignedToFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
-                      <User className="h-3.5 w-3.5" />
-                      Assigned {!assignedToFilter.includes('all') && `(${assignedToFilter.length})`}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search users..." />
-                      <CommandList>
-                        <CommandEmpty>No users found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value="all"
-                            onSelect={() => {
-                              toggleAssignedToFilter('all');
-                              setPopover(null);
-                            }}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              assignedToFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {assignedToFilter.includes('all') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            All Users
-                          </CommandItem>
-                          {availableUsers.map((user) => (
-                            <CommandItem
-                              key={user.name}
-                              value={user.name}
-                              onSelect={() => {
-                                toggleAssignedToFilter(user.name);
-                              }}
-                            >
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                                assignedToFilter.includes(user.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                              }`}>
-                                {assignedToFilter.includes(user.name) && (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Avatar initials={user.initials} name={user.name} size="sm" />
-                                <span>{user.name}</span>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Health Center Chip */}
-                <Popover
-                  open={popover === 'healthCenter'}
-                  onOpenChange={(o) => setPopover(o ? 'healthCenter' : null)}
-                >
-                  <PopoverTrigger asChild>
-                    <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
-                      <Building2 className="h-3.5 w-3.5" />
-                      Health Center {!healthCenterFilter.includes('All Health Centers') && `(${healthCenterFilter.length})`}
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search health centers..." />
-                      <CommandList>
-                        <CommandEmpty>No health centers found.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandItem
-                            value="all"
-                            onSelect={() => {
-                              toggleHealthCenterFilter('All Health Centers');
-                              setPopover(null);
-                            }}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {healthCenterFilter.includes('All Health Centers') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            All Health Centers
-                          </CommandItem>
-                          {healthCenters.map((center) => (
-                            <CommandItem
-                              key={center}
-                              value={center}
-                              onSelect={() => {
-                                toggleHealthCenterFilter(center);
-                              }}
-                            >
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                                healthCenterFilter.includes(center) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                              }`}>
-                                {healthCenterFilter.includes(center) && (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </div>
-                              {center}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Needs Attention Chip */}
-                <Popover
-                  open={popover === 'attention'}
-                  onOpenChange={(o) => setPopover(o ? 'attention' : null)}
-                >
-                  <PopoverTrigger asChild>
-                    <button className={`px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 ${!needsAttentionFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'} text-[12px]`}>
-                      <AlertCircle className="h-3.5 w-3.5" />
-                      Attention
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="start">
-                    <Command>
-                      <CommandList>
-                        <CommandGroup>
-                          <CommandItem
-                            value="all"
-                            onSelect={() => {
-                              toggleNeedsAttentionFilter('all');
-                              setPopover(null);
-                            }}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              needsAttentionFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {needsAttentionFilter.includes('all') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            All
-                          </CommandItem>
-                          <CommandItem
-                            value="needs"
-                            onSelect={() => toggleNeedsAttentionFilter('needs')}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              needsAttentionFilter.includes('needs') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {needsAttentionFilter.includes('needs') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            Files need attention
-                          </CommandItem>
-                          <CommandItem
-                            value="missing"
-                            onSelect={() => toggleNeedsAttentionFilter('missing')}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              needsAttentionFilter.includes('missing') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {needsAttentionFilter.includes('missing') && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            Missing Files
-                          </CommandItem>
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Column Visibility Button */}
-                <Popover
-                  open={popover === 'columns'}
-                  onOpenChange={(o) => setPopover(o ? 'columns' : null)}
-                >
-                  <PopoverTrigger asChild>
-                    <button className="px-3 py-1.5 rounded-full font-medium transition-colors flex items-center gap-1.5 bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5] text-[12px] ml-auto">
-                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
-                        <path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      Columns
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0" align="start">
-                    <Command>
-                      <CommandList>
-                        <CommandGroup>
-                          {availableColumns.map((column) => (
-                            <CommandItem
-                              key={column.id}
-                              value={column.id}
-                              onSelect={() => {
-                                if (column.id !== 'title') {
-                                  toggleColumnVisibility(column.id);
-                                }
-                              }}
-                              disabled={column.id === 'title'}
-                              className={column.id === 'title' ? 'opacity-50 cursor-not-allowed' : ''}
-                            >
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                                visibleColumns.includes(column.id) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                              }`}>
-                                {visibleColumns.includes(column.id) && (
-                                  <Check className="h-3 w-3" />
-                                )}
-                              </div>
-                              {column.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                {/* Clear All Filters */}
-                {activeFilterCount > 0 && (
-                  <button
-                    onClick={() => {
-                      setSearchParams((prev) => {
-                        const params = new URLSearchParams(prev);
-                        params.delete('status');
-                        params.delete('due');
-                        params.delete('assignedTo');
-                        params.delete('healthCenter');
-                        params.delete('attention');
-                        params.delete('q');
-                        return params;
-                      }, { replace: true });
-                    }}
-                    className="px-3 py-1.5 text-sm text-[#3b82f6] hover:text-[#2563eb] font-medium transition-colors ml-auto"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-            </div>
-            </div>
-          )}
+          {/* No filter bar on the project-detail view: this page is for
+              shaping the project's task template, not running it. Completing
+              tasks and filtering "what's mine to do" happens on the Tasks
+              page. */}
 
           {/* Table Content */}
-          {filteredProjectTasks.length === 0 && selectedProject.tasks.length === 0 ? (
+          {resolvedProjectTasks.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <p className="text-[#71717a] text-[14px]">No tasks added to this project yet.</p>
                 <p className="text-[#71717a] text-[14px] mt-1">Click "Add Task" to create your first custom task.</p>
               </div>
             </div>
-          ) : filteredProjectTasks.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-[#71717a] text-[14px]">No tasks match the current filters.</p>
-                <p className="text-[#71717a] text-[14px] mt-1">Try adjusting your filters.</p>
-              </div>
-            </div>
           ) : (
             <div className="flex-1 overflow-y-auto overflow-x-auto px-[24px] pb-6">
               <TaskTableDynamic
-                tasks={filteredProjectTasks}
+                tasks={resolvedProjectTasks}
                 onTaskClick={handleProjectTaskClick}
                 handleToggleTaskComplete={handleToggleProjectTaskComplete}
                 handleUpdateTaskStatus={handleUpdateProjectTaskStatus}
                 selectedTaskId={null}
                 onUpdateTask={handleUpdateProjectTask}
                 onDeleteTask={handleDeleteProjectTask}
-                visibleColumns={visibleColumns}
+                visibleColumns={['title', 'dueDate']}
                 enableRelativeDates={true}
                 projectStartDate={selectedProject.startDate}
                 projectEndDate={selectedProject.endDate}
@@ -1003,6 +406,7 @@ export function AdminPage({
                 assignedHealthCenters={selectedProject.assignedHealthCenters}
                 healthCenterFieldDefs={healthCenterFieldDefs}
                 healthCenters={healthCenterRecords}
+                disableCompletion={true}
               />
             </div>
           )}

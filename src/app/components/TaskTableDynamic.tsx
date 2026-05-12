@@ -166,6 +166,13 @@ interface TaskTableDynamicProps {
    * center.
    */
   healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+  /**
+   * When true, the completion checkbox is hidden and the row's "click
+   * to toggle" surface is removed. Used on the Project Builder detail
+   * page where the table edits the project's task template -- tasks
+   * are completed elsewhere (on the Tasks page).
+   */
+  disableCompletion?: boolean;
 }
 
 // ==================== UTILITIES ====================
@@ -346,7 +353,7 @@ const DueDateBadge = memo(({ dueDate, ruleBroken, ruleSummary, onOpenChange }: {
       ) : (
         <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[#e4e4e7] bg-white">
           <span className="font-['Geist:Regular',sans-serif] font-normal text-[#71717a] text-[13px] leading-tight">
-            Set Due Date
+            Select due date
           </span>
           <ChevronDown className="size-[14px] text-[#71717a]" />
         </div>
@@ -487,6 +494,7 @@ const TaskRow = memo(function TaskRow({
   assignedHealthCenters,
   healthCenterFieldDefs,
   healthCenters,
+  disableCompletion,
 }: {
   task: Task;
   onClick: () => void;
@@ -504,6 +512,7 @@ const TaskRow = memo(function TaskRow({
   assignedHealthCenters?: Array<{ name: string; assignedAt: string }>;
   healthCenterFieldDefs?: Array<{ id: string; label: string }>;
   healthCenters?: Array<{ name: string; dateFields: Record<string, string> }>;
+  disableCompletion?: boolean;
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   // Mirror the inline date popover's open state in ?datePicker=task-<id> so
@@ -824,13 +833,21 @@ const TaskRow = memo(function TaskRow({
         <div aria-hidden="true" className={outlineClass} />
         <div className="flex flex-row items-center size-full">
           <div className="content-stretch flex items-center relative size-full">
-            {/* Checkbox */}
-            <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px] cursor-pointer group" onClick={handleCheckboxClick}>
-              <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] group-active:bg-[#f5f5f5] rounded-l-[8px] transition-colors" />
-              <button className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer z-10">
-                <CheckboxIcon completed={task.completed} />
-              </button>
-            </div>
+            {/* Checkbox -- hidden in views that can't complete tasks
+                (Project Builder detail edits the project's task template
+                only; completion happens on the Tasks page). The left
+                margin stays via the same w-[44px] spacer so columns
+                stay aligned with the header. */}
+            {disableCompletion ? (
+              <div className="shrink-0 w-[44px] h-full" />
+            ) : (
+              <div className="content-stretch flex gap-[8px] h-full items-center justify-center relative shrink-0 w-[44px] cursor-pointer group" onClick={handleCheckboxClick}>
+                <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] group-active:bg-[#f5f5f5] rounded-l-[8px] transition-colors" />
+                <button className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer z-10">
+                  <CheckboxIcon completed={task.completed} />
+                </button>
+              </div>
+            )}
 
             {/* Dynamic Columns */}
             {columns.map((col) => columnMap[col.id](col))}
@@ -869,9 +886,11 @@ const TaskRow = memo(function TaskRow({
       <div className="lg:hidden bg-white relative rounded-[8px] shrink-0 w-full transition-colors p-4">
         <div aria-hidden="true" className={outlineClass} />
         <div className="flex items-start gap-3 mb-4">
-          <button onClick={handleCheckboxClick} className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer mt-1">
-            <CheckboxIcon completed={task.completed} />
-          </button>
+          {!disableCompletion && (
+            <button onClick={handleCheckboxClick} className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer mt-1">
+              <CheckboxIcon completed={task.completed} />
+            </button>
+          )}
           <div className="flex-1 min-w-0">
             <button onClick={onClick} className="font-['Geist:Regular',sans-serif] font-normal text-[#18181b] text-[14px] leading-[20px] text-left w-full overflow-hidden text-ellipsis" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
               {task.title}
@@ -962,7 +981,7 @@ const TaskRow = memo(function TaskRow({
 });
 
 // ==================== MAIN COMPONENT ====================
-function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects, assignedHealthCenters, healthCenterFieldDefs, healthCenters }: TaskTableDynamicProps) {
+function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, selectedTaskId, onUpdateTask, onDeleteTask, visibleColumns = ['title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'], enableRelativeDates = false, projectStartDate, projectEndDate, projectName, availableProjects, assignedHealthCenters, healthCenterFieldDefs, healthCenters, disableCompletion }: TaskTableDynamicProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -1087,6 +1106,7 @@ function TaskTableDynamicInner({ tasks, onTaskClick, handleToggleTaskComplete, s
           healthCenterFieldDefs={healthCenterFieldDefs}
           healthCenters={healthCenters}
           siblingTasks={tasks}
+          disableCompletion={disableCompletion}
         />
       ))}
     </div>
