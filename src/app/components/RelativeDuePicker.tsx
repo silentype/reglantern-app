@@ -399,7 +399,7 @@ export function RelativeDuePicker({
       <div>
         <h3 className="text-sm font-semibold text-[#18181b] mb-2">Timing</h3>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-[#71717a]">Due</span>
+          <span className="text-[12px] font-medium text-[#71717a]">Due</span>
           <input
             type="number"
             min={1}
@@ -597,13 +597,6 @@ export function RelativeDuePicker({
             </>
           )}
         </div>
-      </div>
-
-      <div className="text-xs text-[#71717a] border-t border-[#f4f4f5] pt-2">
-        Computed:{' '}
-        <span className={computedPreview ? 'text-[#18181b] font-medium' : 'italic'}>
-          {computedPreview ?? 'trigger not set yet'}
-        </span>
       </div>
 
       <Button
