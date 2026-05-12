@@ -13,6 +13,7 @@ import { Avatar } from "./design-system/Avatar";
 import { Tab, TabStrip } from "./design-system/Tab";
 import { Button } from "./design-system/Button";
 import { RelativeDuePicker } from "./RelativeDuePicker";
+import { shortDueDateRule } from "../utils/helpers";
 import { AVAILABLE_USERS, HEALTH_CENTERS, QUICK_DATE_OPTIONS } from "../constants";
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
@@ -295,7 +296,7 @@ const QuickDateButton = memo(({ label, onClick }: { label: string; onClick: () =
 ));
 QuickDateButton.displayName = 'QuickDateButton';
 
-const DueDateBadge = memo(({ dueDate, ruleBroken, onOpenChange }: { dueDate?: string; ruleBroken?: boolean; onOpenChange: () => void }) => {
+const DueDateBadge = memo(({ dueDate, ruleBroken, ruleSummary, onOpenChange }: { dueDate?: string; ruleBroken?: boolean; ruleSummary?: string; onOpenChange: () => void }) => {
   // Treat unparseable dates (wrong format, missing, etc.) as "no due date" so
   // the badge falls through to the "Set Due Date" placeholder instead of
   // rendering "NaN/NaN/aN".
@@ -318,6 +319,21 @@ const DueDateBadge = memo(({ dueDate, ruleBroken, onOpenChange }: { dueDate?: st
           </span>
           <ChevronDown className="size-[14px] text-[#b91c1c]" />
         </div>
+      ) : ruleSummary ? (
+        // Task has a saved relative-date rule -- show the compact rule
+        // shortcode instead of the resolved date. The actual computed
+        // date is still in the tooltip for quick reference.
+        <>
+          <div
+            className={`inline-flex items-center px-2 py-0.5 rounded-md border ${styles?.bg ?? 'bg-[#f4f4f5]'} ${styles?.border ?? 'border-[#e4e4e7]'}`}
+            title={dueDate ? `Resolves to ${dueDate}` : 'Rule does not resolve yet'}
+          >
+            <span className={`font-['Geist:Medium',sans-serif] font-medium leading-tight ${styles?.color ?? 'text-[#18181b]'} text-[13px] whitespace-nowrap`}>
+              {ruleSummary}
+            </span>
+          </div>
+          <ChevronDown className="size-[16px] text-[#71717a] ml-1" />
+        </>
       ) : relativeInfo && styles ? (
         <>
           <div className={`inline-flex items-center px-2 py-0.5 rounded-md border ${styles.bg} ${styles.border}`} title={dueDate}>
@@ -599,7 +615,19 @@ const TaskRow = memo(function TaskRow({
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
             <div className="w-full h-full">
-              <DueDateBadge dueDate={task.dueDate} ruleBroken={task.dueDateBroken} onOpenChange={() => setCalendarOpen(true)} />
+              <DueDateBadge
+                dueDate={task.dueDate}
+                ruleBroken={task.dueDateBroken}
+                ruleSummary={
+                  task.dueDateRule
+                    ? shortDueDateRule(task.dueDateRule, {
+                        tasks: siblingTasks ?? [],
+                        healthCenterFieldDefs,
+                      })
+                    : undefined
+                }
+                onOpenChange={() => setCalendarOpen(true)}
+              />
             </div>
           </PopoverTrigger>
           <PopoverContent

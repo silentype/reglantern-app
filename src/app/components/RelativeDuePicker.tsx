@@ -398,44 +398,46 @@ export function RelativeDuePicker({
     <div className={`p-4 w-full flex flex-col gap-4 ${className ?? ''}`}>
       <div>
         <h3 className="text-sm font-semibold text-[#18181b] mb-2">Timing</h3>
-        <div className="flex items-center gap-2">
-          <span className="text-[12px] font-medium text-[#71717a]">Due</span>
-          <input
-            type="number"
-            min={1}
-            value={amount}
-            onChange={(e) => setAmount(Math.max(1, Number(e.target.value) || 1))}
-            className="w-16 h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
-          />
-          <div className="w-28">
-            <UISelect
-              value={unit}
-              onValueChange={(v) => setUnit(v as DueDateRule['unit'])}
-              open={pick === 'unit'}
-              onOpenChange={pickHandler('unit')}
-            >
-              <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
-              <UISelectContent>
-                <UISelectItem value="days">{amount === 1 ? 'day' : 'days'}</UISelectItem>
-                <UISelectItem value="weeks">{amount === 1 ? 'week' : 'weeks'}</UISelectItem>
-                <UISelectItem value="months">{amount === 1 ? 'month' : 'months'}</UISelectItem>
-                <UISelectItem value="years">{amount === 1 ? 'year' : 'years'}</UISelectItem>
-              </UISelectContent>
-            </UISelect>
-          </div>
-          <div className="w-24">
-            <UISelect
-              value={direction}
-              onValueChange={(v) => setDirection(v as DueDateRule['direction'])}
-              open={pick === 'direction'}
-              onOpenChange={pickHandler('direction')}
-            >
-              <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
-              <UISelectContent>
-                <UISelectItem value="after">after</UISelectItem>
-                <UISelectItem value="before">before</UISelectItem>
-              </UISelectContent>
-            </UISelect>
+        <div className={rowCls}>
+          <label className={rowLabelCls}>Due</label>
+          <div className="flex-1 flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              value={amount}
+              onChange={(e) => setAmount(Math.max(1, Number(e.target.value) || 1))}
+              className="w-16 h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
+            />
+            <div className="w-28">
+              <UISelect
+                value={unit}
+                onValueChange={(v) => setUnit(v as DueDateRule['unit'])}
+                open={pick === 'unit'}
+                onOpenChange={pickHandler('unit')}
+              >
+                <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                <UISelectContent>
+                  <UISelectItem value="days">{amount === 1 ? 'day' : 'days'}</UISelectItem>
+                  <UISelectItem value="weeks">{amount === 1 ? 'week' : 'weeks'}</UISelectItem>
+                  <UISelectItem value="months">{amount === 1 ? 'month' : 'months'}</UISelectItem>
+                  <UISelectItem value="years">{amount === 1 ? 'year' : 'years'}</UISelectItem>
+                </UISelectContent>
+              </UISelect>
+            </div>
+            <div className="w-24">
+              <UISelect
+                value={direction}
+                onValueChange={(v) => setDirection(v as DueDateRule['direction'])}
+                open={pick === 'direction'}
+                onOpenChange={pickHandler('direction')}
+              >
+                <UISelectTrigger className={triggerCls}><UISelectValue /></UISelectTrigger>
+                <UISelectContent>
+                  <UISelectItem value="after">after</UISelectItem>
+                  <UISelectItem value="before">before</UISelectItem>
+                </UISelectContent>
+              </UISelect>
+            </div>
           </div>
         </div>
       </div>

@@ -477,6 +477,54 @@ export function describeDueDateRule(
 }
 
 /**
+ * Compact, badge-friendly rendering of a rule -- shown in the task table
+ * instead of the resolved date once a relative rule is saved. Example
+ * outputs:
+ *   "2w after start"   "30d before end"   "1y after instantiation"
+ *   "3d after Verify Patient Demographics"
+ *   "30d before Accreditation expires"
+ *   "2w after Jan 15"
+ *
+ * Returns "Reference broken" when the rule's anchor target no longer
+ * exists, so the badge can render the same red pill it already shows
+ * for a broken rule.
+ */
+export function shortDueDateRule(
+  rule: DueDateRule,
+  ctx: {
+    tasks: Task[];
+    healthCenterFieldDefs?: Array<{ id: string; label: string }>;
+  }
+): string {
+  const unitChar =
+    rule.unit === 'days' ? 'd' :
+    rule.unit === 'weeks' ? 'w' :
+    rule.unit === 'months' ? 'mo' :
+    'y';
+  const offset = `${rule.amount}${unitChar} ${rule.direction}`;
+  const anchor = rule.anchor;
+
+  let anchorText: string;
+  if (anchor.kind === 'projectStart') anchorText = 'start';
+  else if (anchor.kind === 'projectEnd') anchorText = 'end';
+  else if (anchor.kind === 'projectKickoff') anchorText = 'instantiation';
+  else if (anchor.kind === 'fixedAnniversary') {
+    const monthShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const m = anchor.month >= 1 && anchor.month <= 12 ? monthShort[anchor.month - 1] : '?';
+    anchorText = `${m} ${anchor.day}`;
+  } else if (anchor.kind === 'healthCenterField') {
+    const def = (ctx.healthCenterFieldDefs ?? []).find((d) => d.id === anchor.fieldId);
+    if (!def) return 'Reference broken';
+    anchorText = def.label;
+  } else {
+    const t = ctx.tasks.find((x) => x.id === anchor.taskId);
+    if (!t) return 'Reference broken';
+    anchorText = t.title;
+  }
+  return `${offset} ${anchorText}`;
+}
+
+/**
  * Apply rules across an entire project's tasks, producing a new array where
  * each rule-driven task's `dueDate` is replaced with the computed value.
  * Tasks without a rule are returned unchanged. Single-pass resolution; see
