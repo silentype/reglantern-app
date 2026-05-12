@@ -47,7 +47,7 @@ const sampleHealthCenterFieldDefs = [
 
 // Per-center values used by the resolver to compute previews under
 // "Health Center Info". The picker reads them via taskHealthCenter.
-const sampleHealthCenters = [
+const sampleHealthCenters: Array<{ name: string; dateFields: Record<string, string> }> = [
   {
     name: 'Mountain View Clinic',
     dateFields: {

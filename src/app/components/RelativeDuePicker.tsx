@@ -237,7 +237,7 @@ function eventOptionsFor(type: AnchorType): Array<{ value: EventKey; label: stri
       { value: 'ended', label: 'ended' },
     ];
   }
-  if (type === 'fixedDate' || type === 'kickoff' || type === 'healthCenterField') return [];
+  if (type === 'fixedDate' || type === 'healthCenterField') return [];
   return [
     { value: 'started', label: 'started' },
     { value: 'due', label: 'due date' },

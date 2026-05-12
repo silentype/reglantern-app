@@ -335,7 +335,7 @@ const DueDateBadge = memo(({ dueDate, ruleBroken, ruleSummary, onOpenChange }: {
             className={`inline-flex items-center px-2 py-0.5 rounded-md border ${styles?.bg ?? 'bg-[#f4f4f5]'} ${styles?.border ?? 'border-[#e4e4e7]'}`}
             title={dueDate ? `Resolves to ${dueDate}` : 'Rule does not resolve yet'}
           >
-            <span className={`font-['Geist:Medium',sans-serif] font-medium leading-tight ${styles?.color ?? 'text-[#18181b]'} text-[13px] whitespace-nowrap`}>
+            <span className={`font-['Geist:Medium',sans-serif] font-medium leading-tight ${relativeInfo?.color ?? 'text-[#18181b]'} text-[13px] whitespace-nowrap`}>
               {ruleSummary}
             </span>
           </div>
