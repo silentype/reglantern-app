@@ -77,7 +77,12 @@ export interface RelativeDuePickerProps {
   className?: string;
 }
 
-type AnchorType = 'project' | 'task' | 'fixedDate' | 'kickoff' | 'healthCenterField';
+// Picker-internal type. 'healthCenterField' covers both the per-center
+// Kickoff anchor and any catalog field, distinguished by the composite
+// reference string stored in `healthCenterFieldId`:
+//   'kickoff:<centerName>' -> projectKickoff anchor
+//   'field:<fieldId>'      -> healthCenterField anchor
+type AnchorType = 'project' | 'task' | 'fixedDate' | 'healthCenterField';
 type EventKey = 'started' | 'ended' | 'due' | 'completed';
 
 // Sentinel used in the Reference dropdown to mean "the project this task
@@ -107,7 +112,8 @@ function ruleToState(rule: DueDateRule | undefined): {
   event: EventKey;
   fixedMonth: number;
   fixedDay: number;
-  kickoffCenter: string;
+  /** Composite reference for Type=Health Center Info:
+   *  'kickoff:<centerName>' or 'field:<fieldId>'. Empty = unset. */
   healthCenterFieldId: string;
 } {
   const defaults = {
@@ -117,7 +123,6 @@ function ruleToState(rule: DueDateRule | undefined): {
     event: 'started' as EventKey,
     fixedMonth: 1,
     fixedDay: 1,
-    kickoffCenter: '',
     healthCenterFieldId: '',
   };
   if (!rule) return defaults;
@@ -139,10 +144,18 @@ function ruleToState(rule: DueDateRule | undefined): {
     };
   }
   if (a.kind === 'projectKickoff') {
-    return { ...defaults, type: 'kickoff', kickoffCenter: a.healthCenter };
+    return {
+      ...defaults,
+      type: 'healthCenterField',
+      healthCenterFieldId: `kickoff:${a.healthCenter}`,
+    };
   }
   if (a.kind === 'healthCenterField') {
-    return { ...defaults, type: 'healthCenterField', healthCenterFieldId: a.fieldId };
+    return {
+      ...defaults,
+      type: 'healthCenterField',
+      healthCenterFieldId: `field:${a.fieldId}`,
+    };
   }
   if (a.kind === 'fixedAnniversary') {
     return { ...defaults, type: 'fixedDate', fixedMonth: a.month, fixedDay: a.day };
@@ -163,7 +176,6 @@ function buildAnchor(
   event: EventKey,
   fixedMonth: number,
   fixedDay: number,
-  kickoffCenter: string,
   healthCenterFieldId: string
 ): DueDateAnchor | null {
   if (type === 'fixedDate') {
@@ -171,13 +183,19 @@ function buildAnchor(
     if (!Number.isInteger(fixedDay) || fixedDay < 1 || fixedDay > 31) return null;
     return { kind: 'fixedAnniversary', month: fixedMonth, day: fixedDay };
   }
-  if (type === 'kickoff') {
-    if (!kickoffCenter) return null;
-    return { kind: 'projectKickoff', healthCenter: kickoffCenter };
-  }
   if (type === 'healthCenterField') {
     if (!healthCenterFieldId) return null;
-    return { kind: 'healthCenterField', fieldId: healthCenterFieldId };
+    if (healthCenterFieldId.startsWith('kickoff:')) {
+      const center = healthCenterFieldId.slice('kickoff:'.length);
+      if (!center) return null;
+      return { kind: 'projectKickoff', healthCenter: center };
+    }
+    if (healthCenterFieldId.startsWith('field:')) {
+      const fieldId = healthCenterFieldId.slice('field:'.length);
+      if (!fieldId) return null;
+      return { kind: 'healthCenterField', fieldId };
+    }
+    return null;
   }
   if (type === 'project') {
     if (event !== 'started' && event !== 'ended') return null;
@@ -251,20 +269,40 @@ export function RelativeDuePicker({
   }, [initialRule, siblingTasks, excludeTaskId]);
 
   const kickoffOptions = assignedHealthCenters ?? [];
-  // Likewise: kickoffCenter is "missing" when the rule references a center
-  // that's no longer in `assignedHealthCenters` (e.g. it was unassigned).
-  const initialKickoffMissing = useMemo(() => {
-    if (!initialRule || initialRule.anchor.kind !== 'projectKickoff') return false;
-    return !kickoffOptions.some((c) => c.name === initialRule.anchor.healthCenter);
-  }, [initialRule, kickoffOptions]);
-
   const hcFieldOptions = healthCenterFieldDefs ?? [];
-  // And health-center field: "missing" when the rule references a fieldId
-  // that's no longer in the global catalog (deleted in Settings).
+
+  // Combined options shown in the Field dropdown when Type=Health Center
+  // Info. Kickoff entries come first (one per assigned center), then the
+  // global field catalog. Values use a "kickoff:" / "field:" prefix so
+  // buildAnchor can produce the right DueDateAnchor kind.
+  const healthCenterRefOptions = useMemo(
+    () => [
+      ...kickoffOptions.map((c) => ({
+        value: `kickoff:${c.name}`,
+        label: `Kickoff — ${c.name}`,
+      })),
+      ...hcFieldOptions.map((d) => ({
+        value: `field:${d.id}`,
+        label: d.label,
+      })),
+    ],
+    [kickoffOptions, hcFieldOptions]
+  );
+
+  // "Reference missing" detection for the combined Health Center Info
+  // dropdown: covers both the kickoff-was-unassigned case and the
+  // field-was-removed-from-catalog case in one banner.
   const initialHCFieldMissing = useMemo(() => {
-    if (!initialRule || initialRule.anchor.kind !== 'healthCenterField') return false;
-    return !hcFieldOptions.some((d) => d.id === initialRule.anchor.fieldId);
-  }, [initialRule, hcFieldOptions]);
+    if (!initialRule) return false;
+    const a = initialRule.anchor;
+    if (a.kind === 'projectKickoff') {
+      return !kickoffOptions.some((c) => c.name === a.healthCenter);
+    }
+    if (a.kind === 'healthCenterField') {
+      return !hcFieldOptions.some((d) => d.id === a.fieldId);
+    }
+    return false;
+  }, [initialRule, kickoffOptions, hcFieldOptions]);
 
   const [type, setType] = useState<AnchorType>(initial.type);
   const [taskId, setTaskId] = useState<number | null>(
@@ -274,9 +312,6 @@ export function RelativeDuePicker({
   const [event, setEvent] = useState<EventKey>(initial.event);
   const [fixedMonth, setFixedMonth] = useState<number>(initial.fixedMonth);
   const [fixedDay, setFixedDay] = useState<number>(initial.fixedDay);
-  const [kickoffCenter, setKickoffCenter] = useState<string>(
-    initialKickoffMissing ? '' : initial.kickoffCenter
-  );
   const [healthCenterFieldId, setHealthCenterFieldId] = useState<string>(
     initialHCFieldMissing ? '' : initial.healthCenterFieldId
   );
@@ -295,20 +330,17 @@ export function RelativeDuePicker({
     if (type === 'task' && taskId === null && taskOptions[0] && !initialReferenceMissing) {
       setTaskId(taskOptions[0].id);
     }
-    if (type === 'kickoff' && !kickoffCenter && kickoffOptions[0] && !initialKickoffMissing) {
-      setKickoffCenter(kickoffOptions[0].name);
-    }
-    if (type === 'healthCenterField' && !healthCenterFieldId && hcFieldOptions[0] && !initialHCFieldMissing) {
-      setHealthCenterFieldId(hcFieldOptions[0].id);
+    if (type === 'healthCenterField' && !healthCenterFieldId && healthCenterRefOptions[0] && !initialHCFieldMissing) {
+      setHealthCenterFieldId(healthCenterRefOptions[0].value);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type]);
 
   const draftRule: DueDateRule | null = useMemo(() => {
-    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay, kickoffCenter, healthCenterFieldId);
+    const anchor = buildAnchor(type, taskId, projectRef, event, fixedMonth, fixedDay, healthCenterFieldId);
     if (!anchor) return null;
     return { anchor, amount, unit, direction };
-  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, kickoffCenter, healthCenterFieldId, amount, unit, direction]);
+  }, [type, taskId, projectRef, event, fixedMonth, fixedDay, healthCenterFieldId, amount, unit, direction]);
 
   const computedPreview = useMemo(() => {
     if (!draftRule) return null;
@@ -407,14 +439,9 @@ export function RelativeDuePicker({
             The previously-selected task was removed. Pick a new reference or switch to a different type.
           </div>
         )}
-        {initialKickoffMissing && (
-          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
-            The previously-selected health center was unassigned. Pick a new center or switch to a different type.
-          </div>
-        )}
         {initialHCFieldMissing && (
           <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
-            The previously-selected health-center field was removed in Settings. Pick a new field or switch to a different type.
+            The previously-selected health-center reference is no longer available. Pick a new one or switch to a different type.
           </div>
         )}
         <div className="grid grid-cols-3 gap-2">
@@ -431,11 +458,8 @@ export function RelativeDuePicker({
                 <UISelectItem value="project">Project</UISelectItem>
                 <UISelectItem value="task">Task</UISelectItem>
                 <UISelectItem value="fixedDate">Fixed Date</UISelectItem>
-                <UISelectItem value="kickoff" disabled={kickoffOptions.length === 0}>
-                  Kickoff{kickoffOptions.length === 0 ? ' (assign a center first)' : ''}
-                </UISelectItem>
-                <UISelectItem value="healthCenterField" disabled={hcFieldOptions.length === 0}>
-                  Health Center Info{hcFieldOptions.length === 0 ? ' (add a field first)' : ''}
+                <UISelectItem value="healthCenterField" disabled={healthCenterRefOptions.length === 0}>
+                  Health Center Info{healthCenterRefOptions.length === 0 ? ' (assign a center or add a field first)' : ''}
                 </UISelectItem>
               </UISelectContent>
             </UISelect>
@@ -449,34 +473,14 @@ export function RelativeDuePicker({
                 onValueChange={(v) => setHealthCenterFieldId(v)}
                 open={pick === 'reference'}
                 onOpenChange={pickHandler('reference')}
-                disabled={hcFieldOptions.length === 0}
+                disabled={healthCenterRefOptions.length === 0}
               >
                 <UISelectTrigger className={triggerCls}>
-                  <UISelectValue placeholder={hcFieldOptions.length === 0 ? 'No fields configured' : 'Select a field…'} />
+                  <UISelectValue placeholder={healthCenterRefOptions.length === 0 ? 'No references available' : 'Select a reference…'} />
                 </UISelectTrigger>
                 <UISelectContent>
-                  {hcFieldOptions.map((d) => (
-                    <UISelectItem key={d.id} value={d.id}>{d.label}</UISelectItem>
-                  ))}
-                </UISelectContent>
-              </UISelect>
-            </div>
-          ) : type === 'kickoff' ? (
-            <div className="col-span-2">
-              <label className={labelClasses}>Health Center</label>
-              <UISelect
-                value={kickoffCenter || undefined}
-                onValueChange={(v) => setKickoffCenter(v)}
-                open={pick === 'reference'}
-                onOpenChange={pickHandler('reference')}
-                disabled={kickoffOptions.length === 0}
-              >
-                <UISelectTrigger className={triggerCls}>
-                  <UISelectValue placeholder={kickoffOptions.length === 0 ? 'No health centers assigned' : 'Select a center…'} />
-                </UISelectTrigger>
-                <UISelectContent>
-                  {kickoffOptions.map((c) => (
-                    <UISelectItem key={c.name} value={c.name}>{c.name}</UISelectItem>
+                  {healthCenterRefOptions.map((o) => (
+                    <UISelectItem key={o.value} value={o.value}>{o.label}</UISelectItem>
                   ))}
                 </UISelectContent>
               </UISelect>
