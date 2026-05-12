@@ -23,6 +23,7 @@ import {
   type HealthCenter,
   type HealthCenterDateFieldDef,
 } from './data/healthCenters';
+import { PROJECTS_STORAGE_KEY, loadProjects } from './data/initialProjects';
 
 import { ChecklistsPage } from './pages/ChecklistsPage';
 import { AdminPage, type Project } from './pages/AdminPage';
@@ -143,126 +144,17 @@ export default function App() {
   const [healthCenterFieldDefs, setHealthCenterFieldDefs] = useState<HealthCenterDateFieldDef[]>(
     INITIAL_HEALTH_CENTER_FIELD_DEFS
   );
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 1,
-      name: 'Site Compliance Review',
-      description: 'Comprehensive review of all site compliance requirements and documentation',
-      category: 'Compliance',
-      createdAt: '2026-04-01',
-      tasks: [
-        {
-          id: 9001,
-          title: 'Complete Site Safety Assessment',
-          completed: false,
-          status: 'In Progress',
-          dueDate: '05/01/2026',
-          assignedTo: { initials: 'SK', name: 'Sarah Kim' },
-          healthCenter: 'Main Campus',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9002,
-          title: 'Review Emergency Protocols',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '05/05/2026',
-          assignedTo: { initials: 'MJ', name: 'Michael Johnson' },
-          healthCenter: 'East Side Clinic',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9011,
-          title: 'Verify Patient Demographics Data',
-          completed: true,
-          completedAt: '04/22/2026',
-          status: 'Completed',
-          dueDate: '04/22/2026',
-          assignedTo: { initials: 'AR', name: 'Amelia Rodriguez' },
-          healthCenter: 'Main Campus',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9012,
-          title: 'Audit Quality Assurance Manual',
-          completed: false,
-          status: 'In Progress',
-          dueDate: '05/12/2026',
-          assignedTo: { initials: 'JL', name: 'Jasmine Lee' },
-          healthCenter: 'West Valley Center',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9013,
-          title: 'Update Service Area Documentation',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '05/18/2026',
-          assignedTo: { initials: 'DP', name: 'Daniel Park' },
-          healthCenter: 'East Side Clinic',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9014,
-          title: 'Submit Sliding Fee Discount Schedule',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '05/22/2026',
-          assignedTo: { initials: 'RB', name: 'Riya Banerjee' },
-          healthCenter: 'Main Campus',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9015,
-          title: 'Refresh HR Credentialing Files',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '05/29/2026',
-          assignedTo: { initials: 'CN', name: 'Carlos Nguyen' },
-          healthCenter: 'West Valley Center',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        },
-        {
-          id: 9016,
-          title: 'Conduct Quarterly Privacy Walkthrough',
-          completed: false,
-          status: 'Not Started',
-          dueDate: '06/04/2026',
-          assignedTo: { initials: 'OK', name: 'Olivia Kim' },
-          healthCenter: 'Main Campus',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        }
-      ]
-    },
-    {
-      id: 2,
-      name: 'FTCA Documentation Update',
-      description: 'Update all FTCA-related documentation and procedures',
-      category: 'Documentation',
-      createdAt: '2026-03-15',
-      tasks: [
-        {
-          id: 9003,
-          title: 'Update FTCA Policy Manual',
-          completed: false,
-          status: 'In Progress',
-          dueDate: '04/30/2026',
-          assignedTo: { initials: 'EM', name: 'Emily Martinez' },
-          healthCenter: 'West Valley Center',
-          taskType: 'custom',
-          createdBy: { initials: 'TF', name: 'Tim Freeman' }
-        }
-      ]
+  const [projects, setProjects] = useState<Project[]>(() => loadProjects());
+
+  // Mirror new projects + tasks into localStorage so a refresh (or an
+  // html.to.design capture) picks the same state back up.
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projects));
+    } catch {
+      // localStorage unavailable (private mode, quota, etc.) -- non-fatal.
     }
-  ]);
+  }, [projects]);
 
   const handleAddNewTask = useCallback(() => {
     setNewTaskTitle('');

@@ -852,8 +852,10 @@ const TaskRow = memo(function TaskRow({
             {/* Dynamic Columns */}
             {columns.map((col) => columnMap[col.id](col))}
 
-            {/* Ellipsis Menu - Always Last */}
-            <div className="content-stretch flex h-full items-center justify-center relative shrink-0 w-[60px] group/ellipsis">
+            {/* Ellipsis Menu - Always Last, pushed to the right edge so
+                tables with few columns still anchor the kebab at the
+                right side of the row. */}
+            <div className="ml-auto content-stretch flex h-full items-center justify-center relative shrink-0 w-[60px] group/ellipsis">
               <div aria-hidden="true" className="absolute inset-0 bg-transparent group-hover/ellipsis:bg-[#f5f5f5] transition-colors rounded-r-[8px]" />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

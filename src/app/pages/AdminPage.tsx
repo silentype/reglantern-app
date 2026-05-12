@@ -23,6 +23,7 @@ import {
   Check,
   Search,
   Building2,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -128,6 +129,10 @@ export function AdminPage({
   const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
   const [projectCardSelectedCenters, setProjectCardSelectedCenters] = useState<string[]>([]);
   const [projectCardCenterSearch, setProjectCardCenterSearch] = useState('');
+  // Confirmation-modal state for "Delete project". Stored as a boolean
+  // (not a project id) because only the currently-selected project can
+  // be deleted from the detail view.
+  const [confirmDeleteProjectOpen, setConfirmDeleteProjectOpen] = useState(false);
   // selectedProject is derived from URL (selectedProjectId prop) so it survives
   // refresh and is shareable. Mutations to the projects array auto-flow through.
   const selectedProject = useMemo(
@@ -242,6 +247,32 @@ export function AdminPage({
     toast.success('Task deleted successfully');
   }, [selectedProject]);
 
+  // Inline-edit handlers for the project's name + description in the
+  // detail header. Both write straight through to setProjects so the
+  // localStorage mirror picks them up.
+  const handleUpdateProjectName = useCallback((next: string) => {
+    if (!selectedProject) return;
+    setProjects((prev) =>
+      prev.map((p) => (p.id === selectedProject.id ? { ...p, name: next } : p))
+    );
+  }, [selectedProject, setProjects]);
+
+  const handleUpdateProjectDescription = useCallback((next: string) => {
+    if (!selectedProject) return;
+    setProjects((prev) =>
+      prev.map((p) => (p.id === selectedProject.id ? { ...p, description: next } : p))
+    );
+  }, [selectedProject, setProjects]);
+
+  const handleConfirmDeleteProject = useCallback(() => {
+    if (!selectedProject) return;
+    const removedName = selectedProject.name;
+    setProjects((prev) => prev.filter((p) => p.id !== selectedProject.id));
+    setConfirmDeleteProjectOpen(false);
+    onSelectProject(null);
+    toast.success(`Deleted "${removedName}"`);
+  }, [selectedProject, setProjects, onSelectProject]);
+
   // Resolve rule-driven dueDates first (so each task's `dueDate` reflects its
   // dueDateRule against the project's startDate + sibling tasks). Then filter.
   const otherProjects = useMemo(
@@ -299,10 +330,12 @@ export function AdminPage({
   if (selectedProject) {
     return (
       <div className="h-full flex flex-col">
-        {/* Sticky Top Section - Header */}
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
+        {/* Sticky Top Section - Header. No bottom border here -- the
+            table section runs straight into the header on the same
+            page background. */}
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px]">
           <div className="mb-4 flex items-end justify-between gap-6">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <button
                 onClick={() => onSelectProject(null)}
                 className="bg-white h-[40px] px-[16px] py-[8px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#f9fafb] transition-colors mb-3 flex items-center gap-2"
@@ -312,55 +345,40 @@ export function AdminPage({
                 </svg>
                 Back to Projects
               </button>
-              <div className="mb-2">
-                <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px]">{selectedProject.name}</h1>
-              </div>
-              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-                {selectedProject.description}
-              </p>
+              {/* Project name -- click-anywhere editable. Styled as the
+                  page title until focused; reveals a faint border on
+                  hover/focus so it's discoverable as an input. */}
+              <input
+                aria-label="Project name"
+                value={selectedProject.name}
+                onChange={(e) => handleUpdateProjectName(e.target.value)}
+                placeholder="Project name"
+                className="w-full mb-2 text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] bg-transparent border border-transparent rounded-md px-1 -mx-1 hover:border-[#e4e4e7] focus:border-[#fc6] focus:outline-none transition-colors"
+              />
+              <textarea
+                aria-label="Project description"
+                value={selectedProject.description}
+                onChange={(e) => handleUpdateProjectDescription(e.target.value)}
+                placeholder="Add a description"
+                rows={2}
+                className="w-full resize-none text-sm font-medium text-[#71717a] leading-[20px] bg-transparent border border-transparent rounded-md px-1 -mx-1 hover:border-[#e4e4e7] focus:border-[#fc6] focus:outline-none transition-colors"
+              />
               <div className="mt-3 flex items-center gap-2">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] bg-[#f4f4f5] text-[#18181b] text-[12px] font-medium">
                   {selectedProject.category}
                 </span>
-                <Popover
-                  open={popover === 'projectStart'}
-                  onOpenChange={(o) => setPopover(o ? 'projectStart' : null)}
-                >
-                  <PopoverTrigger asChild>
-                    <button className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] border border-[#e4e4e7] bg-white text-[12px] font-medium cursor-pointer hover:border-[#cdd7e1] transition-colors">
-                      <CalendarIcon className="w-3.5 h-3.5 text-[#71717a]" />
-                      <span className={selectedProject.startDate ? 'text-[#18181b]' : 'text-[#71717a]'}>
-                        {selectedProject.startDate
-                          ? `Starts ${format(parse(selectedProject.startDate, 'MM/dd/yyyy', new Date()), 'MMM d, yyyy')}`
-                          : 'Set start date'}
-                      </span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={
-                        selectedProject.startDate
-                          ? parse(selectedProject.startDate, 'MM/dd/yyyy', new Date())
-                          : undefined
-                      }
-                      onSelect={(date) => {
-                        if (!date) return;
-                        const formatted = format(date, 'MM/dd/yyyy');
-                        setProjects((prev) =>
-                          prev.map((p) =>
-                            p.id === selectedProject.id ? { ...p, startDate: formatted } : p
-                          )
-                        );
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
               </div>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <SaveIndicator status={tableSaveStatus} />
+              <button
+                onClick={() => setConfirmDeleteProjectOpen(true)}
+                className="h-[40px] w-[40px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#fef2f2] hover:text-[#b91c1c] hover:border-[#fecaca] transition-colors"
+                aria-label="Delete project"
+                title="Delete project"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
               <Button onClick={() => onAddTaskToProject(selectedProject.id)}>
                 Add Task
                 <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
@@ -369,11 +387,45 @@ export function AdminPage({
               </Button>
             </div>
           </div>
-
         </div>
 
-        {/* Tasks Table Section */}
-        <div className="h-full flex flex-col bg-white">
+        {/* Delete-project confirmation modal */}
+        {confirmDeleteProjectOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setConfirmDeleteProjectOpen(false)}
+          >
+            <div
+              className="bg-white rounded-[8px] shadow-xl max-w-[420px] w-full p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-[18px] font-semibold text-[#18181b] mb-2">
+                Delete this project?
+              </h2>
+              <p className="text-[14px] text-[#52525b] mb-5">
+                <span className="font-medium text-[#18181b]">"{selectedProject.name}"</span>{' '}
+                and its {selectedProject.tasks.length} task
+                {selectedProject.tasks.length === 1 ? '' : 's'} will be permanently removed. This can't be undone.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={() => setConfirmDeleteProjectOpen(false)}>
+                  Cancel
+                </Button>
+                <button
+                  onClick={handleConfirmDeleteProject}
+                  className="h-[40px] px-[16px] py-[8px] rounded-[6px] bg-[#dc2626] text-white text-[14px] font-medium hover:bg-[#b91c1c] transition-colors inline-flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete project
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tasks Table Section -- transparent so the app's gray bg shows
+            through, matching the Tasks page. */}
+        <div className="h-full flex flex-col">
           {/* No filter bar on the project-detail view: this page is for
               shaping the project's task template, not running it. Completing
               tasks and filtering "what's mine to do" happens on the Tasks
