@@ -24,6 +24,7 @@ import {
   Search,
   Building2,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -139,6 +140,12 @@ export function AdminPage({
   // (not a project id) because only the currently-selected project can
   // be deleted from the detail view.
   const [confirmDeleteProjectOpen, setConfirmDeleteProjectOpen] = useState(false);
+  // Edit-project modal: holds a working copy of name / description /
+  // category while open. `null` = modal closed. Discarded on Cancel,
+  // written back to the project on Save.
+  const [editProjectDraft, setEditProjectDraft] = useState<
+    { name: string; description: string; category: string } | null
+  >(null);
   // selectedProject is derived from URL (selectedProjectId prop) so it survives
   // refresh and is shareable. Mutations to the projects array auto-flow through.
   const selectedProject = useMemo(
@@ -253,22 +260,38 @@ export function AdminPage({
     toast.success('Task deleted successfully');
   }, [selectedProject]);
 
-  // Inline-edit handlers for the project's name + description in the
-  // detail header. Both write straight through to setProjects so the
-  // localStorage mirror picks them up.
-  const handleUpdateProjectName = useCallback((next: string) => {
+  // Edit-project modal: open seeds the draft from the current project,
+  // save commits the draft, cancel just clears.
+  const handleOpenEditProject = useCallback(() => {
     if (!selectedProject) return;
-    setProjects((prev) =>
-      prev.map((p) => (p.id === selectedProject.id ? { ...p, name: next } : p))
-    );
-  }, [selectedProject, setProjects]);
+    setEditProjectDraft({
+      name: selectedProject.name,
+      description: selectedProject.description,
+      category: selectedProject.category,
+    });
+  }, [selectedProject]);
 
-  const handleUpdateProjectDescription = useCallback((next: string) => {
-    if (!selectedProject) return;
+  const handleSaveEditProject = useCallback(() => {
+    if (!selectedProject || !editProjectDraft) return;
+    if (!editProjectDraft.name.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
     setProjects((prev) =>
-      prev.map((p) => (p.id === selectedProject.id ? { ...p, description: next } : p))
+      prev.map((p) =>
+        p.id === selectedProject.id
+          ? {
+              ...p,
+              name: editProjectDraft.name.trim(),
+              description: editProjectDraft.description,
+              category: editProjectDraft.category,
+            }
+          : p
+      )
     );
-  }, [selectedProject, setProjects]);
+    setEditProjectDraft(null);
+    toast.success('Project updated');
+  }, [selectedProject, editProjectDraft, setProjects]);
 
   const handleConfirmDeleteProject = useCallback(() => {
     if (!selectedProject) return;
@@ -351,40 +374,44 @@ export function AdminPage({
                 </svg>
                 Back to Projects
               </button>
-              {/* Project name -- click-anywhere editable. Styled as the
-                  page title until focused; reveals a faint border on
-                  hover/focus so it's discoverable as an input. */}
-              <input
-                aria-label="Project name"
-                value={selectedProject.name}
-                onChange={(e) => handleUpdateProjectName(e.target.value)}
-                placeholder="Project name"
-                className="w-full mb-2 text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] bg-transparent border border-transparent rounded-md px-1 -mx-1 hover:border-[#e4e4e7] focus:border-[#fc6] focus:outline-none transition-colors"
-              />
-              <textarea
-                aria-label="Project description"
-                value={selectedProject.description}
-                onChange={(e) => handleUpdateProjectDescription(e.target.value)}
-                placeholder="Add a description"
-                rows={2}
-                className="w-full resize-none text-sm font-medium text-[#71717a] leading-[20px] bg-transparent border border-transparent rounded-md px-1 -mx-1 hover:border-[#e4e4e7] focus:border-[#fc6] focus:outline-none transition-colors"
-              />
+              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
+                {selectedProject.name}
+              </h1>
+              {selectedProject.description && (
+                <p className="text-sm font-medium text-[#71717a] leading-[20px]">
+                  {selectedProject.description}
+                </p>
+              )}
               <div className="mt-3 flex items-center gap-2">
                 <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] bg-[#f4f4f5] text-[#18181b] text-[12px] font-medium">
                   {selectedProject.category}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <SaveIndicator status={tableSaveStatus} />
-              <button
-                onClick={() => setConfirmDeleteProjectOpen(true)}
-                className="h-[40px] w-[40px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#fef2f2] hover:text-[#b91c1c] hover:border-[#fecaca] transition-colors"
-                aria-label="Delete project"
-                title="Delete project"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+            {/* Header actions: Edit + Trash pair sits in its own row
+                above Add Task, so the destructive actions are visually
+                grouped and separated from the primary CTA. */}
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="flex items-center gap-2">
+                <SaveIndicator status={tableSaveStatus} />
+                <button
+                  onClick={handleOpenEditProject}
+                  className="h-[36px] px-[12px] py-[6px] flex items-center justify-center gap-2 rounded-[6px] border border-[#e4e4e7] bg-white text-[#18181b] text-[13px] font-medium hover:bg-[#f9fafb] transition-colors shadow-sm hover:shadow active:shadow-none"
+                  aria-label="Edit project"
+                  title="Edit project"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => setConfirmDeleteProjectOpen(true)}
+                  className="h-[36px] w-[36px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] bg-white text-[#71717a] hover:bg-[#fef2f2] hover:text-[#b91c1c] hover:border-[#fecaca] transition-colors shadow-sm hover:shadow active:shadow-none"
+                  aria-label="Delete project"
+                  title="Delete project"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
               <Button onClick={() => onAddTaskToProject(selectedProject.id)}>
                 Add Task
                 <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
@@ -394,6 +421,80 @@ export function AdminPage({
             </div>
           </div>
         </div>
+
+        {/* Edit-project modal -- mirrors the Delete confirmation style. */}
+        {editProjectDraft && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => setEditProjectDraft(null)}
+          >
+            <div
+              className="bg-white rounded-[8px] shadow-xl max-w-[480px] w-full p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-[18px] font-semibold text-[#18181b] mb-4">
+                Edit project
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Project name <span className="text-[#dc2626]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editProjectDraft.name}
+                    onChange={(e) =>
+                      setEditProjectDraft((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                    }
+                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    placeholder="Project name"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    value={editProjectDraft.description}
+                    onChange={(e) =>
+                      setEditProjectDraft((prev) => (prev ? { ...prev, description: e.target.value } : prev))
+                    }
+                    className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    placeholder="Add a description"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Category <span className="text-[#dc2626]">*</span>
+                  </label>
+                  <Select
+                    value={editProjectDraft.category}
+                    onValueChange={(value) =>
+                      setEditProjectDraft((prev) => (prev ? { ...prev, category: value } : prev))
+                    }
+                  >
+                    <SelectTrigger className="w-full h-[40px] focus:border-[#fc6]">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-5">
+                <Button variant="secondary" onClick={() => setEditProjectDraft(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEditProject}>Save changes</Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Delete-project confirmation modal */}
         {confirmDeleteProjectOpen && (
