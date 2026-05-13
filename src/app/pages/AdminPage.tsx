@@ -169,6 +169,21 @@ export function AdminPage({
     }, { replace: true });
   }, [setSearchParams]);
 
+  // ?edit=1 mirrors the Edit-project modal's open state so a refresh
+  // (or html.to.design capture) reproduces the open modal. The in-
+  // progress text edits stay in component state -- only the open/
+  // closed signal is URL-driven.
+  const editProjectOpen = searchParams.get('edit') === '1';
+
+  const setEditProjectOpen = useCallback((open: boolean) => {
+    setSearchParams((prev) => {
+      const params = new URLSearchParams(prev);
+      if (open) params.set('edit', '1');
+      else params.delete('edit');
+      return params;
+    }, { replace: true });
+  }, [setSearchParams]);
+
   const categories = ['Compliance', 'Documentation', 'Training', 'Quality Assurance', 'Operational'];
 
   const healthCenters = HEALTH_CENTERS;
@@ -270,7 +285,9 @@ export function AdminPage({
   }, [selectedProject]);
 
   // Edit-project modal: open seeds the draft from the current project,
-  // save commits the draft, cancel just clears.
+  // save commits the draft, cancel just clears. Open state is mirrored
+  // to the URL (?edit=1) so refreshing or sharing the URL reproduces
+  // the open modal.
   const handleOpenEditProject = useCallback(() => {
     if (!selectedProject) return;
     setEditProjectDraft({
@@ -278,7 +295,30 @@ export function AdminPage({
       description: selectedProject.description,
       category: selectedProject.category,
     });
-  }, [selectedProject]);
+    setEditProjectOpen(true);
+  }, [selectedProject, setEditProjectOpen]);
+
+  const handleCloseEditProject = useCallback(() => {
+    setEditProjectDraft(null);
+    setEditProjectOpen(false);
+  }, [setEditProjectOpen]);
+
+  // Seed the draft when ?edit=1 lands without an in-memory draft yet
+  // (direct nav, refresh, or someone pasting the URL). Without this the
+  // URL would say "modal open" but the modal element would render
+  // nothing because editProjectDraft is null.
+  useEffect(() => {
+    if (editProjectOpen && !editProjectDraft && selectedProject) {
+      setEditProjectDraft({
+        name: selectedProject.name,
+        description: selectedProject.description,
+        category: selectedProject.category,
+      });
+    }
+    if (!editProjectOpen && editProjectDraft) {
+      setEditProjectDraft(null);
+    }
+  }, [editProjectOpen, editProjectDraft, selectedProject]);
 
   const handleSaveEditProject = useCallback(() => {
     if (!selectedProject || !editProjectDraft) return;
@@ -299,8 +339,9 @@ export function AdminPage({
       )
     );
     setEditProjectDraft(null);
+    setEditProjectOpen(false);
     toast.success('Project updated');
-  }, [selectedProject, editProjectDraft, setProjects]);
+  }, [selectedProject, editProjectDraft, setProjects, setEditProjectOpen]);
 
   const handleConfirmDeleteProject = useCallback(() => {
     if (!selectedProject) return;
@@ -446,11 +487,13 @@ export function AdminPage({
           </div>
         </div>
 
-        {/* Edit-project modal -- mirrors the Delete confirmation style. */}
-        {editProjectDraft && (
+        {/* Edit-project modal -- mirrors the Delete confirmation style.
+            Backed by ?edit=1 in the URL so refreshing the page (or
+            pasting the URL into html.to.design) reopens it. */}
+        {editProjectOpen && editProjectDraft && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-            onClick={() => setEditProjectDraft(null)}
+            onClick={handleCloseEditProject}
           >
             <div
               className="bg-white rounded-[8px] shadow-xl max-w-[480px] w-full p-5"
@@ -511,7 +554,7 @@ export function AdminPage({
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-5">
-                <Button variant="secondary" onClick={() => setEditProjectDraft(null)}>
+                <Button variant="secondary" onClick={handleCloseEditProject}>
                   Cancel
                 </Button>
                 <Button onClick={handleSaveEditProject}>Save changes</Button>
