@@ -9,8 +9,6 @@ import { useSearchParams } from 'react-router';
 import { X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
-import svgPaths from '../../imports/svg-4rlgkpgv7k';
-import svgPathsSubtask from '../../imports/svg-3gmpygqd7l';
 import svgPathsUpload from '../../imports/svg-cqqadqx4y2';
 import { SaveIndicator } from './SaveIndicator';
 import { DueDatePicker } from './DueDatePicker';
@@ -61,7 +59,7 @@ export default function MultiFileUploadPanel({
   onUpdateFiles,
   onSaveNewTask,
   isCreatingNew = false,
-  initialFiles = [],
+  initialFiles: _initialFiles = [],
   initialStatus = 'In Progress',
   initialDueDate,
   initialAssignedTo,
@@ -213,12 +211,7 @@ export default function MultiFileUploadPanel({
   // Comments state
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
-  
-  // Log initial subtasks for debugging
-  useEffect(() => {
-    console.log('MultiFileUploadPanel - Task:', taskTitle.substring(0, 50), 'Subtasks:', initialSubtasks.length, initialSubtasks);
-  }, [taskTitle, initialSubtasks]);
-  
+
   // Autosave state
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -230,7 +223,6 @@ export default function MultiFileUploadPanel({
   const [statusOpen, setStatusOpen] = useState(false);
   const [assignedOpen, setAssignedOpen] = useState(false);
   const [collaboratorsOpen, setCollaboratorsOpen] = useState(false);
-  const [subtaskDropdownOpen, setSubtaskDropdownOpen] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);

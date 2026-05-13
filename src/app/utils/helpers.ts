@@ -206,33 +206,6 @@ export function formatFileSize(bytes: number): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-/**
- * Debounces a function call
- * Used for performance optimization in search and filter operations
- * 
- * @param func - The function to debounce
- * @param wait - The delay in milliseconds
- * @returns A debounced version of the function
- */
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
-  
-  return function executedFunction(...args: Parameters<T>) {
-    const later = () => {
-      timeout = null;
-      func(...args);
-    };
-
-    if (timeout) {
-      clearTimeout(timeout);
-    }
-    timeout = setTimeout(later, wait);
-  };
-}
-
 // ==================== RELATIVE DUE DATES ====================
 
 const DATE_FMT = 'MM/dd/yyyy';

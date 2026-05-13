@@ -22,8 +22,8 @@ import { Button } from '../components/design-system/Button';
 import type { HealthCenter, HealthCenterDateFieldDef } from '../data/healthCenters';
 
 export function HealthCenterAdminPage({
-  onToggleSideNav,
-  sideNavOpen,
+  onToggleSideNav: _onToggleSideNav,
+  sideNavOpen: _sideNavOpen,
   healthCenters,
   setHealthCenters,
   fieldDefs,

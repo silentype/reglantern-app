@@ -3,15 +3,13 @@ import { Calendar } from "./ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "./ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command";
-import { format, parse, differenceInCalendarDays, addDays, addMonths, addYears } from "date-fns";
+import { format, parse, differenceInCalendarDays, addDays } from "date-fns";
 import { MoreHorizontal, ChevronDown, Calendar as CalendarIcon, ChevronsUpDown, ChevronUp, User, Building2, AlertCircle, GripVertical, Check } from "lucide-react";
 import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { Avatar } from "./design-system/Avatar";
 import { Tab, TabStrip } from "./design-system/Tab";
-import { Button } from "./design-system/Button";
 import { RelativeDuePicker } from "./RelativeDuePicker";
 import { shortDueDateRule } from "../utils/helpers";
 import { AVAILABLE_USERS, HEALTH_CENTERS, QUICK_DATE_OPTIONS } from "../constants";
@@ -26,9 +24,9 @@ export type SortDirection = 'asc' | 'desc' | null;
 export interface ColumnConfig {
   id: SortColumn;
   label: string;
-  // Loose typing because lucide-react icons are ForwardRefExoticComponent<LucideProps>,
-  // which doesn't fit a tighter ComponentType<{ size, className }> due to ref forwarding.
-  icon?: React.ComponentType<any> | null;
+  // ElementType accepts both regular components and ForwardRefExoticComponent
+  // (lucide-react icons), unlike the tighter ComponentType<{ size, className }>.
+  icon?: React.ElementType | null;
   width: number;
   minWidth: number;
 }
@@ -264,7 +262,7 @@ UserAvatar.displayName = 'UserAvatar';
 
 const SortButton = memo(({ label, icon: Icon, sortColumn, currentColumn, sortDirection, onSort }: {
   label: string;
-  icon?: React.ComponentType<any> | null;
+  icon?: React.ElementType | null;
   sortColumn: SortColumn;
   currentColumn: SortColumn;
   sortDirection: SortDirection;
@@ -388,7 +386,7 @@ const DraggableColumnHeader = memo(function DraggableColumnHeader({
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
 
-  const [{ isDragging }, drag, preview] = useDrag({
+  const [{ isDragging }, drag] = useDrag({
     type: 'COLUMN',
     item: { index },
     collect: (monitor) => ({
@@ -437,7 +435,7 @@ const DraggableColumnHeader = memo(function DraggableColumnHeader({
         window.removeEventListener('mouseup', handleResizeEnd);
       };
     }
-  }, [isResizing]);
+  }, [isResizing, handleResizeMove, handleResizeEnd]);
 
   return (
     <div
@@ -525,7 +523,6 @@ const TaskRow = memo(function TaskRow({
     else if (params.get('datePicker') === datePickerKey) params.delete('datePicker');
     setSearchParams(params, { replace: true });
   }, [searchParams, setSearchParams, datePickerKey]);
-  const [assignedToOpen, setAssignedToOpen] = useState(false);
   const [inputValue, setInputValue] = useState(task.dueDate || '');
   // Keep the inline / Custom Date input in sync if the task's dueDate
   // changes from outside this cell (calendar pick, rule resolution,
@@ -571,7 +568,7 @@ const TaskRow = memo(function TaskRow({
     onUpdateTask(task.id, { dueDate: formatted, dueDateRule: undefined });
     toast.success(`Due date set to ${formatted}`);
     setCalendarOpen(false);
-  }, [task.id, onUpdateTask]);
+  }, [task.id, onUpdateTask, setCalendarOpen]);
 
   const handleCalendarSelect = useCallback((date: Date | undefined) => {
     if (date) {
@@ -581,7 +578,7 @@ const TaskRow = memo(function TaskRow({
       toast.success(`Due date set to ${formatted}`);
       setCalendarOpen(false);
     }
-  }, [task.id, onUpdateTask]);
+  }, [task.id, onUpdateTask, setCalendarOpen]);
 
   // Inline-cell commit: validates MM/DD/YYYY, writes to the task, and
   // clears any relative rule so the typed value isn't overwritten on
@@ -613,7 +610,7 @@ const TaskRow = memo(function TaskRow({
       toast.success('Due date rule saved');
       setCalendarOpen(false);
     },
-    [task.id, onUpdateTask]
+    [task.id, onUpdateTask, setCalendarOpen]
   );
 
   const handleUserChange = useCallback((value: string) => {
@@ -883,11 +880,11 @@ const TaskRow = memo(function TaskRow({
     )
   }), [
     task, onClick, calendarOpen, inputValue,
-    handleCheckboxClick, handleQuickDateSelect, handleCalendarSelect,
-    handleUserChange, handleHealthCenterChange,
+    handleQuickDateSelect, handleCalendarSelect, handleUserChange,
+    commitInlineDueDate, onUpdateTask, setCalendarOpen,
     // Relative-due-date picker state and derived values must invalidate the
     // memo so flipping tabs / editing the rule re-renders the popover.
-    enableRelativeDates, projectStartDate, projectName, siblingTasks, availableProjects,
+    enableRelativeDates, projectStartDate, projectEndDate, projectName, siblingTasks, availableProjects,
     assignedHealthCenters, healthCenterFieldDefs, healthCenters,
     dateMode, handleSaveRelativeRule,
   ]);

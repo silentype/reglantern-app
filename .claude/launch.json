@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "reglantern-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "node_modules/.bin/vite",
+      "runtimeArgs": [],
       "port": 5173
     }
   ]

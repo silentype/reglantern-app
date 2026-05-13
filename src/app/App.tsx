@@ -4,17 +4,13 @@
  * Handles navigation, task state, and side panel management
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { Toaster, toast } from 'sonner';
-import reglanternLogo from 'figma:asset/5c768d7f259dcbb31703dfef4853e9bbf108c1dc.png';
 
-import MultiFileUpload1 from './components/MultiFileUploadPanel';
 import { SideNavigation } from './components/SideNavigation';
+import { TopNav } from './components/TopNav';
 import { type Task } from './components/TaskTableDynamic';
-
-import { TopNavButton } from './components/design-system/TopNavButton';
-import { Avatar } from './components/design-system/Avatar';
 
 import { INITIAL_TASKS } from './data/initialTasks';
 import {
@@ -25,11 +21,38 @@ import {
 } from './data/healthCenters';
 import { PROJECTS_STORAGE_KEY, loadProjects } from './data/initialProjects';
 
-import { ChecklistsPage } from './pages/ChecklistsPage';
-import { AdminPage, type Project } from './pages/AdminPage';
+// Project type re-exported from AdminPage; we type-import it so the lazy
+// chunk doesn't include AdminPage in the initial bundle.
+import type { Project } from './pages/AdminPage';
+
+// TasksPage is the default landing route, so keep it eager to avoid a
+// Suspense flash on first paint. The other pages are split into their
+// own chunks and loaded on demand.
 import { TasksPage } from './pages/TasksPage';
-import { SettingsPage } from './pages/SettingsPage';
-import { HealthCenterAdminPage } from './pages/HealthCenterAdminPage';
+
+const ChecklistsPage = lazy(() =>
+  import('./pages/ChecklistsPage').then((m) => ({ default: m.ChecklistsPage }))
+);
+const AdminPage = lazy(() =>
+  import('./pages/AdminPage').then((m) => ({ default: m.AdminPage }))
+);
+const SettingsPage = lazy(() =>
+  import('./pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+);
+const HealthCenterAdminPage = lazy(() =>
+  import('./pages/HealthCenterAdminPage').then((m) => ({ default: m.HealthCenterAdminPage }))
+);
+
+// MultiFileUploadPanel only mounts when a task / new-task panel is open.
+// Keeping it eager would pull 1.6k lines + the relative-due-date picker into
+// the initial bundle; lazy load it so first paint stays light.
+const MultiFileUpload1 = lazy(() => import('./components/MultiFileUploadPanel'));
+
+const PageFallback = () => (
+  <div className="flex items-center justify-center h-full text-[#71717a] text-sm">
+    Loading…
+  </div>
+);
 
 // URL <-> sidebar nav item mappings. URL is the source of truth for navigation.
 const NAV_ITEM_TO_URL: Record<string, string> = {
@@ -179,8 +202,6 @@ export default function App() {
       }>;
     }>;
   }) => {
-    console.log('handleSaveNewTask called with:', taskData);
-
     // Check if we're adding to a project
     if (selectedProjectId !== null) {
       setProjects(prevProjects =>
@@ -261,14 +282,8 @@ export default function App() {
         taskType: 'custom' // Custom tasks created by Add a Task +
       };
 
-      console.log('New task created:', newTask);
-      console.log('Previous tasks count:', prevTasks.length);
-
       // Add to beginning of tasks array
-      const updatedTasks = [newTask, ...prevTasks];
-      console.log('Updated tasks count:', updatedTasks.length);
-      console.log('First task in array:', updatedTasks[0]);
-      return updatedTasks;
+      return [newTask, ...prevTasks];
     });
 
     // Close the panel by navigating back to the tasks list
@@ -480,48 +495,7 @@ export default function App() {
           },
         }}
       />
-      {/* Top Navigation Bar */}
-      <header className="bg-[#32383e] h-[80px] flex items-center justify-between px-5 shrink-0 z-50">
-        {/* Left side: Health Center Dropdown + Navigation */}
-        <div className="flex items-center gap-4">
-          {/* Health Center Dropdown */}
-          <div className="bg-transparent border border-[#fc6] rounded-md px-4 py-2 flex items-center gap-2 cursor-pointer">
-            <span className="text-[#fc6] text-sm font-medium whitespace-nowrap">All Health Centers</span>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path 
-                d="M3.5286 5.5286C3.78894 5.26825 4.21105 5.26825 4.4714 5.5286L8 9.05719L11.5286 5.5286C11.7889 5.26825 12.2111 5.26825 12.4714 5.5286C12.7318 5.78895 12.7318 6.21106 12.4714 6.4714L8.4714 10.4714C8.21105 10.7318 7.78894 10.7318 7.5286 10.4714L3.5286 6.4714C3.26825 6.21106 3.26825 5.78895 3.5286 5.5286Z" 
-                fill="#fc6"
-              />
-            </svg>
-          </div>
-
-          {/* Navigation Menu */}
-          <nav className="flex items-center gap-6">
-            <TopNavButton onClick={() => {}}>Home</TopNavButton>
-            <TopNavButton active={currentPage === 'tasks'} onClick={() => handleNavChange('tasks')}>Tasks</TopNavButton>
-            <TopNavButton active={currentPage === 'checklists'} onClick={() => handleNavChange('checklists')}>Tools</TopNavButton>
-            <TopNavButton onClick={() => {}}>Resources</TopNavButton>
-            <TopNavButton onClick={() => {}}>Documents</TopNavButton>
-            <TopNavButton active={currentPage === 'settings'} onClick={() => handleNavChange('settings')}>Settings</TopNavButton>
-            <TopNavButton active={currentPage === 'admin'} onClick={() => handleNavChange('admin')}>Admin</TopNavButton>
-          </nav>
-        </div>
-
-        {/* Right side: Logo + Profile */}
-        <div className="flex items-center gap-4">
-          {/* RegLantern Logo */}
-          <img src={reglanternLogo} alt="RegLantern Logo" className="h-[30px] w-auto" />
-
-          {/* Profile Button */}
-          <div className="flex items-center gap-2">
-            {/* Profile avatar -- always brand yellow as identity, not deterministic palette. */}
-            <Avatar initials="TF" name="Tim Freeman" size="lg" color="#fc6" className="font-bold" />
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transform rotate-90">
-              <path d="M6.47 4L5.53 4.94L8.58333 8L5.53 11.06L6.47 12L10.47 8L6.47 4Z" fill="#fc6"/>
-            </svg>
-          </div>
-        </div>
-      </header>
+      <TopNav currentPage={currentPage} onNavChange={handleNavChange} />
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
@@ -536,6 +510,7 @@ export default function App() {
 
         {/* Main Page Content */}
         <main className={`flex-1 overflow-auto transition-all duration-300 ${sideNavOpen ? 'ml-[280px]' : 'ml-[66px]'}`}>
+          <Suspense fallback={<PageFallback />}>
           {currentPage === 'tasks' ? (
             <TasksPage
               onTaskClick={handleTaskClick}
@@ -601,6 +576,7 @@ export default function App() {
               healthCenterFieldDefs={healthCenterFieldDefs}
             />
           )}
+          </Suspense>
         </main>
 
         {/* Backdrop */}
@@ -617,6 +593,7 @@ export default function App() {
             sidePanelOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
+          <Suspense fallback={<PageFallback />}>
           {isCreatingNewTask ? (
             <MultiFileUpload1
               taskId={null}
@@ -670,6 +647,7 @@ export default function App() {
                 .map((p) => ({ id: p.id, name: p.name, startDate: p.startDate, endDate: p.endDate }))}
             />
           ) : null}
+          </Suspense>
         </div>
       </div>
     </div>
