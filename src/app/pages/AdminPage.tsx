@@ -87,8 +87,8 @@ export interface Project {
 }
 
 export function AdminPage({
-  onToggleSideNav,
-  sideNavOpen,
+  onToggleSideNav: _onToggleSideNav,
+  sideNavOpen: _sideNavOpen,
   selectedNavItem,
   projects,
   setProjects,
@@ -152,7 +152,7 @@ export function AdminPage({
     () => (selectedProjectId !== null ? projects.find(p => p.id === selectedProjectId) ?? null : null),
     [projects, selectedProjectId]
   );
-  const [tableSaveStatus, setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [tableSaveStatus, _setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -220,7 +220,7 @@ export function AdminPage({
         return project;
       })
     );
-  }, [selectedProject]);
+  }, [selectedProject, setProjects]);
 
   const handleUpdateProjectTaskStatus = useCallback((taskId: number, status: string) => {
     if (!selectedProject) return;
@@ -238,7 +238,7 @@ export function AdminPage({
         return project;
       })
     );
-  }, [selectedProject]);
+  }, [selectedProject, setProjects]);
 
   const handleUpdateProjectTask = useCallback((taskId: number, updates: Partial<Task>) => {
     if (!selectedProject) return;
@@ -256,7 +256,7 @@ export function AdminPage({
         return project;
       })
     );
-  }, [selectedProject]);
+  }, [selectedProject, setProjects]);
 
   // Pending delete with cascade: when a task being deleted is anchored to by
   // other tasks' dueDateRules, surface a confirmation listing the dependents
@@ -282,7 +282,7 @@ export function AdminPage({
     } else {
       toast.success('Task deleted successfully');
     }
-  }, [selectedProject]);
+  }, [selectedProject, setProjects]);
 
   // Edit-project modal: open seeds the draft from the current project,
   // save commits the draft, cancel just clears. Open state is mirrored

@@ -29,8 +29,8 @@ function slugify(label: string): string {
 }
 
 export function SettingsPage({
-  onToggleSideNav,
-  sideNavOpen,
+  onToggleSideNav: _onToggleSideNav,
+  sideNavOpen: _sideNavOpen,
   fieldDefs,
   setFieldDefs,
   setHealthCenters,

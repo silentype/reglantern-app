@@ -266,7 +266,7 @@ export function RelativeDuePicker({
     () => (siblingTasks ?? []).filter((t) => t.id !== excludeTaskId),
     [siblingTasks, excludeTaskId]
   );
-  const projectOptions = availableProjects ?? [];
+  const projectOptions = useMemo(() => availableProjects ?? [], [availableProjects]);
 
   // When the initial rule points to a sibling task that no longer exists,
   // surface a banner and force the user to pick a new reference. We
@@ -280,8 +280,8 @@ export function RelativeDuePicker({
     return !(siblingTasks ?? []).some((t) => t.id === a.taskId);
   }, [initialRule, siblingTasks, excludeTaskId]);
 
-  const kickoffOptions = assignedHealthCenters ?? [];
-  const hcFieldOptions = healthCenterFieldDefs ?? [];
+  const kickoffOptions = useMemo(() => assignedHealthCenters ?? [], [assignedHealthCenters]);
+  const hcFieldOptions = useMemo(() => healthCenterFieldDefs ?? [], [healthCenterFieldDefs]);
 
   // Combined options shown in the Field dropdown when Type=Health Center
   // Info. A single "Instantiation" row (implicit center -- resolves
@@ -364,7 +364,6 @@ export function RelativeDuePicker({
   }, [draftRule, projectStartDate, projectEndDate, siblingTasks, projectOptions, kickoffOptions, healthCenters, taskHealthCenter]);
 
   const eventOptions = eventOptionsFor(type);
-  const labelClasses = 'block text-[11px] font-medium text-[#71717a] mb-1';
 
   // URL-driven open state for each dropdown so html.to.design (and shareable
   // links) can capture each open select. Only one Select can be open at a

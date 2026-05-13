@@ -49,7 +49,7 @@ import filterSvgPaths from '../../imports/svg-vp1nlfqwh3';
 import { Avatar } from '../components/design-system/Avatar';
 import { Button } from '../components/design-system/Button';
 
-export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; }) {
+export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, sideNavOpen: _sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; }) {
   const [statusFilter, setStatusFilter] = useState<string[]>(['all']);
   const [dueDateFilter, setDueDateFilter] = useState<string>('');
   const [assignedToFilter, setAssignedToFilter] = useState<string[]>(['all']);
@@ -210,10 +210,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
 
   // Filter tasks based on current filter values (memoized for performance)
   const filteredTasks = useMemo(() => {
-    console.log('Filtering tasks. Total tasks:', tasks.length);
-    console.log('Active filters:', { statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery });
-    
-    const filtered = tasks.filter(task => {
+    return tasks.filter(task => {
       // Status filter
       if (!statusFilter.includes('all')) {
         const matchesStatus = statusFilter.some(filter => {
@@ -221,86 +218,56 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
           if (filter === 'incomplete' && task.completed) return false;
           return true;
         });
-        if (!matchesStatus) {
-          console.log('Task filtered out by status:', task.title);
-          return false;
-        }
+        if (!matchesStatus) return false;
       }
 
       // Date filter - show tasks due on or before the calculated date
       if (dueDateFilter) {
         // Special case for "none" - show only tasks with NO due date
         if (dueDateFilter === 'none') {
-          if (task.dueDate) {
-            console.log('Task filtered out by date (has date but filter is none):', task.title);
-            return false;
-          }
+          if (task.dueDate) return false;
         } else if (task.dueDate) {
           const targetDate = parseDueDateFilter(dueDateFilter);
           if (targetDate) {
             const taskDate = parse(task.dueDate, 'MM/dd/yyyy', new Date());
             taskDate.setHours(0, 0, 0, 0);
-            if (taskDate > targetDate) {
-              console.log('Task filtered out by date (too far in future):', task.title);
-              return false;
-            }
+            if (taskDate > targetDate) return false;
           }
         } else {
-          // If filter is not "none" and task has no due date, exclude it
-          console.log('Task filtered out by date (no due date but filter requires one):', task.title);
+          // Filter is not "none" and task has no due date, exclude it
           return false;
         }
       }
 
       // Assigned To filter
       if (!assignedToFilter.includes('all')) {
-        if (!task.assignedTo || !assignedToFilter.includes(task.assignedTo.name)) {
-          console.log('Task filtered out by assignedTo:', task.title);
-          return false;
-        }
+        if (!task.assignedTo || !assignedToFilter.includes(task.assignedTo.name)) return false;
       }
 
       // Health Center filter
       if (!healthCenterFilter.includes('All Health Centers')) {
-        if (!task.healthCenter || !healthCenterFilter.includes(task.healthCenter)) {
-          console.log('Task filtered out by healthCenter:', task.title);
-          return false;
-        }
+        if (!task.healthCenter || !healthCenterFilter.includes(task.healthCenter)) return false;
       }
 
       // Needs Attention filter
       if (!needsAttentionFilter.includes('all')) {
-        if (!task.attention) {
-          console.log('Task filtered out by needs attention:', task.title);
-          return false;
-        }
-        // Check if the attention type matches any of the selected filters (OR logic)
+        if (!task.attention) return false;
         const matchesFilter = needsAttentionFilter.some(filter => {
           if (filter === 'needs') return task.attention?.type === 'needs';
           if (filter === 'missing') return task.attention?.type === 'missing';
           return false;
         });
-        
-        if (!matchesFilter) {
-          console.log('Task filtered out by needs attention type:', task.title);
-          return false;
-        }
+        if (!matchesFilter) return false;
       }
 
       // Search filter
       if (searchQuery) {
         const lowerCaseQuery = searchQuery.toLowerCase();
-        if (!task.title.toLowerCase().includes(lowerCaseQuery)) {
-          console.log('Task filtered out by search:', task.title);
-          return false;
-        }
+        if (!task.title.toLowerCase().includes(lowerCaseQuery)) return false;
       }
 
       return true;
     });
-    
-    console.log('Filtered tasks count:', filtered.length);
-    return filtered;
   }, [tasks, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery]);
 
   // Count active filters (memoized)
@@ -322,27 +289,6 @@ export function TasksPage({ onTaskClick, onToggleSideNav, sideNavOpen, tasks, ha
     if (statusFilter.includes('incomplete')) return 'Incomplete';
     return 'All Tasks';
   }, [statusFilter]);
-
-  const assignedToDisplayText = useMemo(() => {
-    if (assignedToFilter.includes('all')) return 'All Assigned';
-    if (assignedToFilter.length === 1) {
-      const user = availableUsers.find(u => u.name === assignedToFilter[0]);
-      return user ? (
-        <div className="flex items-center gap-2">
-          <span>Assigned to</span>
-          <Avatar initials={user.initials} name={user.name} size="sm" />
-          <span>{user.name}</span>
-        </div>
-      ) : 'All Assigned';
-    }
-    return `${assignedToFilter.length} selected`;
-  }, [assignedToFilter, availableUsers]);
-
-  const healthCenterDisplayText = useMemo(() => {
-    if (healthCenterFilter.includes('All Health Centers')) return 'All Health Centers';
-    if (healthCenterFilter.length === 1) return healthCenterFilter[0];
-    return `${healthCenterFilter.length} selected`;
-  }, [healthCenterFilter]);
 
   return (
     <div className="h-full flex flex-col">

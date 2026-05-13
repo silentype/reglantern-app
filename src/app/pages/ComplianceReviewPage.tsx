@@ -537,7 +537,10 @@ export function ComplianceReviewPage() {
   const currentAnswer = currentQuestion ? answers[currentQuestion.id] : null;
 
   // Get tasks for the currently selected chapter
-  const allTasksForChapter = allChapterTasks[selectedChapter] || [];
+  const allTasksForChapter = useMemo(
+    () => allChapterTasks[selectedChapter] || [],
+    [allChapterTasks, selectedChapter]
+  );
 
   // Apply filters to tasks
   const chapterTasks = useMemo(() => {
