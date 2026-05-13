@@ -19,34 +19,12 @@ import type { DueDateRule, Task } from './TaskTableDynamic';
 import { AVAILABLE_USERS, STATUS_OPTIONS } from '../constants';
 import { getTaskDescription, getDisplayValueForDate } from '../utils/helpers';
 
-type UploadedFile = {
-  id: string;
-  name: string;
-  size: number;
-  category: string;
-  progress?: number;
-  isUploading?: boolean;
-};
-
-type Subtask = {
-  id: string;
-  title: string;
-  description: string;
-  uploadedFiles: UploadedFile[];
-  notApplicable?: boolean;
-};
-
-type UserType = {
-  initials: string;
-  name: string;
-};
-
-type Comment = {
-  id: string;
-  user: UserType;
-  text: string;
-  timestamp: Date;
-};
+import type { UploadedFile, Subtask, UserType, Comment } from './multi-file-upload-panel/types';
+import {
+  formatCommentTimestamp,
+  getSubtaskCompletionStatus,
+} from './multi-file-upload-panel/helpers';
+import { DocumentPreviewModal } from './multi-file-upload-panel/DocumentPreviewModal';
 
 const availableUsers: UserType[] = AVAILABLE_USERS as unknown as UserType[];
 const statusOptions = STATUS_OPTIONS;
@@ -471,13 +449,6 @@ export default function MultiFileUploadPanel({
     setCollaborators(prev => prev.filter(c => c.name !== userName));
   };
 
-  const getSubtaskCompletionStatus = (subtask: Subtask) => {
-    if (subtask.notApplicable) return { status: 'na', text: 'Not applicable', color: 'text-[#6b7280]' };
-    const fileCount = subtask.uploadedFiles.length;
-    if (fileCount === 0) return { status: 'missing', text: 'Missing files', color: 'text-[#dc2626]' };
-    return { status: 'uploaded', text: `${fileCount} ${fileCount === 1 ? 'file' : 'files'} uploaded`, color: 'text-[#16a34a]' };
-  };
-
   const toggleNotApplicable = (subtaskId: string) => {
     setSubtasks(prev => prev.map(st => 
       st.id === subtaskId 
@@ -506,21 +477,6 @@ export default function MultiFileUploadPanel({
       e.preventDefault();
       handleAddComment();
     }
-  };
-
-  const formatTimestamp = (date: Date) => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   // File handling functions
@@ -568,136 +524,6 @@ export default function MultiFileUploadPanel({
     handleFiles(e.dataTransfer.files, !!activeSubtask);
   };
 
-  const getFileExtension = (fileName: string) => {
-    return fileName.split('.').pop()?.toLowerCase() || '';
-  };
-
-  const getFileType = (fileName: string) => {
-    const ext = getFileExtension(fileName);
-    if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) return 'image';
-    if (ext === 'pdf') return 'pdf';
-    return 'other';
-  };
-
-  const DocumentPreviewModal = ({ file, onClose }: { file: UploadedFile; onClose: () => void }) => {
-    const fileType = getFileType(file.name);
-
-    return (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80" onClick={onClose}>
-        <div className="relative w-[90vw] h-[90vh] max-w-[1200px] bg-white rounded-lg shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#e4e4e7]">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-medium text-[#09090b] truncate">{file.name}</h3>
-              <p className="text-sm text-[#71717a]">{file.category} • {(file.size / 1000000).toFixed(1)}MB</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={() => handleDownload(file)}>Download</Button>
-              <button
-                onClick={onClose}
-                className="p-2 hover:bg-[#f4f4f5] rounded-lg transition-colors"
-              >
-                <X size={24} className="text-[#18181b]" />
-              </button>
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-auto p-6 bg-[#f9fafb]">
-            <div className="h-full flex items-center justify-center">
-              {fileType === 'pdf' ? (
-                <div className="w-full max-w-[800px] bg-white rounded-lg shadow-lg p-8 overflow-auto">
-                  {/* Mock PDF Content */}
-                  <div className="space-y-6">
-                    {/* Header */}
-                    <div className="text-center border-b border-[#e4e4e7] pb-4">
-                      <h1 className="text-2xl font-bold text-[#09090b] mb-2">Document Preview</h1>
-                      <p className="text-sm text-[#71717a]">{file.name}</p>
-                    </div>
-
-                    {/* Mock Image */}
-                    <div className="w-full h-48 bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <svg className="mx-auto size-16 text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <p className="text-sm text-[#9ca3af] mt-2">Sample Image</p>
-                      </div>
-                    </div>
-
-                    {/* Mock Text Content */}
-                    <div className="space-y-4">
-                      <h2 className="text-xl font-semibold text-[#09090b]">Section 1: Introduction</h2>
-                      <p className="text-[15px] text-[#404040] leading-relaxed">
-                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-                      </p>
-                      <p className="text-[15px] text-[#404040] leading-relaxed">
-                        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-                      </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h2 className="text-xl font-semibold text-[#09090b]">Section 2: Details</h2>
-                      <ul className="list-disc list-inside space-y-2 text-[15px] text-[#404040]">
-                        <li>First important point about the document</li>
-                        <li>Second key consideration for review</li>
-                        <li>Third critical element to address</li>
-                        <li>Fourth requirement for compliance</li>
-                      </ul>
-                    </div>
-
-                    {/* Another Mock Image */}
-                    <div className="w-full h-40 bg-gradient-to-br from-[#e8f4f8] to-[#d0e8f0] rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <svg className="mx-auto size-12 text-[#0891b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <p className="text-sm text-[#0891b2] mt-2">Chart or Graph</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h2 className="text-xl font-semibold text-[#09090b]">Section 3: Summary</h2>
-                      <p className="text-[15px] text-[#404040] leading-relaxed">
-                        In conclusion, this document provides comprehensive information regarding the subject matter. All relevant details have been included for review and approval. Please ensure all sections are carefully examined before proceeding.
-                      </p>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="text-center border-t border-[#e4e4e7] pt-4 mt-8">
-                      <p className="text-xs text-[#9ca3af]">Page 1 of 1 • {file.category} • {new Date().toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </div>
-              ) : fileType === 'image' ? (
-                <div className="w-full h-full bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <svg className="mx-auto size-24 text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-lg font-medium text-[#09090b] mt-4">{file.name}</p>
-                    <p className="text-sm text-[#71717a] mt-2">Sample Image Preview</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <div className="mb-4">
-                    <svg className="mx-auto size-16" fill="none" viewBox="0 0 32 32">
-                      <path d={svgPathsUpload.p284b0000} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d={svgPathsUpload.p50e1c00} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d={svgPathsUpload.pb8d9980} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <p className="text-lg font-medium text-[#09090b] mb-2">{file.name}</p>
-                  <p className="text-sm text-[#71717a] mb-4">Preview not available for this file type</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // Render Subtask View
   if (view === 'subtask' && activeSubtask) {
@@ -890,7 +716,7 @@ export default function MultiFileUploadPanel({
         </div>
         </div>
         {showPreviewModal && previewFile && (
-          <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} />
+          <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} />
         )}
         {deleteConfirmFile && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
@@ -1597,7 +1423,7 @@ export default function MultiFileUploadPanel({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-sm font-medium text-[#18181b]">{comment.user.name}</span>
-                            <span className="text-xs text-[#6b7280]">{formatTimestamp(comment.timestamp)}</span>
+                            <span className="text-xs text-[#6b7280]">{formatCommentTimestamp(comment.timestamp)}</span>
                           </div>
                           <p className="text-sm text-[#09090b] whitespace-pre-wrap">{comment.text}</p>
                         </div>
@@ -1624,7 +1450,7 @@ export default function MultiFileUploadPanel({
       </div>
       </div>
       {showPreviewModal && previewFile && (
-        <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} />
+        <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} />
       )}
       {deleteConfirmFile && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
