@@ -701,49 +701,71 @@ export function AdminPage({
 
       {/* Content */}
       <div className="flex-1 overflow-auto px-[24px] py-6">
+        {/* Create-project modal -- mirrors the Edit-project modal style.
+            Open state is URL-driven via /admin/project-builder/new
+            (controlled by creatingNewProject), so refresh / shareable
+            link both reproduce the open modal. */}
         {creatingNewProject && (
-          <div className="mb-6 p-5 border border-[#e4e4e7] rounded-[6px] bg-[#fafafa]">
-            <h2 className="text-[16px] font-semibold text-[#18181b] mb-4">Create New Project</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[14px] font-medium text-[#18181b] mb-1.5">Project Name *</label>
-                <input
-                  type="text"
-                  value={newProject.name}
-                  onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                  className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px] font-['Geist',sans-serif]"
-                  placeholder="Enter project name"
-                />
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onClick={() => {
+              onCreatingNewProjectChange(false);
+              setNewProject({ name: '', description: '', category: '' });
+            }}
+          >
+            <div
+              className="bg-white rounded-[8px] shadow-xl max-w-[480px] w-full p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-[18px] font-semibold text-[#18181b] mb-4">Create Project</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Project name <span className="text-[#dc2626]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.name}
+                    onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    placeholder="Project name"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    value={newProject.description}
+                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    placeholder="Add a description"
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                    Category <span className="text-[#dc2626]">*</span>
+                  </label>
+                  <Select
+                    value={newProject.category}
+                    onValueChange={(value) => setNewProject({ ...newProject, category: value })}
+                    open={popover === 'newCat'}
+                    onOpenChange={(o) => setPopover(o ? 'newCat' : null)}
+                  >
+                    <SelectTrigger className="w-full h-[40px] focus:border-[#fc6]">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <label className="block text-[14px] font-medium text-[#18181b] mb-1.5">Description</label>
-                <textarea
-                  value={newProject.description}
-                  onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px] font-['Geist',sans-serif]"
-                  placeholder="Enter project description"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <label className="block text-[14px] font-medium text-[#18181b] mb-1.5">Category *</label>
-                <Select
-                  value={newProject.category}
-                  onValueChange={(value) => setNewProject({ ...newProject, category: value })}
-                  open={popover === 'newCat'}
-                  onOpenChange={(o) => setPopover(o ? 'newCat' : null)}
-                >
-                  <SelectTrigger className="w-full h-[40px] focus:border-[#fc6]">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2 justify-end pt-2">
+              <div className="flex justify-end gap-2 pt-5">
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -753,7 +775,7 @@ export function AdminPage({
                 >
                   Cancel
                 </Button>
-                <Button onClick={handleCreateProject}>Create Project</Button>
+                <Button onClick={handleCreateProject}>Create project</Button>
               </div>
             </div>
           </div>
