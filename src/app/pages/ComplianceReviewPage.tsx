@@ -16,44 +16,42 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Calendar } from '../components/ui/calendar';
 import { AVAILABLE_USERS, DATE_FILTER_PRESETS } from '../constants';
 import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
+import { FRAMEWORKS, CHAPTERS_BY_FRAMEWORK, INITIAL_CHAPTER_TASKS } from '../data/complianceData';
+import type { ComplianceChapter } from '../data/complianceData';
 
-const FRAMEWORKS = [
-  {
-    id: 'ftca',
-    name: 'FTCA Deeming',
-    description: 'Federal Tort Claims Act deeming application and site visit preparation',
-    category: 'Federal',
-    chapters: 4,
-  },
-  {
-    id: 'ryan-white-c',
-    name: 'Ryan White Part C',
-    description: 'HIV/AIDS outpatient care and early intervention services review',
-    category: 'Ryan White',
-    chapters: 4,
-  },
-  {
-    id: 'ryan-white-d',
-    name: 'Ryan White Part D',
-    description: 'HIV/AIDS services for women, infants, children, and youth',
-    category: 'Ryan White',
-    chapters: 4,
-  },
-  {
-    id: 'hrsa-site-visit',
-    name: 'HRSA Site Visit',
-    description: 'Health Resources & Services Administration operational site review',
-    category: 'Federal',
-    chapters: 4,
-  },
-  {
-    id: 'uds',
-    name: 'UDS Reporting',
-    description: 'Uniform Data System annual reporting compliance review',
-    category: 'Reporting',
-    chapters: 4,
-  },
-];
+type Answers = Record<string, { answer: 'yes' | 'no' | null; explanation: string }>;
+
+function getChapterCompletion(chapter: ComplianceChapter, answers: Answers) {
+  const completed = chapter.questions.filter(
+    (q) => answers[q.id]?.answer !== null && answers[q.id]?.answer !== undefined
+  ).length;
+  return { completed, total: chapter.questions.length };
+}
+
+function getChapterHasNo(chapter: ComplianceChapter, answers: Answers) {
+  return chapter.questions.some((q) => answers[q.id]?.answer === 'no');
+}
+
+function getChapterHasAttention(chapter: ComplianceChapter, allChapterTasks: Record<number, Task[]>) {
+  return (allChapterTasks[chapter.id] ?? []).some((task) => {
+    if (task.attention) return true;
+    if (task.taskType === 'system') {
+      const fileCount = task.files?.reduce((acc, fg) => acc + (fg.uploadedFiles?.length || 0), 0) || 0;
+      return fileCount === 0;
+    }
+    return false;
+  });
+}
+
+function toggleMultiFilter(current: string[], value: string): string[] {
+  if (value === 'all') return ['all'];
+  const next = current.includes('all')
+    ? [value]
+    : current.includes(value)
+    ? current.filter((v) => v !== value)
+    : [...current, value];
+  return next.length === 0 ? ['all'] : next;
+}
 
 export function ComplianceReviewPage() {
   const navigate = useNavigate();
@@ -132,439 +130,9 @@ export function ComplianceReviewPage() {
   const [previewTaskId, setPreviewTaskId] = useState<number | null>(null);
   const [rightTab, setRightTab] = useState<'tasks' | 'preview'>('tasks');
 
-  const [allChapterTasks, setAllChapterTasks] = useState<Record<number, Task[]>>({
-    1: [
-      {
-        id: 10001,
-        title: 'Service Area Documentation',
-        completed: false,
-        status: 'Complete',
-        dueDate: '2026-04-15',
-        assignedTo: { initials: 'TF', name: 'Tim Freeman' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 1,
-            patientName: 'Service Area Documentation',
-            uploadedFiles: [
-              { id: 'doc-1', name: 'Service_Area_Map.pdf', size: 2048576, category: 'Documentation' },
-              { id: 'doc-2', name: 'Coverage_Report.pdf', size: 1536000, category: 'Reports' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-1',
-            title: 'Service Area Documentation',
-            description: 'Upload documentation for service area identification',
-            uploadedFiles: [
-              { id: 'doc-1', name: 'Service_Area_Map.pdf', size: 2048576, category: 'Documentation' },
-              { id: 'doc-2', name: 'Coverage_Report.pdf', size: 1536000, category: 'Reports' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 10002,
-        title: 'Patient Demographics Report',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '2026-04-20',
-        assignedTo: { initials: 'SK', name: 'Sarah Kim' },
-        healthCenter: 'East Side Clinic',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 1,
-            patientName: 'Patient Demographics',
-            uploadedFiles: [
-              { id: 'doc-3', name: 'Demographics_2026.xlsx', size: 3145728, category: 'Reports' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-2',
-            title: 'Patient Demographics Report',
-            description: 'Upload patient demographics data and analysis',
-            uploadedFiles: [
-              { id: 'doc-3', name: 'Demographics_2026.xlsx', size: 3145728, category: 'Reports' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 10003,
-        title: 'Quality Assurance Manual',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '2026-04-25',
-        assignedTo: { initials: 'MJ', name: 'Michael Johnson' },
-        healthCenter: 'West Valley Center',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [],
-        subtasks: [
-          {
-            id: 'sub-3',
-            title: 'Quality Assurance Manual',
-            description: 'Upload QA manual and procedures',
-            uploadedFiles: [],
-          },
-        ],
-      },
-      {
-        id: 10004,
-        title: 'Staff Credentials Verification',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '2026-04-18',
-        assignedTo: { initials: 'EM', name: 'Emily Martinez' },
-        healthCenter: 'North Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 1,
-            patientName: 'Staff Credentials',
-            uploadedFiles: [
-              { id: 'doc-4', name: 'License_Verification.pdf', size: 1024000, category: 'Credentials' },
-              { id: 'doc-5', name: 'Training_Certificates.pdf', size: 2560000, category: 'Credentials' },
-              { id: 'doc-6', name: 'Background_Checks.pdf', size: 1800000, category: 'Credentials' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-4',
-            title: 'Staff Credentials Verification',
-            description: 'Upload staff credential verification documents',
-            uploadedFiles: [
-              { id: 'doc-4', name: 'License_Verification.pdf', size: 1024000, category: 'Credentials' },
-              { id: 'doc-5', name: 'Training_Certificates.pdf', size: 2560000, category: 'Credentials' },
-              { id: 'doc-6', name: 'Background_Checks.pdf', size: 1800000, category: 'Credentials' },
-            ],
-          },
-        ],
-      },
-    ],
-    2: [
-      {
-        id: 20001,
-        title: 'Budget Documentation',
-        completed: false,
-        status: 'Complete',
-        dueDate: '2026-04-12',
-        assignedTo: { initials: 'EM', name: 'Emily Martinez' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 1,
-            patientName: 'Budget Documentation',
-            uploadedFiles: [
-              { id: 'doc-7', name: 'Annual_Budget_2026.xlsx', size: 2500000, category: 'Financial' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-5',
-            title: 'Budget Documentation',
-            description: 'Upload annual budget and supporting documentation',
-            uploadedFiles: [
-              { id: 'doc-7', name: 'Annual_Budget_2026.xlsx', size: 2500000, category: 'Financial' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 20002,
-        title: 'Financial Reports',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '2026-04-18',
-        assignedTo: { initials: 'MJ', name: 'Michael Johnson' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 2,
-            patientName: 'Financial Reports',
-            uploadedFiles: [
-              { id: 'doc-11', name: 'Q1_Financial_Report_2026.pdf', size: 1800000, category: 'Financial' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-6',
-            title: 'Financial Reports',
-            description: 'Upload quarterly financial reports',
-            uploadedFiles: [
-              { id: 'doc-11', name: 'Q1_Financial_Report_2026.pdf', size: 1800000, category: 'Financial' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 20003,
-        title: 'Grant Management Files',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '2026-04-22',
-        assignedTo: { initials: 'SK', name: 'Sarah Kim' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 3,
-            patientName: 'Grant Management Files',
-            uploadedFiles: [
-              { id: 'doc-12', name: 'Grant_Award_Letter_2026.pdf', size: 1200000, category: 'Financial' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-7',
-            title: 'Grant Management Files',
-            description: 'Upload grant documentation and tracking reports',
-            uploadedFiles: [
-              { id: 'doc-12', name: 'Grant_Award_Letter_2026.pdf', size: 1200000, category: 'Financial' },
-            ],
-          },
-        ],
-      },
-    ],
-    3: [
-      {
-        id: 30001,
-        title: 'Board Meeting Minutes',
-        completed: false,
-        status: 'Complete',
-        dueDate: '2026-04-10',
-        assignedTo: { initials: 'TF', name: 'Tim Freeman' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 1,
-            patientName: 'Board Meeting Minutes',
-            uploadedFiles: [
-              { id: 'doc-8', name: 'Board_Minutes_Q1_2026.pdf', size: 1200000, category: 'Governance' },
-              { id: 'doc-9', name: 'Board_Minutes_Q2_2026.pdf', size: 1300000, category: 'Governance' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-8',
-            title: 'Board Meeting Minutes',
-            description: 'Upload board meeting minutes for the current year',
-            uploadedFiles: [
-              { id: 'doc-8', name: 'Board_Minutes_Q1_2026.pdf', size: 1200000, category: 'Governance' },
-              { id: 'doc-9', name: 'Board_Minutes_Q2_2026.pdf', size: 1300000, category: 'Governance' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 30002,
-        title: 'Policy Documents',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '2026-04-16',
-        assignedTo: { initials: 'EM', name: 'Emily Martinez' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 1,
-            patientName: 'Policy Documents',
-            uploadedFiles: [
-              { id: 'doc-10', name: 'Policy_Manual_2026.pdf', size: 3000000, category: 'Governance' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-9',
-            title: 'Policy Documents',
-            description: 'Upload updated policy manual and procedures',
-            uploadedFiles: [
-              { id: 'doc-10', name: 'Policy_Manual_2026.pdf', size: 3000000, category: 'Governance' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 30003,
-        title: 'Strategic Plan',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '2026-04-28',
-        assignedTo: { initials: 'SK', name: 'Sarah Kim' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [],
-        subtasks: [
-          {
-            id: 'sub-10',
-            title: 'Strategic Plan',
-            description: 'Upload current strategic plan and implementation timeline',
-            uploadedFiles: [],
-          },
-        ],
-      },
-    ],
-    4: [
-      {
-        id: 40001,
-        title: 'Clinical Protocols',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '2026-04-14',
-        assignedTo: { initials: 'MJ', name: 'Michael Johnson' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 1,
-            patientName: 'Clinical Protocols',
-            uploadedFiles: [
-              { id: 'doc-11', name: 'Clinical_Protocols_2026.pdf', size: 2800000, category: 'Clinical' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-11',
-            title: 'Clinical Protocols',
-            description: 'Upload clinical protocols and guidelines',
-            uploadedFiles: [
-              { id: 'doc-11', name: 'Clinical_Protocols_2026.pdf', size: 2800000, category: 'Clinical' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 40002,
-        title: 'Medical Records Compliance',
-        completed: false,
-        status: 'Complete',
-        dueDate: '2026-04-11',
-        assignedTo: { initials: 'SK', name: 'Sarah Kim' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [
-          {
-            patientId: 1,
-            patientName: 'Medical Records',
-            uploadedFiles: [
-              { id: 'doc-12', name: 'Records_Audit_Report.pdf', size: 1500000, category: 'Clinical' },
-            ],
-          },
-        ],
-        subtasks: [
-          {
-            id: 'sub-12',
-            title: 'Medical Records Compliance',
-            description: 'Upload medical records compliance documentation',
-            uploadedFiles: [
-              { id: 'doc-12', name: 'Records_Audit_Report.pdf', size: 1500000, category: 'Clinical' },
-            ],
-          },
-        ],
-      },
-      {
-        id: 40003,
-        title: 'Infection Control Procedures',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '2026-04-24',
-        assignedTo: { initials: 'EM', name: 'Emily Martinez' },
-        healthCenter: 'Main Campus',
-        taskType: 'system',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-        files: [],
-        subtasks: [
-          {
-            id: 'sub-13',
-            title: 'Infection Control Procedures',
-            description: 'Upload infection control policies and training materials',
-            uploadedFiles: [],
-          },
-        ],
-      },
-    ],
-  });
+  const [allChapterTasks, setAllChapterTasks] = useState<Record<number, Task[]>>(INITIAL_CHAPTER_TASKS);
+  const chapters = (frameworkId && CHAPTERS_BY_FRAMEWORK[frameworkId]) || [];
 
-  const chapters = [
-    {
-      id: 1,
-      name: 'Chapter 1',
-      category: 'clinical',
-      questions: [
-        { id: '1-1', breadcrumb: 'Chapter 1 > Element a > Service Area Identification', text: 'Does the health center clearly identify all service areas in their documentation?' },
-        { id: '1-2', breadcrumb: 'Chapter 1 > Element b > Patient Demographics', text: 'Are patient demographics properly recorded and maintained?' },
-        { id: '1-3', breadcrumb: 'Chapter 1 > Element c > Service Delivery', text: 'Is the service delivery model documented and approved?' },
-        { id: '1-4', breadcrumb: 'Chapter 1 > Element d > Quality Assurance', text: 'Are quality assurance processes in place and documented?' },
-        { id: '1-5', breadcrumb: 'Chapter 1 > Element e > Staff Credentials', text: 'Are all staff credentials verified and up to date?' },
-        { id: '1-6', breadcrumb: 'Chapter 1 > Element f > Facility Compliance', text: 'Does the facility meet all regulatory compliance requirements?' },
-      ],
-    },
-    {
-      id: 2,
-      name: 'Chapter 2',
-      category: 'fiscal',
-      questions: [
-        { id: '2-1', breadcrumb: 'Chapter 2 > Element a > Budget Planning', text: 'Is there a comprehensive budget planning process in place?' },
-        { id: '2-2', breadcrumb: 'Chapter 2 > Element b > Financial Reporting', text: 'Are financial reports accurate and timely?' },
-        { id: '2-3', breadcrumb: 'Chapter 2 > Element c > Audit Compliance', text: 'Does the organization comply with audit requirements?' },
-        { id: '2-4', breadcrumb: 'Chapter 2 > Element d > Grant Management', text: 'Are grant funds properly managed and documented?' },
-        { id: '2-5', breadcrumb: 'Chapter 2 > Element e > Revenue Cycle', text: 'Is the revenue cycle properly managed?' },
-        { id: '2-6', breadcrumb: 'Chapter 2 > Element f > Cost Allocation', text: 'Are costs properly allocated across programs?' },
-      ],
-    },
-    {
-      id: 3,
-      name: 'Chapter 3',
-      category: 'governance',
-      questions: [
-        { id: '3-1', breadcrumb: 'Chapter 3 > Element a > Board Composition', text: 'Does the board meet composition requirements?' },
-        { id: '3-2', breadcrumb: 'Chapter 3 > Element b > Meeting Minutes', text: 'Are meeting minutes properly documented?' },
-        { id: '3-3', breadcrumb: 'Chapter 3 > Element c > Policy Review', text: 'Are policies reviewed and updated regularly?' },
-        { id: '3-4', breadcrumb: 'Chapter 3 > Element d > Conflict of Interest', text: 'Are conflict of interest policies enforced?' },
-        { id: '3-5', breadcrumb: 'Chapter 3 > Element e > Strategic Planning', text: 'Is there an active strategic planning process?' },
-        { id: '3-6', breadcrumb: 'Chapter 3 > Element f > Bylaws Compliance', text: 'Does the organization comply with its bylaws?' },
-      ],
-    },
-    {
-      id: 4,
-      name: 'Chapter 4',
-      category: 'clinical',
-      questions: [
-        { id: '4-1', breadcrumb: 'Chapter 4 > Element a > Clinical Protocols', text: 'Are clinical protocols documented and followed?' },
-        { id: '4-2', breadcrumb: 'Chapter 4 > Element b > Patient Care Standards', text: 'Are patient care standards maintained?' },
-        { id: '4-3', breadcrumb: 'Chapter 4 > Element c > Medical Records', text: 'Are medical records properly maintained?' },
-        { id: '4-4', breadcrumb: 'Chapter 4 > Element d > Infection Control', text: 'Are infection control procedures in place?' },
-        { id: '4-5', breadcrumb: 'Chapter 4 > Element e > Emergency Preparedness', text: 'Is there an emergency preparedness plan?' },
-        { id: '4-6', breadcrumb: 'Chapter 4 > Element f > Pharmacy Operations', text: 'Are pharmacy operations properly managed?' },
-      ],
-    },
-  ];
 
   const currentChapter = chapters.find((ch) => ch.id === selectedChapter);
   const currentQuestion = currentChapter?.questions[currentQuestionIndex];
@@ -642,28 +210,6 @@ export function ComplianceReviewPage() {
     setRightTab('tasks');
   };
 
-  const getChapterCompletion = (chapter: (typeof chapters)[0]) => {
-    const completed = chapter.questions.filter(
-      (q) => answers[q.id]?.answer !== null && answers[q.id]?.answer !== undefined
-    ).length;
-    return { completed, total: chapter.questions.length };
-  };
-
-  const getChapterHasNo = (chapter: (typeof chapters)[0]) =>
-    chapter.questions.some((q) => answers[q.id]?.answer === 'no');
-
-  const getChapterHasAttention = (chapter: (typeof chapters)[0]) => {
-    const tasks = allChapterTasks[chapter.id] || [];
-    return tasks.some((task) => {
-      if (task.attention) return true;
-      if (task.taskType === 'system') {
-        const fileCount = task.files?.reduce((acc, fg) => acc + (fg.uploadedFiles?.length || 0), 0) || 0;
-        return fileCount === 0;
-      }
-      return false;
-    });
-  };
-
   const selectedTask = chapterTasks.find((t) => t.id === selectedTaskId);
 
   const handleOpenTaskPanel = (taskId: number) => {
@@ -723,35 +269,11 @@ export function ComplianceReviewPage() {
     setNeedsAttentionFilter(['all']);
   };
 
-  const toggleAssignedToFilter = (value: string) => {
-    if (value === 'all') {
-      setAssignedToFilter(['all']);
-    } else {
-      setAssignedToFilter((prev) => {
-        const next = prev.includes('all')
-          ? [value]
-          : prev.includes(value)
-          ? prev.filter((v) => v !== value)
-          : [...prev, value];
-        return next.length === 0 ? ['all'] : next;
-      });
-    }
-  };
+  const toggleAssignedToFilter = (value: string) =>
+    setAssignedToFilter((prev) => toggleMultiFilter(prev, value));
 
-  const toggleNeedsAttentionFilter = (value: string) => {
-    if (value === 'all') {
-      setNeedsAttentionFilter(['all']);
-    } else {
-      setNeedsAttentionFilter((prev) => {
-        const next = prev.includes('all')
-          ? [value]
-          : prev.includes(value)
-          ? prev.filter((v) => v !== value)
-          : [...prev, value];
-        return next.length === 0 ? ['all'] : next;
-      });
-    }
-  };
+  const toggleNeedsAttentionFilter = (value: string) =>
+    setNeedsAttentionFilter((prev) => toggleMultiFilter(prev, value));
 
   // Landing page — no framework selected yet
   if (!framework) {
@@ -821,12 +343,12 @@ export function ComplianceReviewPage() {
         {/* Chapter Sidebar */}
         <div className="w-14 flex-none flex flex-col items-center py-3 gap-2 border-r border-[#e4e4e7] overflow-y-auto bg-[#f9fafb]">
           {chapters.map((chapter) => {
-            const { completed, total } = getChapterCompletion(chapter);
+            const { completed, total } = getChapterCompletion(chapter, answers);
             const isActive = selectedChapter === chapter.id;
             const isComplete = completed === total && total > 0;
             const isPartial = completed > 0 && completed < total;
-            const hasAttention = getChapterHasAttention(chapter);
-            const hasNo = getChapterHasNo(chapter);
+            const hasAttention = getChapterHasAttention(chapter, allChapterTasks);
+            const hasNo = getChapterHasNo(chapter, answers);
             return (
               <button
                 key={chapter.id}
@@ -967,13 +489,13 @@ export function ComplianceReviewPage() {
 
           {/* Tab bar + filters */}
           <div className="flex-none border-b border-[#e4e4e7] bg-white">
-            <div className="flex items-center px-4 border-b border-[#e4e4e7]">
+            <div className={`flex items-center px-4 border-b-2 transition-colors ${rightTab === 'tasks' ? 'border-[#fc6]' : 'border-[#e4e4e7]'}`}>
               <button
                 onClick={() => setRightTab('tasks')}
-                className={`py-2.5 px-4 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
+                className={`py-2.5 px-4 text-[13px] font-medium transition-colors ${
                   rightTab === 'tasks'
-                    ? 'border-[#fc6] text-[#18181b]'
-                    : 'border-transparent text-[#71717a] hover:text-[#18181b]'
+                    ? 'text-[#18181b]'
+                    : 'text-[#71717a] hover:text-[#18181b]'
                 }`}
               >
                 Tasks
@@ -981,10 +503,10 @@ export function ComplianceReviewPage() {
               {previewFile && (
                 <button
                   onClick={() => setRightTab('preview')}
-                  className={`py-2.5 px-4 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
+                  className={`py-2.5 px-4 text-[13px] font-medium transition-colors ${
                     rightTab === 'preview'
-                      ? 'border-[#fc6] text-[#18181b]'
-                      : 'border-transparent text-[#71717a] hover:text-[#18181b]'
+                      ? 'text-[#18181b]'
+                      : 'text-[#71717a] hover:text-[#18181b]'
                   }`}
                 >
                   {previewFile.name}
