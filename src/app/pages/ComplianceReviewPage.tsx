@@ -832,7 +832,7 @@ export function ComplianceReviewPage() {
                 key={chapter.id}
                 onClick={() => handleChapterChange(chapter.id)}
                 title={`${chapter.name} · ${completed}/${total} answered`}
-                className={`relative w-8 h-8 rounded-full text-[12px] font-semibold transition-colors flex items-center justify-center flex-none ${
+                className={`relative w-10 h-10 rounded-full text-[13px] font-semibold transition-colors flex items-center justify-center flex-none ${
                   isActive
                     ? 'bg-[#cdd7e1] text-[#18181b]'
                     : isPartial
@@ -842,17 +842,17 @@ export function ComplianceReviewPage() {
               >
                 {chapter.id}
                 {isComplete && !hasNo && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#16a34a] rounded-full border border-white flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#16a34a] rounded-full border border-white flex items-center justify-center">
                     <Check className="w-2 h-2 text-white" strokeWidth={3} />
                   </span>
                 )}
                 {hasNo && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#7c3aed] rounded-full border border-white flex items-center justify-center">
+                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#7c3aed] rounded-full border border-white flex items-center justify-center">
                     <X className="w-2 h-2 text-white" strokeWidth={3} />
                   </span>
                 )}
                 {hasAttention && !isComplete && !hasNo && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
+                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border border-white" />
                 )}
               </button>
             );

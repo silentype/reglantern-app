@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, Settings2, UserPlus, HelpCircle, Info } from 'lucide-react';
+import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, Settings2, UserPlus, HelpCircle, Info, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 interface SideNavigationProps {
   pageType: 'tasks' | 'checklists' | 'admin' | 'settings';
@@ -98,22 +98,19 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
     >
       {/* Top Section — structure never changes, only sidebar width + button padding animate */}
       <div>
-        {/* Collapse/Expand Button — always right-aligned */}
-        <div className="flex justify-end pr-3 pt-2 pb-1">
+        {/* Collapse/Expand Button */}
+        <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
           <button
             onClick={onToggle}
-            className="h-[40px] w-[40px] flex items-center justify-center rounded-[8px] hover:bg-[#e4e4e7] transition-colors"
             aria-label="Toggle side navigation"
+            className={`h-[40px] w-full rounded-[6px] flex items-center hover:bg-[#e4e4e7] transition-all duration-300 overflow-hidden whitespace-nowrap ${isOpen ? 'justify-end pr-3' : 'pl-[15px]'}`}
           >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <rect x="4" y="4" width="16" height="16" rx="3" stroke="#32383E" strokeWidth="2" fill="none"/>
-              <line x1="8.5" y1="4" x2="8.5" y2="20" stroke="#32383E" strokeWidth="2"/>
-              {isOpen ? (
-                <path d="M15 10l-2 2 2 2" stroke="#32383E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              ) : (
-                <path d="M13 10l2 2-2 2" stroke="#32383E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              )}
-            </svg>
+            <div className="shrink-0 size-[20px] flex items-center justify-center">
+              {isOpen
+                ? <PanelLeftClose size={18} strokeWidth={2} className="text-[#18181b]" />
+                : <PanelLeftOpen size={18} strokeWidth={2} className="text-[#18181b]" />
+              }
+            </div>
           </button>
         </div>
 
