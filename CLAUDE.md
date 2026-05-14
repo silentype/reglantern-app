@@ -1,6 +1,6 @@
 # CLAUDE.md — Reglantern
 
-Reglantern is a client-side React + TypeScript SPA for health-center compliance task management (FTCA site visits, Ryan White Part C/D, etc.). All logic and data live in the browser; this codebase started life as a Figma Make export and is being grown into a real product.
+Reglantern is a client-side React + TypeScript SPA for health-center compliance task management (FTCA site visits, Ryan White Part C/D, etc.). All logic and data live in the browser; this codebase started life as a Figma Make export and has since been refactored into a more conventional pages-and-components structure.
 
 A backend (PostgreSQL + Auth0 + S3) is documented in the `*.md` handoff files at the repo root, but is **not yet wired up**. Treat those docs as the *target* architecture, not the current state.
 
@@ -11,56 +11,68 @@ A backend (PostgreSQL + Auth0 + S3) is documented in the `*.md` handoff files at
 ```
 Reglantern/
 ├── src/
-│   ├── main.tsx              # React entry point
+│   ├── main.tsx                                       # React entry point — mounts <App> inside <BrowserRouter>
 │   ├── app/
-│   │   ├── App.tsx           # Monolithic root component (~4400 lines) — owns task state, navigation, side panels
-│   │   ├── DeveloperHub.tsx  # In-app dev/component documentation tab
-│   │   ├── DeveloperManual.tsx
-│   │   ├── ComponentShowcase.tsx
-│   │   ├── AccurateComponentShowcase.tsx
+│   │   ├── App.tsx                                    # Root component — URL-driven page selection, top nav, side panel
+│   │   ├── pages/
+│   │   │   ├── TasksPage.tsx                          # My Tasks: filter chip bar + task table
+│   │   │   ├── ChecklistsPage.tsx                     # Site Visit / Ryan White / FTCA checklists
+│   │   │   ├── AdminPage.tsx                          # Project Builder + dispatch to Compliance Review
+│   │   │   ├── ComplianceReviewPage.tsx               # Chapter-by-chapter Yes/No review with attached tasks
+│   │   │   ├── HealthCenterAdminPage.tsx              # Health Center Information admin
+│   │   │   └── SettingsPage.tsx                       # Global Health Center Fields catalog
 │   │   ├── components/
-│   │   │   ├── SideNavigation.tsx     # Left rail (collapsible)
-│   │   │   ├── TasksHeader.tsx        # Page header
-│   │   │   ├── TaskTableDynamic.tsx   # Main task table with sorting/filtering
-│   │   │   ├── MultiFileUploadPanel.tsx  # Right side panel — file uploads per patient
-│   │   │   ├── DueDatePicker.tsx
-│   │   │   ├── SaveIndicator.tsx
-│   │   │   ├── CodeBlock.tsx
-│   │   │   ├── figma/ImageWithFallback.tsx
-│   │   │   └── ui/                    # ~50 shadcn-style Radix primitives
-│   │   ├── constants/
-│   │   │   ├── index.ts               # AVAILABLE_USERS, HEALTH_CENTERS, STATUS_OPTIONS, DATE_FILTER_PRESETS, COLORS
-│   │   │   ├── codeSnippets.ts        # DeveloperHub content
-│   │   │   ├── accurateCodeSnippets.ts
-│   │   │   └── performanceGuidelines.ts
+│   │   │   ├── TopNav.tsx                             # Dark header bar (health-center selector + nav + avatar)
+│   │   │   ├── SideNavigation.tsx                     # Collapsible left rail, items differ by pageType
+│   │   │   ├── TasksHeader.tsx                        # "Tasks" h1 + autosave indicator + Add New Task button
+│   │   │   ├── TaskTableDynamic.tsx                   # Thin orchestrator — sort state, column order, DndProvider
+│   │   │   ├── task-table/                            # Cell components, helpers, types for the task table
+│   │   │   │   ├── TaskRow.tsx                        # Desktop + mobile row dispatcher
+│   │   │   │   ├── DraggableColumnHeader.tsx          # Drag + resize handles on each column header
+│   │   │   │   ├── DueDateBadge.tsx                   # Inline date pill (relative info, rule summary, broken-ref)
+│   │   │   │   ├── AttentionBadge.tsx, CheckboxIcon.tsx, UserAvatar.tsx, SortButton.tsx, QuickDateButton.tsx
+│   │   │   │   ├── helpers.ts                         # formatRelativeDate, getDateBadgeStyles
+│   │   │   │   ├── types.ts                           # Task, DueDateRule, SortColumn, ColumnConfig (re-exported from TaskTableDynamic)
+│   │   │   │   └── cells/                             # One file per column renderer
+│   │   │   │       ├── TitleCell.tsx, AttentionCell.tsx, HealthCenterCell.tsx, SubtasksCell.tsx
+│   │   │   │       ├── AssignedToCell.tsx, TaskTypeCell.tsx
+│   │   │   │       └── DueDateCell.tsx                # Owns popover state, inline input draft, Quick/Custom/Calendar/Relative-to UI
+│   │   │   ├── MultiFileUploadPanel.tsx               # Right-hand sliding side panel (lazy-loaded)
+│   │   │   ├── multi-file-upload-panel/
+│   │   │   │   ├── DocumentPreviewModal.tsx           # Full-screen mock file preview overlay
+│   │   │   │   ├── helpers.ts                         # formatCommentTimestamp, getFileType, getSubtaskCompletionStatus
+│   │   │   │   └── types.ts                           # UploadedFile, Subtask, UserType, Comment
+│   │   │   ├── DueDatePicker.tsx                      # Reusable inline-input + popover for dates (with optional relative-to mode)
+│   │   │   ├── RelativeDuePicker.tsx                  # Type/Reference/Event picker that emits a DueDateRule
+│   │   │   ├── SaveIndicator.tsx                      # Bouncing-dots → check → fade autosave indicator
+│   │   │   ├── design-system/                         # In-house design-system primitives (Avatar, Button, Card, FilterChip, Tab, etc.)
+│   │   │   └── ui/                                    # shadcn-style Radix wrappers (Popover, Calendar, Select, Dropdown, Command…)
+│   │   ├── constants/index.ts                         # AVAILABLE_USERS, HEALTH_CENTERS, STATUS_OPTIONS, DATE_FILTER_PRESETS, QUICK_DATE_OPTIONS, SIDE_PANEL_WIDTH, COLORS
 │   │   ├── data/
-│   │   │   └── initialTasks.ts        # Hard-coded seed task list
-│   │   ├── types/
-│   │   │   └── index.ts               # User, Task, PatientFile, UploadedFile, SortColumn, etc.
-│   │   └── utils/
-│   │       └── helpers.ts             # parseDueDateFilter, formatFileSize, debounce, etc.
-│   ├── imports/                       # Figma-exported SVG path data + raw screen mocks (treat as generated)
-│   ├── assets/                        # Logo + bitmap assets
+│   │   │   ├── initialTasks.ts                        # Seed task list
+│   │   │   ├── initialProjects.ts                     # Seed projects + localStorage load/save (PROJECTS_STORAGE_KEY)
+│   │   │   └── healthCenters.ts                       # Initial HealthCenter records + field defs
+│   │   ├── types/index.ts                             # Misc shared types (most live in component-local files)
+│   │   └── utils/helpers.ts                           # parseDueDateFilter, displayDueDateFilter, shortDueDateRule, computeDueDate, resolveTaskDueDates
+│   ├── imports/                                       # Figma-exported SVG path data + raw screen mocks (treat as generated)
+│   ├── assets/                                        # Logo + bitmap assets
 │   └── styles/
-│       ├── index.css                  # Aggregator — imports the three below
+│       ├── index.css                                  # Aggregator — imports the three below
 │       ├── fonts.css
-│       ├── tailwind.css               # @import 'tailwindcss' source(none); + @source globs
-│       └── theme.css                  # Design tokens (CSS custom props) and shadcn theme
+│       ├── tailwind.css                               # @import 'tailwindcss' source(none); + @source globs
+│       └── theme.css                                  # Design tokens (CSS custom props) and shadcn theme
+├── .storybook/                                        # main.js + preview.tsx (BrowserRouter decorator + Figma file URL)
 ├── index.html
-├── vite.config.ts                     # Vite + Tailwind + custom figma:asset/ resolver
+├── vite.config.ts                                     # Vite + Tailwind + custom figma:asset/ resolver
 ├── postcss.config.mjs
+├── eslint.config.js                                   # ESLint 9 flat config (typescript-eslint + react + react-hooks + prettier)
+├── tsconfig.json
 ├── package.json
-├── default_shadcn_theme.css           # Reference copy of the original shadcn theme
-├── REGLANTERN_COLOR_LIBRARY.md        # Brand color reference
-├── DEVELOPER_HANDOFF.md               # Target architecture (backend + Auth0 + S3)
-├── BACKEND_IMPLEMENTATION.md
-├── FRONTEND_INTEGRATION.md
-├── COMPONENT_LIBRARY.md
-├── ARCHITECTURE_DIAGRAMS.md
-├── DEPLOYMENT_GUIDE.md
-├── TESTING_GUIDE.md
-├── QUICK_START.md
-└── (other handoff docs)
+├── vercel.json                                        # SPA rewrite (everything → /index.html)
+├── default_shadcn_theme.css                           # Reference copy of the original shadcn theme
+├── REGLANTERN_COLOR_LIBRARY.md                        # Brand color reference
+├── DEVELOPER_HANDOFF.md                               # Target architecture (backend + Auth0 + S3)
+└── (other handoff docs: BACKEND_IMPLEMENTATION.md, FRONTEND_INTEGRATION.md, etc.)
 ```
 
 ---
@@ -70,20 +82,21 @@ Reglantern/
 | Layer | Technology |
 |---|---|
 | UI | React 18 (hooks only, no class components) |
-| Language | TypeScript |
+| Language | TypeScript 5.6 (no `strict` mode yet) |
 | Build | Vite 6 |
+| Routing | react-router 7 (URL is the source of truth for navigation + side-panel open state) |
 | Styling | Tailwind CSS 4 (via `@tailwindcss/vite` plugin — **no `tailwind.config.js`**) |
 | Components | Radix UI primitives + shadcn-style wrappers in `src/app/components/ui/` |
+| Design system | In-house wrappers in `src/app/components/design-system/` (Avatar, Button, Tab, FilterChip, etc.) — all have Storybook stories |
 | Icons | lucide-react (+ raw Figma-exported SVG paths in `src/imports/`) |
 | Toasts | sonner |
-| Animation | motion (Framer Motion successor) + tw-animate-css |
-| Forms | react-hook-form |
-| Charts | recharts |
 | Date | date-fns |
-| Drag & Drop | react-dnd + react-dnd-html5-backend |
-| Misc UI | re-resizable, react-resizable-panels, embla-carousel-react, react-day-picker, vaul, cmdk, input-otp |
+| Drag & Drop | react-dnd + react-dnd-html5-backend (column reordering in the task table) |
+| Misc UI | cmdk, react-day-picker, tw-animate-css |
+| Storybook | Storybook 10 (`@storybook/react-vite`) with addon-a11y, addon-docs, addon-designs |
+| Lint / format | ESLint 9 (flat config, typescript-eslint + react-hooks) + Prettier 3 |
 
-No TypeScript strict mode is enforced. No test runner is configured. No state management library — `useState` + `useMemo` + `useCallback` only.
+No test runner is configured yet. No state management library — `useState` + `useMemo` + `useCallback` + `useSearchParams` only.
 
 ---
 
@@ -91,94 +104,107 @@ No TypeScript strict mode is enforced. No test runner is configured. No state ma
 
 ```bash
 npm install
-npm run dev          # Vite dev server (default http://localhost:5173)
-npm run build        # production bundle → dist/
+npm run dev             # Vite dev server (http://localhost:5173)
+npm run build           # tsc --noEmit && vite build → dist/
+npm run typecheck       # tsc --noEmit
+npm run lint            # eslint .
+npm run lint:fix        # eslint . --fix
+npm run format          # prettier --write .
+npm run format:check    # prettier --check .
+npm run storybook       # Storybook dev (http://localhost:6006)
+npm run build-storybook # Static Storybook → storybook-static/
 ```
 
-Note `package.json` does not yet define a `preview` or `lint` script — add one if the workflow needs it.
+No `preview` script — the production deploy runs on Vercel and uses the SPA rewrite in `vercel.json`.
 
 ---
 
 ## Architecture Patterns
 
-### Single-Component App
-`App.tsx` is intentionally monolithic right now (~4400 lines). It owns:
-- Task list state (`tasks`) and project list state (`projects`)
-- Active page (`tasks` | `checklists` | `admin`)
-- Selected nav item, side panel open/closed, selected task id
-- Inline new-task creation flow
-- DeveloperHub toggle
+### URL-driven page selection
+`App.tsx` reads `useLocation()` and derives the current page, selected nav item, selected task id, and side-panel open state from the URL path. URL shape:
 
-Refactoring into smaller modules is a known future task — be deliberate about which slice you extract, and keep the existing behavior identical until tests exist.
+```
+/tasks/my-tasks                              -> Tasks page
+/tasks/my-tasks/new                          -> Tasks + new-task side panel
+/tasks/my-tasks/:taskId                      -> Tasks + task detail side panel
+/checklists/:slug                            -> Checklists
+/admin/project-builder                       -> Admin: project list
+/admin/project-builder/new                   -> Admin + create-project form
+/admin/project-builder/:pid                  -> Project detail
+/admin/project-builder/:pid/:taskId          -> Project task detail in side panel
+/admin/compliance-review                     -> Compliance Review
+/admin/health-centers[/:name]                -> Health Center Information
+/settings                                    -> Settings
+```
 
-### Pages & Navigation
-The `SideNavigation` component renders different items per `pageType`:
-- `tasks` → `My Tasks`
-- `checklists` → `Site Visit Protocol Checklist`, `Ryan White Part C/D`, `FTCA Site Visit Protocol`
-- `admin` → `Project Builder`, `Compliance Review`
+Bare section paths (`/`, `/tasks`, `/checklists`, `/admin`) redirect to canonical defaults via a `useEffect` in `App.tsx`. Side-panel open state is derived from the URL too, so panels survive refresh and are shareable.
 
-There is **no router** — page selection is plain state in `App.tsx`. Adding deep links would require introducing `react-router` (already a dependency) or hash-based routing.
+### Lazy-loaded pages and panel
+`App.tsx` keeps **`TasksPage` eager** (it's the default landing route) and lazy-loads the other pages (`ChecklistsPage`, `AdminPage`, `SettingsPage`, `HealthCenterAdminPage`) and the side panel (`MultiFileUploadPanel`) via `React.lazy()` + a `<Suspense>` fallback. Each lazy chunk is emitted as a separate JS file at build time.
 
-### Task Model
-Defined in `src/app/types/index.ts`. Each task has:
-- `id`, `title`, `completed`, `status` (`In Progress` | `Complete` | `Blocked`)
-- Optional `dueDate`, `assignedTo`, `collaborators[]`, `healthCenter`
-- Optional `attention` badge (`needs` or `missing` + count)
+### Task model
+Defined in `src/app/components/task-table/types.ts` and **re-exported from `src/app/components/TaskTableDynamic.tsx`** — all existing import sites (`import type { Task } from '.../TaskTableDynamic'`) continue to resolve. Key fields:
+
+- `id`, `title`, `completed`, `status` (`In Progress` | `Complete` | `Blocked` | …)
+- `dueDate` (`MM/dd/yyyy`), optional `dueDateRule` (relative-date rule), transient `dueDateBroken` flag
+- `startedAt`, `completedAt` timestamps
+- `assignedTo`, `collaborators[]`, `healthCenter`, `createdBy`
+- `attention` badge (`needs` | `missing` + count)
 - `taskType`: `system` (has uploads, read-only title/desc) vs `custom` (no uploads, editable)
-- Optional `files[]` — array of `PatientFile` (each with patient id/name + `UploadedFile[]`)
+- `files[]` and `subtasks[]` with nested `UploadedFile[]`
 
-Seed data lives in `src/app/data/initialTasks.ts`.
-
-### Side Panel (MultiFileUploadPanel)
-Right-hand drawer that opens when a task row is clicked or a new task is being created. Handles:
-- Editing task metadata
-- Per-patient file upload UI with categories and progress
-- Inline new-task creation flow
-
-It is the second-largest component (~1600 lines) — same caution about refactoring applies.
+Seed data in `src/app/data/initialTasks.ts`. Relative-due-date resolution lives in `src/app/utils/helpers.ts` (`resolveTaskDueDates`, `computeDueDate`, `shortDueDateRule`).
 
 ### Persistence
-Currently **none** — tasks live in React state and reset on reload. The handoff docs describe a Postgres + S3 backend, but it has not been built yet. If adding persistence as a stopgap, prefer `localStorage` with a versioned key.
+- **Projects**: persisted to `localStorage` under `PROJECTS_STORAGE_KEY` (see `src/app/data/initialProjects.ts`) so refreshes and html.to.design captures preserve project state.
+- **Tasks, health centers, field defs**: in-memory only — reset on reload.
+- Side-panel open state, popover open state, active tab, etc. are mirrored to URL search params (e.g. `?datePicker=task-123`, `?tab=comments`, `?subtask=sub-2`, `?edit=1`, `?popover=...`).
 
-### Styling & Tokens
-- All design tokens live in `src/styles/theme.css` as CSS custom properties (`--brand-yellow`, `--header-dark`, `--app-background`, etc.) plus shadcn variables (`--background`, `--foreground`, `--primary`, …).
-- Brand yellow: `#fc6` (hover `#ffcc77`).
-- Header: `#32383e`. App bg: `#f9fafb`. Sidebar bg: `#f4f4f5`.
-- `src/app/constants/index.ts` also exports a `COLORS` object for use in TS — keep it in sync with `theme.css`.
-- Tailwind v4 picks up classes via `@source '../**/*.{js,ts,jsx,tsx}'` in `tailwind.css`. Do not add a `tailwind.config.js`.
+### Styling & tokens
+- Design tokens in `src/styles/theme.css` as CSS custom properties (`--brand-yellow`, `--header-dark`, `--app-background`, …) plus shadcn variables (`--background`, `--foreground`, `--primary`, …).
+- Brand yellow: `#fc6` (hover `#ffcc77`). Header: `#32383e`. App bg: `#f9fafb`. Sidebar bg: `#f4f4f5`.
+- `src/app/constants/index.ts` exports a `COLORS` object for TS — keep in sync with `theme.css`.
+- Tailwind v4 picks up classes via `@source '../**/*.{js,ts,jsx,tsx}'` in `tailwind.css`. **Do not add a `tailwind.config.js`.**
 
-### Figma Imports
-`src/imports/` contains files generated by Figma Make: SVG path constants (`svg-*.ts`), raw screen-level component dumps (e.g. `Tasks.tsx`, `TopBar.tsx`, `Filters.tsx`), and PNG screenshots used as fallbacks. Treat these as **generated artifacts**:
+### Storybook
+22 stories under `src/app/components/design-system/*.stories.tsx` plus 5 app-level stories (`TopNav`, `SideNavigation`, `TasksHeader`, `SaveIndicator`, `DueDatePicker`) and `RelativeDuePicker.stories.tsx`. `.storybook/preview.tsx` wraps every story in `<MemoryRouter>` and exposes the Figma file URL in the Design panel. Backgrounds: `app`, `sidebar`, `header`, `white`.
+
+### Figma imports
+`src/imports/` contains generated SVG path constants (`svg-*.ts`) and raw screen-level component dumps. Treat as **generated artifacts**:
 - Do not hand-edit them — re-export from Figma if you need updates.
-- Components in `src/app/` import SVG paths from these files but otherwise should not depend on the screen-level dumps.
+- App components import the SVG paths but otherwise should not depend on the screen-level dumps.
 
-### Vite Config Quirks
-`vite.config.ts` registers a custom `figmaAssetResolver` plugin that rewrites `figma:asset/<filename>` imports to `src/assets/<filename>`. This is how the logo is referenced. Don't remove the plugin.
+### Vite config quirks
+`vite.config.ts` registers a custom `figmaAssetResolver` plugin that rewrites `figma:asset/<filename>` imports to `src/assets/<filename>`. Used by the logo import. Don't remove.
 
-### Path Alias
-`@` is aliased to `./src` in both `vite.config.ts` and used throughout. Prefer `@/app/...` in new code over deep relative paths.
+### Path alias
+`@` is aliased to `./src` in `vite.config.ts`. Many files still use deep relative paths — prefer `@/app/...` in new code.
 
 ---
 
 ## Common Pitfalls
 
-- **No backend yet.** Anything that looks like an API (Auth0, S3, Postgres) lives only in the markdown docs. Don't write code that calls fetch endpoints unless you're explicitly building that integration.
+- **No backend yet.** Anything that looks like an API (Auth0, S3, Postgres) lives only in the markdown handoff docs. Don't write code that calls fetch endpoints unless you're explicitly building that integration.
 - **Do not add a `tailwind.config.js`.** Tailwind v4 with the Vite plugin uses `@source` directives in `tailwind.css` instead.
 - **Do not edit files in `src/imports/` by hand** — they are generated.
-- **`App.tsx` is huge on purpose (for now).** When you add a feature, extend it in place rather than starting a parallel architecture. Refactor only when explicitly requested.
-- **Two showcase components exist** (`ComponentShowcase.tsx`, `AccurateComponentShowcase.tsx`) — they are dev-only documentation views surfaced through `DeveloperHub`. They are not part of the main task flow.
-- **Lots of unused MUI dependencies** in `package.json` (`@mui/material`, `@mui/icons-material`, `@emotion/*`). The app primarily uses Radix + shadcn — leave the MUI deps in place unless explicitly removing them.
+- **`MultiFileUploadPanel.tsx` is still a god component (~1,500 lines).** Tightly-coupled state for autosave, file-upload simulation, subtasks, comments, and popovers. A real refactor needs a state-hoisting pass plus tests. Leaf extractions (types, helpers, modal) are already done.
+- **URL is the source of truth for navigation and panel state.** Don't add a parallel boolean to track what page is open — read from the URL.
+- **Lots of state lives in URL search params** (`?datePicker=...`, `?tab=...`, `?subtask=...`, `?edit=1`, `?popover=...`). When adding a new popover or modal that should survive refresh, follow the same pattern.
 
 ---
 
 ## Adding a New Feature
 
-1. Add or update types in `src/app/types/index.ts`.
+1. Add or update types alongside the component that owns them (e.g. `task-table/types.ts`, `multi-file-upload-panel/types.ts`). `src/app/types/index.ts` is for truly cross-cutting types only.
 2. Add constants (status options, presets, etc.) to `src/app/constants/index.ts`.
-3. Add UI in `src/app/App.tsx` or, if it's reusable, a new file under `src/app/components/`.
-4. Reuse primitives from `src/app/components/ui/` rather than creating new ones.
-5. Use design tokens from `theme.css` — do not hardcode hex colors.
-6. If the feature needs persistence, decide explicitly between in-memory, `localStorage`, or wiring up the documented backend; don't half-do it.
+3. Add UI:
+   - **A new page** → drop a file under `src/app/pages/`, wire it up in `App.tsx`'s URL parser, and lazy-load it.
+   - **A new task-table column** → add a `cells/<Name>Cell.tsx`, dispatch in `TaskRow`'s switch, register in `TaskTableDynamic`'s column config.
+   - **A new design-system primitive** → file under `src/app/components/design-system/` + a sibling `.stories.tsx`.
+4. Reuse primitives from `src/app/components/ui/` (Radix wrappers) and `src/app/components/design-system/` (in-house) before creating new ones.
+5. Use design tokens from `theme.css` — do not hardcode hex colors except for the brand yellow `#fc6` (which is shorthand for the design token).
+6. If the feature needs persistence, decide explicitly between in-memory, `localStorage` (follow the `PROJECTS_STORAGE_KEY` pattern), or wiring up the documented backend; don't half-do it.
 
 ---
 
@@ -194,9 +220,11 @@ Currently **none** — tasks live in React state and reset on reload. The handof
 ## Verification Rule
 
 Before closing a task, verify behavior in the browser:
+- `npm run typecheck && npm run lint && npm run build` should all be clean.
 - `npm run dev`, exercise the affected flow, and confirm no console errors.
-- Test both the Tasks page and the Checklists page if navigation/layout changed.
-- For file-upload changes, walk through the multi-patient upload panel end-to-end.
+- Test both the Tasks page and the Checklists/Admin pages if navigation/layout changed.
+- For task-table changes, verify sort, drag-reorder columns, resize columns, and the due-date popover (Quick / Custom / Calendar / Relative-to).
+- For file-upload changes, walk through the side panel end-to-end (upload, preview modal, subtask switch, comment composer).
 
 ---
 
@@ -205,5 +233,6 @@ Before closing a task, verify behavior in the browser:
 | Date | Description |
 |---|---|
 | 2026-05-06 | Imported Figma Make prototype v1 as the starting codebase; added this CLAUDE.md |
+| 2026-05-13 | Refresh — App.tsx is no longer monolithic (660 lines, was ~4,400); pages/ directory exists; URL-driven routing via react-router; lazy-loaded pages + side panel; Storybook + ESLint + Prettier wired up; MUI / motion / recharts removed; TaskTableDynamic split into `task-table/` + `task-table/cells/`; TasksPage dead-code purge (-1,000 lines); MultiFileUploadPanel leaf extractions |
 
 > Append a row when you make significant changes.
