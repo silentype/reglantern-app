@@ -489,13 +489,13 @@ export function ComplianceReviewPage() {
 
           {/* Tab bar + filters */}
           <div className="flex-none border-b border-[#e4e4e7] bg-white">
-            <div className={`flex items-center px-4 border-b-2 transition-colors ${rightTab === 'tasks' ? 'border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+            <div className="flex items-center px-4 border-b border-[#e4e4e7]">
               <button
                 onClick={() => setRightTab('tasks')}
-                className={`py-2.5 px-4 text-[13px] font-medium transition-colors ${
+                className={`py-2.5 px-4 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
                   rightTab === 'tasks'
-                    ? 'text-[#18181b]'
-                    : 'text-[#71717a] hover:text-[#18181b]'
+                    ? 'border-[#fc6] text-[#18181b]'
+                    : 'border-transparent text-[#71717a] hover:text-[#18181b]'
                 }`}
               >
                 Tasks
@@ -503,10 +503,10 @@ export function ComplianceReviewPage() {
               {previewFile && (
                 <button
                   onClick={() => setRightTab('preview')}
-                  className={`py-2.5 px-4 text-[13px] font-medium transition-colors ${
+                  className={`py-2.5 px-4 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
                     rightTab === 'preview'
-                      ? 'text-[#18181b]'
-                      : 'text-[#71717a] hover:text-[#18181b]'
+                      ? 'border-[#fc6] text-[#18181b]'
+                      : 'border-transparent text-[#71717a] hover:text-[#18181b]'
                   }`}
                 >
                   {previewFile.name}
