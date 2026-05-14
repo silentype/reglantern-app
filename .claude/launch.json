@@ -3,9 +3,15 @@
   "configurations": [
     {
       "name": "reglantern-dev",
-      "runtimeExecutable": "node_modules/.bin/vite",
-      "runtimeArgs": [],
-      "port": 5173
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5175"],
+      "port": 5175
+    },
+    {
+      "name": "worktree-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5175"],
+      "port": 5175
     }
   ]
 }

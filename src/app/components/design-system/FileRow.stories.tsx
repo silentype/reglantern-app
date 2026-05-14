@@ -10,6 +10,7 @@ const meta: Meta<typeof FileRow> = {
     category: 'Governance',
     onPreview: () => {},
     onDownload: () => {},
+    onOpenInNew: () => {},
     onDelete: () => {},
   },
 };
@@ -17,10 +18,11 @@ export default meta;
 type Story = StoryObj<typeof FileRow>;
 
 export const Default: Story = {};
-export const Large: Story = { args: { name: 'Service_Area_Map.pdf', size: 2_048_576 } };
+export const Spreadsheet: Story = { args: { name: 'Annual_Budget_2026.xlsx', size: 2_500_000, category: 'Financial' } };
+export const Image: Story = { args: { name: 'Site_Photo.jpg', size: 890_000, category: 'Photos' } };
 export const Small: Story = { args: { name: 'note.txt', size: 240, category: 'Notes' } };
 export const NoActions: Story = {
-  args: { onPreview: undefined, onDownload: undefined, onDelete: undefined },
+  args: { onPreview: undefined, onDownload: undefined, onOpenInNew: undefined, onDelete: undefined },
 };
 
 export const Stack: Story = {
@@ -32,14 +34,16 @@ export const Stack: Story = {
         category="Documentation"
         onPreview={() => {}}
         onDownload={() => {}}
+        onOpenInNew={() => {}}
         onDelete={() => {}}
       />
       <FileRow
-        name="Coverage_Report.pdf"
-        size={1_536_000}
+        name="Demographics_2026.xlsx"
+        size={3_145_728}
         category="Reports"
         onPreview={() => {}}
         onDownload={() => {}}
+        onOpenInNew={() => {}}
         onDelete={() => {}}
       />
       <FileRow
@@ -48,6 +52,14 @@ export const Stack: Story = {
         category="Governance"
         onPreview={() => {}}
         onDownload={() => {}}
+        onOpenInNew={() => {}}
+        onDelete={() => {}}
+      />
+      <FileRow
+        name="Training_Photo.jpg"
+        size={890_000}
+        category="Photos"
+        onPreview={() => {}}
         onDelete={() => {}}
       />
     </div>

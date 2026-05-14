@@ -19,6 +19,7 @@ import { Building2, Calendar as CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Calendar } from '../components/ui/calendar';
 import { Button } from '../components/design-system/Button';
+import { BackButton } from '../components/design-system/BackButton';
 import type { HealthCenter, HealthCenterDateFieldDef } from '../data/healthCenters';
 
 export function HealthCenterAdminPage({
@@ -62,15 +63,9 @@ export function HealthCenterAdminPage({
     return (
       <div className="h-full flex flex-col">
         <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
-          <button
-            onClick={() => onSelectCenter(null)}
-            className="bg-white h-[40px] px-[16px] py-[8px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#f9fafb] transition-colors mb-3 flex items-center gap-2"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Back to Health Centers
-          </button>
+          <BackButton onClick={() => onSelectCenter(null)} className="mb-3">
+            Health Center Information
+          </BackButton>
           <div className="flex items-center gap-2 mb-2">
             <Building2 className="w-5 h-5 text-[#71717a]" />
             <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px]">

@@ -49,6 +49,7 @@ import { SaveIndicator } from '../components/SaveIndicator';
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 
 import { Button } from '../components/design-system/Button';
+import { BackButton } from '../components/design-system/BackButton';
 
 import { HEALTH_CENTERS } from '../constants';
 import { resolveTaskDueDates, findTasksAnchoredTo } from '../utils/helpers';
@@ -430,15 +431,9 @@ export function AdminPage({
         <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px]">
           <div className="mb-4 flex items-end justify-between gap-6">
             <div className="flex-1 min-w-0">
-              <button
-                onClick={() => onSelectProject(null)}
-                className="bg-white h-[40px] px-[16px] py-[8px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-['Geist:Medium',sans-serif] font-medium text-[14px] hover:bg-[#f9fafb] transition-colors mb-3 flex items-center gap-2"
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Back to Projects
-              </button>
+              <BackButton onClick={() => onSelectProject(null)} className="mb-3">
+                Project Builder
+              </BackButton>
               <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
                 {selectedProject.name}
               </h1>

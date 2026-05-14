@@ -1,8 +1,5 @@
 import { memo, useMemo } from 'react';
-import { ClipboardCheck } from 'lucide-react';
-import svgPaths from '../../imports/svg-z6xjpcewkp';
-import collapsedSvgPaths from '../../imports/SecondaryMenuCollapsed/svg-g3ofy9behl';
-import myTasksIconPaths from '../../imports/Button/svg-itt5jgyi6c';
+import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, Settings2, UserPlus, HelpCircle, Info } from 'lucide-react';
 
 interface SideNavigationProps {
   pageType: 'tasks' | 'checklists' | 'admin' | 'settings';
@@ -21,74 +18,63 @@ const CHECKLISTS_ITEMS = [
 const ADMIN_ITEMS = ['Project Builder', 'Compliance Review', 'Health Center Information'] as const;
 const SETTINGS_ITEMS = ['Health Center Fields'] as const;
 
+const NAV_ICONS: Record<string, LucideIcon> = {
+  'My Tasks': CheckSquare,
+  'Project Builder': FolderKanban,
+  'Compliance Review': ClipboardCheck,
+  'Health Center Information': Building2,
+  'Site Visit Protocol Checklist': ClipboardList,
+  'Ryan White Part C/D': ClipboardList,
+  'FTCA Site Visit Protocol': ClipboardList,
+  'Health Center Fields': Settings2,
+};
+
+const UTILITY_ICONS: Record<string, LucideIcon> = {
+  'Invite Teammates': UserPlus,
+  'Ask an Expert': HelpCircle,
+  'About': Info,
+};
+
 const NavItem = memo(({ item, isSelected, onClick, isExpanded }: { item: string; isSelected: boolean; onClick: () => void; isExpanded: boolean }) => {
-  const isMyTasks = item === 'My Tasks';
-  const isComplianceReview = item === 'Compliance Review';
-  const iconPath = isMyTasks ? myTasksIconPaths.p3b077500 : collapsedSvgPaths.p4616280;
-  const viewBox = isMyTasks ? '0 0 18.3334 18.3333' : '0 0 16 16';
+  const Icon = NAV_ICONS[item] ?? ClipboardList;
 
   return (
     <button
       onClick={onClick}
-      className={`h-[40px] rounded-[6px] flex items-center text-sm font-medium text-[#18181b] leading-[20px] transition-colors hover:bg-[#e4e4e7] ${
-        isSelected ? 'bg-[#cdd7e1]' : ''
-      } ${isExpanded ? 'px-4 py-2 text-left w-full' : 'w-[50px] justify-center'}`}
       title={!isExpanded ? item : undefined}
+      className={`h-[40px] w-full rounded-[6px] flex items-center text-sm font-medium text-[#18181b] leading-[20px] transition-all duration-300 hover:bg-[#e4e4e7] overflow-hidden whitespace-nowrap ${
+        isSelected ? 'bg-[#cdd7e1]' : ''
+      } ${isExpanded ? 'pl-3 pr-3' : 'pl-[15px] pr-0'}`}
     >
-      {isExpanded ? (
-        <>
-          <div className="shrink-0 size-[20px] flex items-center justify-center">
-            {isComplianceReview ? (
-              <ClipboardCheck size={20} className="text-[#18181b]" strokeWidth={2} />
-            ) : (
-              <svg width="20" height="20" viewBox={viewBox} fill="none" className="block">
-                <path d={iconPath} fill="#18181B" fillRule="evenodd" clipRule="evenodd" />
-              </svg>
-            )}
-          </div>
-          <span className="ml-2">{item}</span>
-        </>
-      ) : (
-        <div className="shrink-0 size-[20px] flex items-center justify-center">
-          {isComplianceReview ? (
-            <ClipboardCheck size={20} className="text-[#18181b]" strokeWidth={2} />
-          ) : (
-            <svg width="20" height="20" viewBox={viewBox} fill="none" className="block">
-              <path d={iconPath} fill="#18181B" fillRule="evenodd" clipRule="evenodd" />
-            </svg>
-          )}
-        </div>
-      )}
+      <div className="shrink-0 size-[20px] flex items-center justify-center">
+        <Icon size={18} className="text-[#18181b]" strokeWidth={2} />
+      </div>
+      <span className={`ml-2 transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
+        {item}
+      </span>
     </button>
   );
 });
 NavItem.displayName = 'NavItem';
 
-const UtilityButton = memo(({ icon, label, isExpanded }: { icon: string; label: string; isExpanded: boolean }) => (
-  <button
-    className={`h-[40px] rounded-[6px] flex items-center text-sm font-medium text-[#18181b] leading-[20px] hover:bg-[#e4e4e7] transition-colors ${
-      isExpanded ? 'px-4 py-2 gap-2 w-full' : 'w-[50px] justify-center px-[16px] py-[8px]'
-    }`}
-    title={!isExpanded ? label : undefined}
-  >
-    {isExpanded ? (
-      <>
-        <div className="shrink-0 size-[16px]">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="block">
-            <path d={icon} fill="#18181B" fillRule="evenodd" clipRule="evenodd" />
-          </svg>
-        </div>
-        <span>{label}</span>
-      </>
-    ) : (
-      <div className="shrink-0 size-[16px]">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="block">
-          <path d={icon} fill="#18181B" fillRule="evenodd" clipRule="evenodd" />
-        </svg>
+const UtilityButton = memo(({ label, isExpanded }: { label: string; isExpanded: boolean }) => {
+  const Icon = UTILITY_ICONS[label] ?? Info;
+  return (
+    <button
+      title={!isExpanded ? label : undefined}
+      className={`h-[40px] w-full rounded-[6px] flex items-center text-sm font-medium text-[#18181b] leading-[20px] hover:bg-[#e4e4e7] transition-all duration-300 overflow-hidden whitespace-nowrap ${
+        isExpanded ? 'pl-3 pr-3' : 'pl-[15px] pr-0'
+      }`}
+    >
+      <div className="shrink-0 size-[20px] flex items-center justify-center">
+        <Icon size={18} className="text-[#18181b]" strokeWidth={2} />
       </div>
-    )}
-  </button>
-));
+      <span className={`ml-2 transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
+        {label}
+      </span>
+    </button>
+  );
+});
 UtilityButton.displayName = 'UtilityButton';
 
 export const SideNavigation = memo(function SideNavigation({ pageType, selectedItem, onItemSelect, isOpen, onToggle }: SideNavigationProps) {
@@ -110,10 +96,10 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
         isOpen ? 'w-[280px]' : 'w-[66px]'
       }`}
     >
-      {/* Top Section - Collapse/Expand Button + Navigation Items */}
-      <div className={isOpen ? 'p-2' : ''}>
-        {/* Collapse/Expand Button */}
-        <div className={isOpen ? 'flex justify-end pr-2 pt-2 pb-1' : 'flex justify-center pt-[8px]'}>
+      {/* Top Section — structure never changes, only sidebar width + button padding animate */}
+      <div>
+        {/* Collapse/Expand Button — always right-aligned */}
+        <div className="flex justify-end pr-3 pt-2 pb-1">
           <button
             onClick={onToggle}
             className="h-[40px] w-[40px] flex items-center justify-center rounded-[8px] hover:bg-[#e4e4e7] transition-colors"
@@ -131,7 +117,7 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
           </button>
         </div>
 
-        <div className={`flex flex-col ${isOpen ? 'gap-1 pt-2 px-2' : 'gap-[4px] pt-[8px] px-[8px]'}`}>
+        <div className="flex flex-col gap-1 px-2">
           {navItems.map((item) => (
             <NavItem
               key={item}
@@ -144,14 +130,12 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
         </div>
       </div>
 
-      {/* Bottom Section - Utility Links */}
+      {/* Bottom Section — same fixed structure */}
       <div className="border-t border-[#cdd7e1]">
-        <div className={isOpen ? 'p-2' : ''}>
-          <div className={`flex flex-col ${isOpen ? 'gap-1 pt-2 px-2' : 'gap-[4px] pt-[8px] px-[8px]'}`}>
-            <UtilityButton icon={svgPaths.p15aee600} label="Invite Teammates" isExpanded={isOpen} />
-            <UtilityButton icon={svgPaths.p9f6a200} label="Ask an Expert" isExpanded={isOpen} />
-            <UtilityButton icon={svgPaths.p1ecaa900} label="About" isExpanded={isOpen} />
-          </div>
+        <div className="flex flex-col gap-1 px-2 py-2">
+          <UtilityButton label="Invite Teammates" isExpanded={isOpen} />
+          <UtilityButton label="Ask an Expert" isExpanded={isOpen} />
+          <UtilityButton label="About" isExpanded={isOpen} />
         </div>
       </div>
     </div>

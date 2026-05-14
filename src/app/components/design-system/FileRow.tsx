@@ -1,5 +1,14 @@
 import { ReactNode } from 'react';
-import { FileText, Trash2 } from 'lucide-react';
+import { type LucideIcon, FileText, FileImage, FileSpreadsheet, File, Trash2, ExternalLink } from 'lucide-react';
+
+function fileIcon(name: string): LucideIcon {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'pdf') return FileText;
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic'].includes(ext)) return FileImage;
+  if (['xlsx', 'xls', 'csv'].includes(ext)) return FileSpreadsheet;
+  if (['doc', 'docx', 'txt', 'rtf'].includes(ext)) return FileText;
+  return File;
+}
 import { Button } from './Button';
 
 export interface FileRowProps {
@@ -12,6 +21,7 @@ export interface FileRowProps {
   icon?: ReactNode;
   onPreview?: () => void;
   onDownload?: () => void;
+  onOpenInNew?: () => void;
   onDelete?: () => void;
   className?: string;
 }
@@ -36,6 +46,7 @@ export function FileRow({
   icon,
   onPreview,
   onDownload,
+  onOpenInNew,
   onDelete,
   className,
 }: FileRowProps) {
@@ -43,8 +54,8 @@ export function FileRow({
     <div
       className={`flex items-center gap-3 p-3 bg-white border border-[#e4e4e7] rounded-md ${className ?? ''}`}
     >
-      <div className="shrink-0 size-8 rounded bg-[#fee2e2] text-[#b91c1c] flex items-center justify-center">
-        {icon ?? <FileText className="size-4" />}
+      <div className="shrink-0 size-8 rounded bg-[#f4f4f5] flex items-center justify-center">
+        {icon ?? (() => { const Icon = fileIcon(name); return <Icon className="size-4 text-[#52525b]" strokeWidth={2} />; })()}
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-[14px] font-medium text-[#18181b] truncate">{name}</div>
@@ -59,14 +70,25 @@ export function FileRow({
         {onDownload && (
           <Button variant="secondary" size="sm" onClick={onDownload}>Download</Button>
         )}
+        {onOpenInNew && (
+          <button
+            type="button"
+            onClick={onOpenInNew}
+            aria-label={`Open ${name} in new window`}
+            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
+            title="Open in new window"
+          >
+            <ExternalLink className="size-3.5" />
+          </button>
+        )}
         {onDelete && (
           <button
             type="button"
             onClick={onDelete}
             aria-label={`Delete ${name}`}
-            className="size-8 inline-flex items-center justify-center rounded text-[#dc2626] hover:bg-[#fee2e2] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
+            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] text-[#dc2626] hover:bg-[#fee2e2] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
           >
-            <Trash2 className="size-4" />
+            <Trash2 className="size-3.5" />
           </button>
         )}
       </div>
