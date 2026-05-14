@@ -6,7 +6,16 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router';
-import { X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight } from 'lucide-react';
+import { type LucideIcon, X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight, FileText, FileImage, FileSpreadsheet, File } from 'lucide-react';
+
+function fileIcon(name: string): LucideIcon {
+  const ext = name.split('.').pop()?.toLowerCase() ?? '';
+  if (ext === 'pdf') return FileText;
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'heic'].includes(ext)) return FileImage;
+  if (['xlsx', 'xls', 'csv'].includes(ext)) return FileSpreadsheet;
+  if (['doc', 'docx', 'txt', 'rtf'].includes(ext)) return FileText;
+  return File;
+}
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from './ui/command';
 import svgPathsUpload from '../../imports/svg-cqqadqx4y2';
@@ -14,7 +23,10 @@ import { SaveIndicator } from './SaveIndicator';
 import { DueDatePicker } from './DueDatePicker';
 import { Tab, TabStrip } from './design-system/Tab';
 import { Button } from './design-system/Button';
+import { BackButton } from './design-system/BackButton';
 import { Avatar } from './design-system/Avatar';
+import { FileRow } from './design-system/FileRow';
+import { UserAvatar } from './task-table/UserAvatar';
 import type { DueDateRule, Task } from './TaskTableDynamic';
 import { AVAILABLE_USERS, STATUS_OPTIONS } from '../constants';
 import { getTaskDescription, getDisplayValueForDate } from '../utils/helpers';
@@ -537,15 +549,7 @@ export default function MultiFileUploadPanel({
         <div className="border-b border-[#e4e4e7] px-6 py-6">
           <div className="flex items-center justify-between max-w-[521px]">
             {/* Back Button */}
-            <button
-              onClick={handleBackToTask}
-              className="flex items-center gap-2 px-4 py-2 border border-[#cdd7e1] rounded hover:bg-[#f4f4f5] transition-colors"
-            >
-              <svg className="block size-4" fill="none" preserveAspectRatio="none" viewBox="0 0 16 16">
-                <path clipRule="evenodd" d={svgPathsUpload.p38ef20f0} fill="#09090B" fillRule="evenodd" />
-              </svg>
-              <span className="text-sm font-medium text-[#18181b]">Back</span>
-            </button>
+            <BackButton onClick={handleBackToTask}>Back</BackButton>
 
             {/* Close Button */}
             <button onClick={handleClose} className="p-1 hover:bg-[#f4f4f5] rounded transition-colors">
@@ -637,79 +641,39 @@ export default function MultiFileUploadPanel({
 
             {/* Uploaded Files List */}
             {currentFiles.map((file) => {
-              const borderColor = file.isUploading ? 'border-[#3b82f6]' : 'border-[#cdd7e1]';
-              return (
-                <div
-                  key={file.id}
-                  className={`bg-white border rounded-lg h-[60px] flex items-center gap-3 px-4 relative overflow-hidden transition-all duration-300 ${borderColor}`}
-                >
-                  {file.isUploading && typeof file.progress === 'number' && (
+              if (file.isUploading && typeof file.progress === 'number') {
+                return (
+                  <div
+                    key={file.id}
+                    className="bg-white border border-[#3b82f6] rounded-md h-[60px] flex items-center gap-3 px-4 relative overflow-hidden"
+                  >
                     <div
                       className="absolute inset-0 bg-[#dbeafe] transition-all duration-300 ease-out"
-                      style={{
-                        width: `${file.progress}%`,
-                        opacity: 0.5
-                      }}
+                      style={{ width: `${file.progress}%`, opacity: 0.5 }}
                     />
-                  )}
-
-                  {/* File Icon */}
-                  <div className="relative size-8 shrink-0 z-10">
-                    {file.isUploading && typeof file.progress === 'number' && file.progress < 100 ? (
-                      <Upload className="size-8 text-[#3b82f6] animate-pulse" />
-                    ) : (
-                      <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 32 32">
-                        <path d={svgPathsUpload.p284b0000} stroke="black" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d={svgPathsUpload.p50e1c00} stroke="black" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d={svgPathsUpload.pb8d9980} stroke="black" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    )}
-                  </div>
-
-                  {/* File Info */}
-                  <div className="flex-1 min-w-0 z-10">
-                    <p className="text-sm text-[#212121] truncate">{file.name}</p>
-                    <p className="text-[11px] text-[#8c8c8c]">
-                      {file.category} • {(file.size / 1000000).toFixed(1)}MB
-                    </p>
-                  </div>
-
-                  {/* Upload Progress */}
-                  {file.isUploading && typeof file.progress === 'number' && (
+                    <div className="relative shrink-0 size-8 z-10 flex items-center justify-center">
+                      <Upload className="size-5 text-[#3b82f6] animate-pulse" />
+                    </div>
+                    <div className="flex-1 min-w-0 z-10">
+                      <p className="text-[14px] font-medium text-[#18181b] truncate">{file.name}</p>
+                      <p className="text-[12px] text-[#71717a]">{file.category}</p>
+                    </div>
                     <span className="text-xs font-medium text-[#3b82f6] z-10">
                       {Math.round(file.progress)}%
                     </span>
-                  )}
-
-                  {/* Action Buttons */}
-                  {!file.isUploading && (
-                    <div className="flex items-center gap-2 z-10">
-                      <button
-                        onClick={() => handlePreviewClick(file)}
-                        className="px-3 py-1.5 text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded hover:bg-[#f9fafb] transition-colors"
-                      >
-                        Preview
-                      </button>
-                      <button
-                        onClick={() => handleDownload(file)}
-                        className="px-3 py-1.5 text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded hover:bg-[#f9fafb] transition-colors"
-                      >
-                        Download
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(file.id, true)}
-                        className="shrink-0 hover:bg-[#fee] rounded p-1 transition-colors"
-                        title="Delete file"
-                      >
-                        <div className="size-5">
-                          <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16.6667 18.3333">
-                            <path clipRule="evenodd" d={svgPathsUpload.pc7d1a80} fill="#dc2626" fillRule="evenodd" />
-                          </svg>
-                        </div>
-                      </button>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                );
+              }
+              return (
+                <FileRow
+                  key={file.id}
+                  name={file.name}
+                  size={file.size}
+                  category={file.category}
+                  onPreview={() => handlePreviewClick(file)}
+                  onDownload={() => handleDownload(file)}
+                  onDelete={() => handleDeleteClick(file.id, true)}
+                />
               );
             })}
           </div>
@@ -976,15 +940,10 @@ export default function MultiFileUploadPanel({
 
                         {/* File Icon */}
                         <div className="relative size-8 shrink-0 z-10">
-                          {file.isUploading && typeof file.progress === 'number' && file.progress < 100 ? (
-                            <Upload className="size-8 text-[#3b82f6] animate-pulse" />
-                          ) : (
-                            <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 32 32">
-                              <path d={svgPathsUpload.p284b0000} stroke="black" strokeLinecap="round" strokeLinejoin="round" />
-                              <path d={svgPathsUpload.p50e1c00} stroke="black" strokeLinecap="round" strokeLinejoin="round" />
-                              <path d={svgPathsUpload.pb8d9980} stroke="black" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
+                          {file.isUploading && typeof file.progress === 'number' && file.progress < 100
+                            ? <Upload className="size-8 text-[#3b82f6] animate-pulse" />
+                            : (() => { const Icon = fileIcon(file.name); return <Icon className="size-8 text-[#52525b]" strokeWidth={1.5} />; })()
+                          }
                         </div>
 
                         {/* File Info */}
@@ -1237,10 +1196,7 @@ export default function MultiFileUploadPanel({
                   <PopoverTrigger asChild>
                     <button className="flex-1 max-w-[240px] bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[#f9fafb] transition-colors">
                       {assignedTo ? (
-                        <div className="flex items-center gap-2">
-                          <Avatar initials={assignedTo.initials} name={assignedTo.name} size="sm" />
-                          <span className="text-sm text-[#18181b]">{assignedTo.name}</span>
-                        </div>
+                        <UserAvatar user={assignedTo} />
                       ) : (
                         <span className="text-[#6b7280]">Select User</span>
                       )}
@@ -1334,12 +1290,7 @@ export default function MultiFileUploadPanel({
                           key={collab.name}
                           className="bg-[#f5f5f5] px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-[#e5e7eb] transition-colors"
                         >
-                          <Avatar
-                            initials={collab.initials}
-                            name={collab.name}
-                            className="size-5 text-[10px]"
-                          />
-                          <span className="text-sm text-[#18181b]">{collab.name}</span>
+                          <UserAvatar user={collab} />
                           <button
                             onClick={(e) => {
                               e.preventDefault();
@@ -1378,14 +1329,7 @@ export default function MultiFileUploadPanel({
               <div className="flex items-center gap-2">
                 <UserPlus size={20} className="text-[#09090b]" />
                 <span className="text-sm text-[#09090b] w-[104px]">Created by</span>
-                <div className="bg-[#f5f5f5] rounded-lg flex items-center gap-2 px-[12px] py-[4px]">
-                  <Avatar
-                    initials={initialCreatedBy?.initials || 'RL'}
-                    name={initialCreatedBy?.name || 'Reglantern RL'}
-                    size="sm"
-                  />
-                  <span className="text-sm text-[#09090b]">{initialCreatedBy?.name || 'Reglantern RL'}</span>
-                </div>
+                <UserAvatar user={{ initials: initialCreatedBy?.initials || 'RL', name: initialCreatedBy?.name || 'Reglantern RL' }} />
               </div>
             </div>
           )}

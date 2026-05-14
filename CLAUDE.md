@@ -194,6 +194,77 @@ Seed data in `src/app/data/initialTasks.ts`. Relative-due-date resolution lives 
 
 ---
 
+## Consistency Rules — enforced on every feature, no exceptions
+
+These rules apply even when the user asks for something new. New ideas get implemented using existing design elements; the elements themselves don't change per-feature.
+
+### Components — always use the design system first
+
+Before writing any UI element, scan `src/app/components/design-system/` and the table below. If a component exists for the pattern, use it exactly as-is. Do not reimplement it inline, do not copy its markup, do not adjust its colors or sizing locally.
+
+| Pattern | Component | Rule |
+|---|---|---|
+| Back / up-one-level navigation | `<BackButton>` from `design-system/BackButton` | Always outlined + chevron-left. Never a text link, rotated icon, or custom button. Label = the name of the destination page (e.g. "Project Builder", not "Back to Projects"). Applies in overlays/panels too. |
+| User avatar + name | `<UserAvatar user={…}>` from `task-table/UserAvatar` | Always `size="sm"` (24px) avatar + `text-[13px]` name. Never custom sizes. |
+| Page title + description + actions | `<PageHeader>` from `design-system/PageHeader` | Use `eyebrow` slot for `<BackButton>`. |
+| Action buttons | `<Button variant="…">` from `design-system/Button` | Variants: `primary` (yellow), `secondary` (outlined), `ghost`, `danger`. Never custom colors or shadows via `className`. |
+| Dismissible filter toggles | `<FilterChip>` from `design-system/FilterChip` | |
+| File attachment rows | `<FileRow>` from `design-system/FileRow` | Use `onPreview`, `onDownload`, `onOpenInNew`, `onDelete` props. |
+| User avatar | `<Avatar>` / `<AvatarStack>` from `design-system/Avatar` | |
+| Task status label | `<StatusBadge>` from `design-system/StatusBadge` | |
+| Card container | `<Card>` from `design-system/Card` | |
+| Empty state | `<EmptyState>` from `design-system/EmptyState` | |
+
+**Adding a new recurring pattern:** extract it into `design-system/`, add a `.stories.tsx`, add a row here, then use it everywhere — including retrofitting any existing instances.
+
+### Icons — lucide-react only
+
+Always use icons from `lucide-react`. Never use raw Figma-exported SVG path data for new icons. Size `18` with `strokeWidth={2}` is the nav standard; `16` or `20` elsewhere depending on context.
+
+Do not use inline `<svg>` + `<path>` for icons that lucide covers. If lucide doesn't have what you need, add an SVG component to `design-system/` rather than inlining path data.
+
+### Colors — tokens and the approved palette only
+
+| Use | Value |
+|---|---|
+| Brand yellow (primary action) | `#fc6` |
+| Hover on yellow | `#eab308` |
+| Active on yellow | `#ca8a04` |
+| Text primary | `#18181b` |
+| Text secondary / muted | `#71717a` |
+| Border default | `#e4e4e7` |
+| Border strong (selected sidebar) | `#cdd7e1` |
+| Surface 1 (page bg) | `#f9fafb` |
+| Surface 2 (sidebar bg) | `#f4f4f5` |
+| Surface 3 (hover rows) | `#f5f5f5` |
+| White surface (cards, panels) | `#ffffff` |
+| Danger | `#dc2626` |
+| Success | `#16a34a` |
+| Info / selected chapter | `#cdd7e1` |
+
+Never introduce a new hex color without adding it to this table. If the user asks for a new color, check whether an existing token covers the intent first.
+
+### Spacing — consistent page chrome
+
+Every page header uses these exact values:
+- Horizontal padding: `px-[24px]`
+- Top padding: `pt-[22px]`
+- Bottom padding: `pb-[16px]`
+- Bottom border: `border-b border-[#e4e4e7]`
+- Scrollable body: `px-[24px] py-6`
+
+Never vary these per page. If a page looks tight or loose, adjust content inside the body — not the chrome padding.
+
+### Selector cards (landing pages)
+
+Framework/project cards on landing pages follow the Project Builder pattern:
+- `p-5 border border-[#e4e4e7] rounded-[6px] bg-white`
+- Hover: `hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)]`
+- Focus ring: `focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1`
+- `transition-all text-left`
+
+---
+
 ## Adding a New Feature
 
 1. Add or update types alongside the component that owns them (e.g. `task-table/types.ts`, `multi-file-upload-panel/types.ts`). `src/app/types/index.ts` is for truly cross-cutting types only.
