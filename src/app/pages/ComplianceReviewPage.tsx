@@ -126,12 +126,43 @@ export function ComplianceReviewPage() {
   const [assignedToOpen, setAssignedToOpen] = useState(false);
   const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
 
-  const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
-  const [previewTaskId, setPreviewTaskId] = useState<number | null>(null);
-  const [rightTab, setRightTab] = useState<'tasks' | 'preview'>('tasks');
-
   const [allChapterTasks, setAllChapterTasks] = useState<Record<number, Task[]>>(INITIAL_CHAPTER_TASKS);
   const chapters = (frameworkId && CHAPTERS_BY_FRAMEWORK[frameworkId]) || [];
+
+  const previewFileId = searchParams.get('preview');
+  const previewTaskIdParam = searchParams.get('previewTask');
+  const previewTaskId = previewTaskIdParam ? Number(previewTaskIdParam) : null;
+
+  const previewFile = useMemo(() => {
+    if (!previewFileId) return null;
+    for (const tasks of Object.values(allChapterTasks)) {
+      for (const task of tasks) {
+        const found = task.files?.flatMap((fg) => fg.uploadedFiles ?? []).find((f) => f.id === previewFileId);
+        if (found) return found;
+      }
+    }
+    return null;
+  }, [previewFileId, allChapterTasks]);
+
+  const setPreviewFile = useCallback(
+    (file: UploadedFile | null, taskId?: number | null) => {
+      const next = new URLSearchParams(searchParams);
+      if (file === null) {
+        next.delete('preview');
+        next.delete('previewTask');
+      } else {
+        next.set('preview', file.id);
+        if (taskId != null) next.set('previewTask', String(taskId));
+        else next.delete('previewTask');
+      }
+      setSearchParams(next);
+    },
+    [searchParams, setSearchParams]
+  );
+
+  const [rightTab, setRightTab] = useState<'tasks' | 'preview'>(() =>
+    searchParams.get('preview') ? 'preview' : 'tasks'
+  );
 
 
   const currentChapter = chapters.find((ch) => ch.id === selectedChapter);
@@ -733,7 +764,7 @@ export function ComplianceReviewPage() {
                               size={file.size}
                               category={file.category}
                               className={previewFile?.id === file.id ? 'border-[#47515B]' : ''}
-                              onPreview={() => { setPreviewFile(file); setPreviewTaskId(task.id); setRightTab('preview'); }}
+                              onPreview={() => { setPreviewFile(file, task.id); setRightTab('preview'); }}
                               onDownload={() => {/* download handler */}}
                               onOpenInNew={() => {/* open in new window handler */}}
                             />
