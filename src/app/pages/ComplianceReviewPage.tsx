@@ -543,7 +543,7 @@ export function ComplianceReviewPage() {
                 </button>
               )}
             </div>
-            <div className={`px-4 py-2 ${rightTab === 'preview' ? 'hidden' : ''}`}>
+            <div className={`px-4 py-3 ${rightTab === 'preview' ? 'hidden' : ''}`}>
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
                   {/* Status pills */}
                   <button
