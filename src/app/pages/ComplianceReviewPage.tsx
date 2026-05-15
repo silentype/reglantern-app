@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
+import { toast } from 'sonner';
 import { format, parse, isValid } from 'date-fns';
-import { Calendar as CalendarIcon, User, AlertCircle, X, ArrowUpRight, FileText, Check, ExternalLink } from 'lucide-react';
+import { Calendar as CalendarIcon, User, AlertCircle, X, ArrowUpRight, FileText, Check, ExternalLink, Download } from 'lucide-react';
 import MultiFileUpload1 from '../components/MultiFileUploadPanel';
 import { type Task } from '../components/TaskTableDynamic';
 import { StatusBadge } from '../components/design-system/StatusBadge';
@@ -286,6 +287,21 @@ export function ComplianceReviewPage() {
     []
   );
 
+  const allChapterFiles = useMemo(
+    () => allTasksForChapter.flatMap((t) => t.files?.flatMap((fg) => fg.uploadedFiles ?? []) ?? []),
+    [allTasksForChapter]
+  );
+
+  const answeredCount = useMemo(
+    () => currentChapter?.questions.filter((q) => answers[q.id]?.answer != null).length ?? 0,
+    [currentChapter, answers]
+  );
+
+  const handleDownloadAll = () => {
+    if (allChapterFiles.length === 0) return;
+    toast.success(`Downloading ${allChapterFiles.length} file${allChapterFiles.length === 1 ? '' : 's'}…`);
+  };
+
   const hasActiveFilters =
     !statusFilter.includes('all') ||
     !!dueDateFilter ||
@@ -498,14 +514,53 @@ export function ComplianceReviewPage() {
                 />
               </div>
 
-              {/* Pagination */}
-              <Pagination
-                current={currentQuestionIndex + 1}
-                total={totalQuestions}
-                onPrev={handleBack}
-                onNext={handleNext}
-                className="pt-6 border-t border-[#e4e4e7]"
-              />
+              {/* Progress + Pagination */}
+              <div className="pt-6 border-t border-[#e4e4e7]">
+                {/* Progress bar */}
+                <div className="mb-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[12px] font-medium text-[#71717a]">
+                      Question {currentQuestionIndex + 1} of {totalQuestions}
+                    </span>
+                    <span className="text-[12px] text-[#a1a1aa]">
+                      {answeredCount} of {totalQuestions} answered
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-[#f4f4f5] rounded-full overflow-hidden mb-3">
+                    <div
+                      className="h-full bg-[#fc6] rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${totalQuestions > 1 ? (currentQuestionIndex / (totalQuestions - 1)) * 100 : 100}%` }}
+                    />
+                  </div>
+                  {/* Step dots */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {currentChapter?.questions.map((q, i) => {
+                      const answered = answers[q.id]?.answer != null;
+                      const isCurrent = i === currentQuestionIndex;
+                      return (
+                        <button
+                          key={q.id}
+                          onClick={() => setCurrentQuestionIndex(i)}
+                          title={`Question ${i + 1}${answered ? (answers[q.id]?.answer === 'yes' ? ' · Yes' : ' · No') : ''}`}
+                          className={`rounded-full transition-all duration-200 ${
+                            isCurrent
+                              ? 'w-4 h-2.5 bg-[#fc6]'
+                              : answered
+                              ? 'w-2.5 h-2.5 bg-[#16a34a]'
+                              : 'w-2.5 h-2.5 bg-[#e4e4e7] hover:bg-[#d4d4d8]'
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+                <Pagination
+                  current={currentQuestionIndex + 1}
+                  total={totalQuestions}
+                  onPrev={handleBack}
+                  onNext={handleNext}
+                />
+              </div>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center text-[#71717a]">
@@ -542,6 +597,17 @@ export function ComplianceReviewPage() {
                   {previewFile.name}
                 </button>
               )}
+              <div className="ml-auto shrink-0 py-1.5">
+                <button
+                  onClick={handleDownloadAll}
+                  disabled={allChapterFiles.length === 0}
+                  className="flex items-center gap-1.5 px-3 h-[28px] rounded-[6px] border border-[#e4e4e7] text-[12px] font-medium text-[#18181b] bg-white hover:bg-[#f9fafb] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title={allChapterFiles.length === 0 ? 'No files in this chapter' : `Download all ${allChapterFiles.length} files`}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Download all{allChapterFiles.length > 0 ? ` (${allChapterFiles.length})` : ''}
+                </button>
+              </div>
             </div>
             <div className={`px-4 py-3 ${rightTab === 'preview' ? 'hidden' : ''}`}>
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">

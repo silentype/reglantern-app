@@ -15,10 +15,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as React from 'react';
 import { useSearchParams } from 'react-router';
-import { format, parse, isValid } from 'date-fns';
+import { format } from 'date-fns';
 import {
   X,
-  Calendar as CalendarIcon,
   ChevronsUpDown,
   Check,
   Search,
@@ -43,7 +42,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { Calendar } from '../components/ui/calendar';
 
 import { SaveIndicator } from '../components/SaveIndicator';
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
