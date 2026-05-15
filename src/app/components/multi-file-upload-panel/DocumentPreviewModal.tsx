@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X, Download, ExternalLink } from 'lucide-react';
 import { Button } from '../design-system/Button';
 import svgPathsUpload from '../../../imports/svg-cqqadqx4y2';
 import { getFileType } from './helpers';
@@ -8,6 +8,7 @@ interface DocumentPreviewModalProps {
   file: UploadedFile;
   onClose: () => void;
   onDownload: (file: UploadedFile) => void;
+  onOpenInNew?: (file: UploadedFile) => void;
 }
 
 /**
@@ -17,7 +18,7 @@ interface DocumentPreviewModalProps {
  * inline component inside MultiFileUploadPanel; pulled out so the
  * panel body doesn't carry ~120 lines of static mock JSX.
  */
-export function DocumentPreviewModal({ file, onClose, onDownload }: DocumentPreviewModalProps) {
+export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }: DocumentPreviewModalProps) {
   const fileType = getFileType(file.name);
 
   return (
@@ -38,7 +39,16 @@ export function DocumentPreviewModal({ file, onClose, onDownload }: DocumentPrev
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={() => onDownload(file)}>Download</Button>
+            <Button variant="secondary" size="sm" onClick={() => onDownload(file)}>
+              <Download size={14} strokeWidth={2} />
+              Download
+            </Button>
+            {onOpenInNew && (
+              <Button variant="secondary" size="sm" onClick={() => onOpenInNew(file)}>
+                <ExternalLink size={14} strokeWidth={2} />
+                Open in new window
+              </Button>
+            )}
             <button
               onClick={onClose}
               className="p-2 hover:bg-[#f4f4f5] rounded-lg transition-colors"

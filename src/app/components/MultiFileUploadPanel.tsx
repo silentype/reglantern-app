@@ -431,6 +431,11 @@ export default function MultiFileUploadPanel({
     link.click();
   };
 
+  const handleOpenInNew = (file: UploadedFile) => {
+    console.log('Opening file in new window:', file.name);
+    window.open('#', '_blank', 'noopener,noreferrer');
+  };
+
   const handleDeleteClick = (fileId: string, isSubtask: boolean) => {
     setDeleteConfirmFile({ id: fileId, isSubtask });
   };
@@ -680,7 +685,7 @@ export default function MultiFileUploadPanel({
         </div>
         </div>
         {showPreviewModal && previewFile && (
-          <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} />
+          <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} onOpenInNew={handleOpenInNew} />
         )}
         {deleteConfirmFile && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
@@ -1394,7 +1399,7 @@ export default function MultiFileUploadPanel({
       </div>
       </div>
       {showPreviewModal && previewFile && (
-        <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} />
+        <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} onOpenInNew={handleOpenInNew} />
       )}
       {deleteConfirmFile && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
