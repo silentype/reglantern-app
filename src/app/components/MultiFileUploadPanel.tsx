@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
-import { type LucideIcon, X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight, FileText, FileImage, FileSpreadsheet, File } from 'lucide-react';
+import { type LucideIcon, X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight, FileText, FileImage, FileSpreadsheet, File, ExternalLink } from 'lucide-react';
 
 function fileIcon(name: string): LucideIcon {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
@@ -26,6 +26,7 @@ import { Button } from './design-system/Button';
 import { BackButton } from './design-system/BackButton';
 import { Avatar } from './design-system/Avatar';
 import { FileRow } from './design-system/FileRow';
+import { Select as DesignSelect } from './design-system/Select';
 import { UserAvatar } from './task-table/UserAvatar';
 import type { DueDateRule, Task } from './TaskTableDynamic';
 import { AVAILABLE_USERS, STATUS_OPTIONS } from '../constants';
@@ -34,9 +35,9 @@ import { getTaskDescription, getDisplayValueForDate } from '../utils/helpers';
 import type { UploadedFile, Subtask, UserType, Comment } from './multi-file-upload-panel/types';
 import {
   formatCommentTimestamp,
+  getFileType,
   getSubtaskCompletionStatus,
 } from './multi-file-upload-panel/helpers';
-import { DocumentPreviewModal } from './multi-file-upload-panel/DocumentPreviewModal';
 
 const availableUsers: UserType[] = AVAILABLE_USERS as unknown as UserType[];
 const statusOptions = STATUS_OPTIONS;
@@ -210,7 +211,6 @@ export default function MultiFileUploadPanel({
   const isInitialRender = useRef(true);
   
   // Popover states
-  const [statusOpen, setStatusOpen] = useState(false);
   const [assignedOpen, setAssignedOpen] = useState(false);
   const [collaboratorsOpen, setCollaboratorsOpen] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
@@ -553,6 +553,122 @@ export default function MultiFileUploadPanel({
   };
 
 
+  // Render Inline File Preview
+  if (previewFile) {
+    const previewFileType = getFileType(previewFile.name);
+    return (
+      <div className="h-full flex flex-col bg-white">
+        {/* Header */}
+        <div className="px-6 py-6 border-b border-[#e5e7eb] flex items-center justify-between">
+          <BackButton onClick={handleClosePreview}>Back</BackButton>
+          <button onClick={handleClose} className="p-1 hover:bg-[#f4f4f5] rounded transition-colors">
+            <X size={24} className="text-[#18181b]" />
+          </button>
+        </div>
+
+        {/* File info bar */}
+        <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-[#e4e4e7] bg-white">
+          <div className="min-w-0 flex-1 mr-3">
+            <p className="text-[13px] font-medium text-[#09090b] truncate">{previewFile.name}</p>
+            <p className="text-[11px] text-[#71717a]">
+              {previewFile.category} · {(previewFile.size / 1_000_000).toFixed(1)} MB
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => handleDownload(previewFile)}
+              className="bg-white h-[32px] px-3 rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-medium text-[12px] hover:bg-[#f9fafb] transition-colors"
+            >
+              Download
+            </button>
+            <button
+              onClick={() => handleOpenInNew(previewFile)}
+              className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
+              title="Open in new window"
+            >
+              <ExternalLink size={14} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+
+        {/* Preview content */}
+        <div className="flex-1 overflow-auto p-6 bg-[#f9fafb]">
+          <div className="flex items-start justify-center min-h-full">
+            {previewFileType === 'pdf' ? (
+              <div className="w-full max-w-[640px] bg-white rounded-lg shadow-lg p-8">
+                <div className="space-y-6">
+                  <div className="text-center border-b border-[#e4e4e7] pb-4">
+                    <h1 className="text-2xl font-bold text-[#09090b] mb-2">Document Preview</h1>
+                    <p className="text-sm text-[#71717a]">{previewFile.name}</p>
+                  </div>
+                  <div className="w-full h-48 bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <svg className="mx-auto size-16 text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm text-[#9ca3af] mt-2">Sample Image</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-semibold text-[#09090b]">Section 1: Introduction</h2>
+                    <p className="text-[15px] text-[#404040] leading-relaxed">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+                    <p className="text-[15px] text-[#404040] leading-relaxed">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                  </div>
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-semibold text-[#09090b]">Section 2: Details</h2>
+                    <ul className="list-disc list-inside space-y-2 text-[15px] text-[#404040]">
+                      <li>First important point about the document</li>
+                      <li>Second key consideration for review</li>
+                      <li>Third critical element to address</li>
+                      <li>Fourth requirement for compliance</li>
+                    </ul>
+                  </div>
+                  <div className="w-full h-40 bg-gradient-to-br from-[#e8f4f8] to-[#d0e8f0] rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <svg className="mx-auto size-12 text-[#0891b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <p className="text-sm text-[#0891b2] mt-2">Chart or Graph</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <h2 className="text-xl font-semibold text-[#09090b]">Section 3: Summary</h2>
+                    <p className="text-[15px] text-[#404040] leading-relaxed">In conclusion, this document provides comprehensive information regarding the subject matter. All relevant details have been included for review and approval.</p>
+                  </div>
+                  <div className="text-center border-t border-[#e4e4e7] pt-4 mt-8">
+                    <p className="text-xs text-[#9ca3af]">Page 1 of 1 · {previewFile.category} · {new Date().toLocaleDateString()}</p>
+                  </div>
+                </div>
+              </div>
+            ) : previewFileType === 'image' ? (
+              <div className="w-full h-full bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <svg className="mx-auto size-24 text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p className="text-lg font-medium text-[#09090b] mt-4">{previewFile.name}</p>
+                  <p className="text-sm text-[#71717a] mt-2">Sample Image Preview</p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center pt-16">
+                <div className="mb-4">
+                  <svg className="mx-auto size-16" fill="none" viewBox="0 0 32 32">
+                    <path d={svgPathsUpload.p284b0000} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d={svgPathsUpload.p50e1c00} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d={svgPathsUpload.pb8d9980} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <p className="text-lg font-medium text-[#09090b] mb-2">{previewFile.name}</p>
+                <p className="text-sm text-[#71717a]">Preview not available for this file type</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Render Subtask View
   if (view === 'subtask' && activeSubtask) {
     const currentSubtask = subtasks.find(st => st.id === activeSubtask.id) || activeSubtask;
@@ -562,8 +678,8 @@ export default function MultiFileUploadPanel({
       <>
         <div className="h-full flex flex-col bg-white">
         {/* Header */}
-        <div className="border-b border-[#e4e4e7] px-6 py-6">
-          <div className="flex items-center justify-between max-w-[521px]">
+        <div className="border-b border-[#e4e4e7] px-6 py-3">
+          <div className="flex items-center justify-between">
             {/* Back Button */}
             <BackButton onClick={handleBackToTask}>Back</BackButton>
 
@@ -575,7 +691,7 @@ export default function MultiFileUploadPanel({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto px-6 py-6">
+        <div className="flex-1 overflow-auto px-6 py-5">
           <div className="max-w-[521px] space-y-3">
             {/* Subtask Title */}
             <h2 className="text-2xl font-normal text-[#09090b] tracking-[0.4px] leading-[22px]">
@@ -695,9 +811,6 @@ export default function MultiFileUploadPanel({
           </div>
         </div>
         </div>
-        {previewFile && (
-          <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} onOpenInNew={handleOpenInNew} />
-        )}
         {deleteConfirmFile && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
             <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
@@ -738,47 +851,22 @@ export default function MultiFileUploadPanel({
     <>
       <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="px-6 py-6 border-b border-[#e5e7eb] flex items-center justify-between">
+      <div className="px-6 py-3 border-b border-[#e5e7eb] flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isCreatingNew && (
             <Button onClick={handleSaveAndClose} disabled={!editableTitle.trim()}>Add Task</Button>
           )}
           
-          <Popover open={statusOpen} onOpenChange={setStatusOpen}>
-            <PopoverTrigger asChild>
-              <button
-                className="bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#fc6] w-[200px] flex items-center justify-between hover:bg-[#f9fafb] transition-colors"
-              >
-                <span className="text-[#18181b]">{taskStatus}</span>
-                <ChevronsUpDown className="h-4 w-4 opacity-50" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0" align="start">
-              <Command>
-                <CommandList>
-                  <CommandGroup>
-                    {statusOptions.map((status) => (
-                      <CommandItem
-                        key={status}
-                        value={status}
-                        onSelect={() => {
-                          setTaskStatus(status);
-                          setStatusOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={`mr-2 h-4 w-4 ${
-                            taskStatus === status ? 'opacity-100' : 'opacity-0'
-                          }`}
-                        />
-                        {status}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <DesignSelect
+            size="sm"
+            value={taskStatus}
+            onChange={(e) => setTaskStatus(e.target.value)}
+            className="w-[200px]"
+          >
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </DesignSelect>
         </div>
         
         <div className="flex items-center gap-4">
@@ -793,7 +881,7 @@ export default function MultiFileUploadPanel({
       {/* Content */}
       <div className="flex-1 overflow-auto">
         {/* Task Title and Description */}
-        <div className="px-6 py-6 space-y-3">
+        <div className="px-6 py-5 space-y-3">
           {(isCreatingNew || initialTaskType === 'custom') ? (
             <>
               <div>
@@ -825,8 +913,8 @@ export default function MultiFileUploadPanel({
             </>
           ) : (
             <>
-              <h2 className="font-normal text-[#09090b] tracking-[0.4px] text-[18px]">{taskTitle}</h2>
-              <p className="text-[15px] text-[#09090b] tracking-[0.4px]">
+              <h2 className="text-2xl font-normal text-[#09090b] tracking-[0.4px] leading-[22px]">{taskTitle}</h2>
+              <p className="text-[15px] text-[#09090b] tracking-[0.4px] leading-[22px]">
                 {getTaskDescription(taskTitle)}
               </p>
             </>
@@ -1409,9 +1497,6 @@ export default function MultiFileUploadPanel({
         </div>
       </div>
       </div>
-      {previewFile && (
-        <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} onOpenInNew={handleOpenInNew} />
-      )}
       {deleteConfirmFile && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
           <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
