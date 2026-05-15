@@ -26,6 +26,7 @@ import { Button } from './design-system/Button';
 import { BackButton } from './design-system/BackButton';
 import { Avatar } from './design-system/Avatar';
 import { FileRow } from './design-system/FileRow';
+import { Select as DesignSelect } from './design-system/Select';
 import { UserAvatar } from './task-table/UserAvatar';
 import type { DueDateRule, Task } from './TaskTableDynamic';
 import { AVAILABLE_USERS, STATUS_OPTIONS } from '../constants';
@@ -210,7 +211,6 @@ export default function MultiFileUploadPanel({
   const isInitialRender = useRef(true);
   
   // Popover states
-  const [statusOpen, setStatusOpen] = useState(false);
   const [assignedOpen, setAssignedOpen] = useState(false);
   const [collaboratorsOpen, setCollaboratorsOpen] = useState(false);
   const [showValidationError, setShowValidationError] = useState(false);
@@ -857,41 +857,16 @@ export default function MultiFileUploadPanel({
             <Button onClick={handleSaveAndClose} disabled={!editableTitle.trim()}>Add Task</Button>
           )}
           
-          <Popover open={statusOpen} onOpenChange={setStatusOpen}>
-            <PopoverTrigger asChild>
-              <button
-                className="bg-white border border-[#e4e4e7] rounded-md px-3 h-8 text-sm focus:outline-none focus:border-[#fc6] w-[200px] flex items-center justify-between hover:bg-[#f9fafb] transition-colors"
-              >
-                <span className="text-[#18181b]">{taskStatus}</span>
-                <ChevronsUpDown className="h-4 w-4 opacity-50" />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0" align="start">
-              <Command>
-                <CommandList>
-                  <CommandGroup>
-                    {statusOptions.map((status) => (
-                      <CommandItem
-                        key={status}
-                        value={status}
-                        onSelect={() => {
-                          setTaskStatus(status);
-                          setStatusOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={`mr-2 h-4 w-4 ${
-                            taskStatus === status ? 'opacity-100' : 'opacity-0'
-                          }`}
-                        />
-                        {status}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+          <DesignSelect
+            size="sm"
+            value={taskStatus}
+            onChange={(e) => setTaskStatus(e.target.value)}
+            className="w-[200px]"
+          >
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>{status}</option>
+            ))}
+          </DesignSelect>
         </div>
         
         <div className="flex items-center gap-4">
