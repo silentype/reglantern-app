@@ -164,7 +164,6 @@ export function ComplianceReviewPage() {
     searchParams.get('preview') ? 'preview' : 'tasks'
   );
 
-
   const currentChapter = chapters.find((ch) => ch.id === selectedChapter);
   const currentQuestion = currentChapter?.questions[currentQuestionIndex];
   const totalQuestions = currentChapter?.questions.length || 0;
