@@ -1,5 +1,4 @@
-import { X, ExternalLink } from 'lucide-react';
-import { Button } from '../design-system/Button';
+import { ArrowLeft, ExternalLink } from 'lucide-react';
 import svgPathsUpload from '../../../imports/svg-cqqadqx4y2';
 import { getFileType } from './helpers';
 import type { UploadedFile } from './types';
@@ -27,32 +26,42 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
       onClick={onClose}
     >
       <div
-        className="relative w-[90vw] h-[90vh] max-w-[1200px] bg-white rounded-lg shadow-2xl flex flex-col"
+        className="relative w-[90vw] h-[90vh] max-w-[1200px] bg-white shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#e4e4e7]">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-medium text-[#09090b] truncate">{file.name}</h3>
-            <p className="text-sm text-[#71717a]">
-              {file.category} • {(file.size / 1000000).toFixed(1)}MB
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => onDownload(file)}>
-              Download
-            </Button>
-            {onOpenInNew && (
-              <Button variant="secondary" size="sm" onClick={() => onOpenInNew(file)}>
-                <ExternalLink size={14} strokeWidth={2} />
-              </Button>
-            )}
+        <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-[#e4e4e7] bg-white">
+          <div className="flex items-center gap-2 flex-1 min-w-0 mr-3">
             <button
               onClick={onClose}
-              className="p-2 hover:bg-[#f4f4f5] rounded-lg transition-colors"
+              className="shrink-0 p-1 hover:bg-[#f4f4f5] rounded transition-colors"
+              title="Back"
             >
-              <X size={24} className="text-[#18181b]" />
+              <ArrowLeft size={16} strokeWidth={2} className="text-[#71717a]" />
             </button>
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium text-[#09090b] truncate">{file.name}</p>
+              <p className="text-[11px] text-[#71717a]">
+                {file.category} · {(file.size / 1_000_000).toFixed(1)} MB
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => onDownload(file)}
+              className="bg-white h-[32px] px-3 rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-medium text-[12px] hover:bg-[#f9fafb] transition-colors"
+            >
+              Download
+            </button>
+            {onOpenInNew && (
+              <button
+                onClick={() => onOpenInNew(file)}
+                className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
+                title="Open in new window"
+              >
+                <ExternalLink size={14} strokeWidth={2} />
+              </button>
+            )}
           </div>
         </div>
 
