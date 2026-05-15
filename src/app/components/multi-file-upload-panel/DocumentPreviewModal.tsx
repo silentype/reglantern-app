@@ -1,4 +1,5 @@
-import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
+import { BackButton } from '../design-system/BackButton';
 import svgPathsUpload from '../../../imports/svg-cqqadqx4y2';
 import { getFileType } from './helpers';
 import type { UploadedFile } from './types';
@@ -32,13 +33,7 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
         {/* Header */}
         <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-[#e4e4e7] bg-white">
           <div className="flex items-center gap-2 flex-1 min-w-0 mr-3">
-            <button
-              onClick={onClose}
-              className="shrink-0 p-1 hover:bg-[#f4f4f5] rounded transition-colors"
-              title="Back"
-            >
-              <ArrowLeft size={16} strokeWidth={2} className="text-[#71717a]" />
-            </button>
+            <BackButton onClick={onClose}>Back</BackButton>
             <div className="min-w-0">
               <p className="text-[13px] font-medium text-[#09090b] truncate">{file.name}</p>
               <p className="text-[11px] text-[#71717a]">
