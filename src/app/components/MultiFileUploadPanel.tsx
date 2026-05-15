@@ -913,8 +913,8 @@ export default function MultiFileUploadPanel({
             </>
           ) : (
             <>
-              <h2 className="font-normal text-[#09090b] tracking-[0.4px] text-[18px]">{taskTitle}</h2>
-              <p className="text-[15px] text-[#09090b] tracking-[0.4px]">
+              <h2 className="text-2xl font-normal text-[#09090b] tracking-[0.4px] leading-[22px]">{taskTitle}</h2>
+              <p className="text-[15px] text-[#09090b] tracking-[0.4px] leading-[22px]">
                 {getTaskDescription(taskTitle)}
               </p>
             </>
