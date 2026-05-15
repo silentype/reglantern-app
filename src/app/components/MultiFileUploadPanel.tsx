@@ -678,8 +678,8 @@ export default function MultiFileUploadPanel({
       <>
         <div className="h-full flex flex-col bg-white">
         {/* Header */}
-        <div className="border-b border-[#e4e4e7] px-6 py-6">
-          <div className="flex items-center justify-between max-w-[521px]">
+        <div className="border-b border-[#e4e4e7] px-6 py-3">
+          <div className="flex items-center justify-between">
             {/* Back Button */}
             <BackButton onClick={handleBackToTask}>Back</BackButton>
 
@@ -691,7 +691,7 @@ export default function MultiFileUploadPanel({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto px-6 py-6">
+        <div className="flex-1 overflow-auto px-6 py-5">
           <div className="max-w-[521px] space-y-3">
             {/* Subtask Title */}
             <h2 className="text-2xl font-normal text-[#09090b] tracking-[0.4px] leading-[22px]">
