@@ -881,7 +881,7 @@ export default function MultiFileUploadPanel({
       {/* Content */}
       <div className="flex-1 overflow-auto">
         {/* Task Title and Description */}
-        <div className="px-6 py-6 space-y-3">
+        <div className="px-4 py-5 space-y-3">
           {(isCreatingNew || initialTaskType === 'custom') ? (
             <>
               <div>
@@ -1249,7 +1249,7 @@ export default function MultiFileUploadPanel({
         </div>
 
         {/* Tabs and Details */}
-        <div className="px-6 pt-4 pb-8 bg-white border-t-2 border-[#E4E4E7]">
+        <div className="px-4 pt-4 pb-8 bg-white border-t-2 border-[#E4E4E7]">
           <TabStrip className="mb-6">
             <Tab active={activeTab === 'details'} onClick={() => setActiveTab('details')}>Details</Tab>
             <Tab active={activeTab === 'comments'} onClick={() => setActiveTab('comments')}>Comments</Tab>
