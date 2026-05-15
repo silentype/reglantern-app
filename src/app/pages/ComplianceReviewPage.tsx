@@ -526,32 +526,11 @@ export function ComplianceReviewPage() {
                       {answeredCount} of {totalQuestions} answered
                     </span>
                   </div>
-                  <div className="h-1.5 bg-[#f4f4f5] rounded-full overflow-hidden mb-3">
+                  <div className="h-1.5 bg-[#f4f4f5] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-[#fc6] rounded-full transition-all duration-300 ease-out"
                       style={{ width: `${totalQuestions > 1 ? (currentQuestionIndex / (totalQuestions - 1)) * 100 : 100}%` }}
                     />
-                  </div>
-                  {/* Step dots */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {currentChapter?.questions.map((q, i) => {
-                      const answered = answers[q.id]?.answer != null;
-                      const isCurrent = i === currentQuestionIndex;
-                      return (
-                        <button
-                          key={q.id}
-                          onClick={() => setCurrentQuestionIndex(i)}
-                          title={`Question ${i + 1}${answered ? (answers[q.id]?.answer === 'yes' ? ' · Yes' : ' · No') : ''}`}
-                          className={`rounded-full transition-all duration-200 ${
-                            isCurrent
-                              ? 'w-4 h-2.5 bg-[#fc6]'
-                              : answered
-                              ? 'w-2.5 h-2.5 bg-[#16a34a]'
-                              : 'w-2.5 h-2.5 bg-[#e4e4e7] hover:bg-[#d4d4d8]'
-                          }`}
-                        />
-                      );
-                    })}
                   </div>
                 </div>
                 <Pagination
@@ -559,6 +538,7 @@ export function ComplianceReviewPage() {
                   total={totalQuestions}
                   onPrev={handleBack}
                   onNext={handleNext}
+                  hideCounter
                 />
               </div>
             </div>
