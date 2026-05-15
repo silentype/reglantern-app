@@ -851,7 +851,7 @@ export default function MultiFileUploadPanel({
     <>
       <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="px-6 py-6 border-b border-[#e5e7eb] flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-[#e5e7eb] flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isCreatingNew && (
             <Button onClick={handleSaveAndClose} disabled={!editableTitle.trim()}>Add Task</Button>
