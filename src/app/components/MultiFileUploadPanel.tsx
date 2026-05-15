@@ -860,7 +860,7 @@ export default function MultiFileUploadPanel({
           <Popover open={statusOpen} onOpenChange={setStatusOpen}>
             <PopoverTrigger asChild>
               <button
-                className="bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#fc6] w-[200px] flex items-center justify-between hover:bg-[#f9fafb] transition-colors"
+                className="bg-white border border-[#e4e4e7] rounded-md px-3 h-8 text-sm focus:outline-none focus:border-[#fc6] w-[200px] flex items-center justify-between hover:bg-[#f9fafb] transition-colors"
               >
                 <span className="text-[#18181b]">{taskStatus}</span>
                 <ChevronsUpDown className="h-4 w-4 opacity-50" />
