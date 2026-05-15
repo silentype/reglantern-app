@@ -4,7 +4,7 @@
  * Supports navigation between task view and subtask upload views
  */
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { type LucideIcon, X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight, FileText, FileImage, FileSpreadsheet, File } from 'lucide-react';
 
@@ -216,8 +216,17 @@ export default function MultiFileUploadPanel({
   const [showValidationError, setShowValidationError] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewFile, setPreviewFile] = useState<UploadedFile | null>(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const filePreviewId = searchParams.get('filePreview');
+  const previewFile = useMemo(() => {
+    if (!filePreviewId) return null;
+    const inUploaded = uploadedFiles.find((f) => f.id === filePreviewId);
+    if (inUploaded) return inUploaded;
+    for (const st of subtasks) {
+      const found = st.uploadedFiles?.find((f: UploadedFile) => f.id === filePreviewId);
+      if (found) return found;
+    }
+    return null;
+  }, [filePreviewId, uploadedFiles, subtasks]);
   const [deleteConfirmFile, setDeleteConfirmFile] = useState<{ id: string; isSubtask: boolean } | null>(null);
 
   // Autosave effect
@@ -412,13 +421,15 @@ export default function MultiFileUploadPanel({
   };
 
   const handlePreviewClick = (file: UploadedFile) => {
-    setPreviewFile(file);
-    setShowPreviewModal(true);
+    const next = new URLSearchParams(searchParams);
+    next.set('filePreview', file.id);
+    setSearchParams(next);
   };
 
   const handleClosePreview = () => {
-    setShowPreviewModal(false);
-    setPreviewFile(null);
+    const next = new URLSearchParams(searchParams);
+    next.delete('filePreview');
+    setSearchParams(next);
   };
 
   const handleDownload = (file: UploadedFile) => {
@@ -429,6 +440,11 @@ export default function MultiFileUploadPanel({
     link.href = '#';
     link.download = file.name;
     link.click();
+  };
+
+  const handleOpenInNew = (file: UploadedFile) => {
+    console.log('Opening file in new window:', file.name);
+    window.open('#', '_blank', 'noopener,noreferrer');
   };
 
   const handleDeleteClick = (fileId: string, isSubtask: boolean) => {
@@ -679,8 +695,8 @@ export default function MultiFileUploadPanel({
           </div>
         </div>
         </div>
-        {showPreviewModal && previewFile && (
-          <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} />
+        {previewFile && (
+          <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} onOpenInNew={handleOpenInNew} />
         )}
         {deleteConfirmFile && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
@@ -1393,8 +1409,8 @@ export default function MultiFileUploadPanel({
         </div>
       </div>
       </div>
-      {showPreviewModal && previewFile && (
-        <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} />
+      {previewFile && (
+        <DocumentPreviewModal file={previewFile} onClose={handleClosePreview} onDownload={handleDownload} onOpenInNew={handleOpenInNew} />
       )}
       {deleteConfirmFile && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
