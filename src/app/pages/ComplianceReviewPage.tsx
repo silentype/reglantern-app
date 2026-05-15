@@ -810,13 +810,7 @@ export function ComplianceReviewPage() {
                 {/* Preview header */}
                 <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-[#e4e4e7] bg-white">
                   <div className="flex items-center gap-2 flex-1 min-w-0 mr-3">
-                    <button
-                      onClick={() => setRightTab('tasks')}
-                      className="shrink-0 p-1 hover:bg-[#f4f4f5] rounded transition-colors"
-                      title="Back to tasks"
-                    >
-                      <ArrowUpRight className="w-4 h-4 text-[#71717a] rotate-[225deg]" />
-                    </button>
+                    <BackButton onClick={() => setRightTab('tasks')}>Back</BackButton>
                     <div className="min-w-0">
                       <p className="text-[13px] font-medium text-[#09090b] truncate">{previewFile.name}</p>
                       <p className="text-[11px] text-[#71717a]">
