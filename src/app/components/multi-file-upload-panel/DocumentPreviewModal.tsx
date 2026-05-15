@@ -1,4 +1,4 @@
-import { X, Download, ExternalLink } from 'lucide-react';
+import { X, ExternalLink } from 'lucide-react';
 import { Button } from '../design-system/Button';
 import svgPathsUpload from '../../../imports/svg-cqqadqx4y2';
 import { getFileType } from './helpers';
@@ -40,13 +40,11 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
           </div>
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" onClick={() => onDownload(file)}>
-              <Download size={14} strokeWidth={2} />
               Download
             </Button>
             {onOpenInNew && (
               <Button variant="secondary" size="sm" onClick={() => onOpenInNew(file)}>
                 <ExternalLink size={14} strokeWidth={2} />
-                Open in new window
               </Button>
             )}
             <button
