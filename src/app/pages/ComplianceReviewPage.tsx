@@ -520,11 +520,20 @@ export function ComplianceReviewPage() {
                       {answeredCount} of {totalQuestions} answered
                     </span>
                   </div>
-                  <div className="h-1.5 bg-[#f4f4f5] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-[#fc6] rounded-full transition-all duration-300 ease-out"
-                      style={{ width: `${totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0}%` }}
-                    />
+                  <div className="flex gap-1">
+                    {(currentChapter?.questions ?? []).map((q) => {
+                      const ans = answers[q.id]?.answer;
+                      return (
+                        <div
+                          key={q.id}
+                          className={`flex-1 h-1.5 rounded-full transition-colors duration-200 ${
+                            ans === 'yes' ? 'bg-[#16a34a]' :
+                            ans === 'no'  ? 'bg-[#dc2626]' :
+                            'bg-[#f4f4f5]'
+                          }`}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
                 <Pagination
