@@ -22,8 +22,6 @@ import {
   ChevronLast,
   ChevronLeft,
   ChevronRight,
-  Search,
-  X,
 } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -46,6 +44,7 @@ import {
 } from '../components/ui/command';
 import { Button } from '../components/design-system/Button';
 import { BackButton } from '../components/design-system/BackButton';
+import { SearchInput } from '../components/design-system/SearchInput';
 import { Select } from '../components/design-system/Select';
 import type {
   HealthCenter,
@@ -673,21 +672,13 @@ export function HealthCenterAdminPage({
         {/* Filter chip bar — same pattern as TasksPage */}
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none my-[16px]">
           {/* Search */}
-          <div className="relative shrink-0">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717a]" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="bg-[#f9fafb] border border-[#e4e4e7] rounded-md pl-8 pr-8 py-1.5 text-sm hover:bg-white transition-colors focus:outline-none focus:border-[#fc6] w-[240px]"
-            />
-            {search && (
-              <button onClick={() => { setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-[#e5e5e5] rounded transition-colors">
-                <X className="w-3.5 h-3.5 text-[#71717a]" />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onClear={() => { setSearch(''); setPage(1); }}
+            className="w-[240px]"
+          />
 
           <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
 

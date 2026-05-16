@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { format, parse, isValid } from 'date-fns';
-import { Calendar as CalendarIcon, User, AlertCircle, X, ArrowUpRight, FileText, Check, ExternalLink, Download, Search } from 'lucide-react';
+import { Calendar as CalendarIcon, User, AlertCircle, X, ArrowUpRight, FileText, Check, ExternalLink, Download } from 'lucide-react';
 import MultiFileUpload1 from '../components/MultiFileUploadPanel';
 import { type Task } from '../components/TaskTableDynamic';
 import { StatusBadge } from '../components/design-system/StatusBadge';
@@ -10,6 +10,7 @@ import { Pagination } from '../components/design-system/Pagination';
 import { UserAvatar } from '../components/task-table/UserAvatar';
 import { FileRow } from '../components/design-system/FileRow';
 import { BackButton } from '../components/design-system/BackButton';
+import { SearchInput } from '../components/design-system/SearchInput';
 import { getFileType } from '../components/multi-file-upload-panel/helpers';
 import type { UploadedFile } from '../components/multi-file-upload-panel/types';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -319,21 +320,13 @@ export function ComplianceReviewPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 my-[16px]">
-            <div className="relative shrink-0">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717a] pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Search frameworks..."
-                value={frameworkSearch}
-                onChange={(e) => setFrameworkSearch(e.target.value)}
-                className="bg-[#f9fafb] border border-[#e4e4e7] rounded-md pl-8 pr-10 py-1.5 text-sm hover:bg-white transition-colors focus:outline-none focus:border-[#fc6] w-[280px]"
-              />
-              {frameworkSearch && (
-                <button onClick={() => setFrameworkSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[#e5e5e5] rounded transition-colors">
-                  <X className="w-3.5 h-3.5 text-[#71717a]" />
-                </button>
-              )}
-            </div>
+            <SearchInput
+              placeholder="Search frameworks..."
+              value={frameworkSearch}
+              onChange={(e) => setFrameworkSearch(e.target.value)}
+              onClear={() => setFrameworkSearch('')}
+              className="w-[280px]"
+            />
           </div>
           <div className="border-b border-[#e4e4e7]" />
         </div>
@@ -448,11 +441,11 @@ export function ComplianceReviewPage() {
         </div>
 
         {/* Question Panel */}
-        <div className="w-[44%] overflow-y-auto border-r border-[#e4e4e7] p-8">
+        <div className="w-[44%] overflow-y-auto border-r border-[#e4e4e7] p-6">
           {currentQuestion ? (
             <div className="max-w-2xl">
               {/* Breadcrumb */}
-              <div className="flex gap-[10px] items-center mb-4 flex-wrap">
+              <div className="flex gap-[10px] items-center mb-3 flex-wrap">
                 {currentQuestion.breadcrumb.split(' > ').map((part, index, arr) => (
                   <div key={index} className="flex gap-[10px] items-center">
                     <p
@@ -478,13 +471,13 @@ export function ComplianceReviewPage() {
               </div>
 
               {/* Question */}
-              <h2 className="text-[24px] font-semibold text-[#18181b] mb-6">{currentQuestion.text}</h2>
+              <h2 className="text-[22px] font-semibold text-[#18181b] mb-4">{currentQuestion.text}</h2>
 
               {/* Yes / No */}
-              <div className="flex gap-4 mb-6">
+              <div className="flex gap-3 mb-4">
                 <button
                   onClick={() => handleAnswerChange('yes')}
-                  className={`flex items-center gap-3 px-6 py-4 rounded-lg border-2 transition-all ${
+                  className={`flex items-center gap-3 px-5 py-3 rounded-lg border-2 transition-all ${
                     currentAnswer?.answer === 'yes'
                       ? 'border-green-500 bg-green-50'
                       : 'border-[#e4e4e7] hover:border-[#d4d4d8]'
@@ -504,7 +497,7 @@ export function ComplianceReviewPage() {
 
                 <button
                   onClick={() => handleAnswerChange('no')}
-                  className={`flex items-center gap-3 px-6 py-4 rounded-lg border-2 transition-all ${
+                  className={`flex items-center gap-3 px-5 py-3 rounded-lg border-2 transition-all ${
                     currentAnswer?.answer === 'no'
                       ? 'border-red-500 bg-red-50'
                       : 'border-[#e4e4e7] hover:border-[#d4d4d8]'
@@ -524,20 +517,20 @@ export function ComplianceReviewPage() {
               </div>
 
               {/* Explanation */}
-              <div className="mb-8">
-                <label className="block text-[14px] font-medium text-[#18181b] mb-2">Explanation</label>
+              <div className="mb-5">
+                <label className="block text-[13px] font-medium text-[#52525b] mb-1.5">Explanation</label>
                 <textarea
                   value={currentAnswer?.explanation || ''}
                   onChange={(e) => handleExplanationChange(e.target.value)}
-                  className="w-full px-4 py-3 border border-[#e4e4e7] rounded-lg focus:outline-none focus:border-[#fc6] transition-colors text-[14px] min-h-[120px]"
+                  className="w-full px-3 py-2.5 border border-[#e4e4e7] rounded-lg focus:outline-none focus:border-[#fc6] transition-colors text-[14px] min-h-[100px]"
                   placeholder="Provide additional context or explanation..."
                 />
               </div>
 
               {/* Progress + Pagination */}
-              <div className="pt-6 border-t border-[#e4e4e7]">
+              <div className="pt-4 border-t border-[#e4e4e7]">
                 {/* Progress bar */}
-                <div className="mb-5">
+                <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[12px] font-medium text-[#71717a]">
                       Question {currentQuestionIndex + 1} of {totalQuestions}
@@ -546,7 +539,7 @@ export function ComplianceReviewPage() {
                       {answeredCount} of {totalQuestions} answered
                     </span>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1 h-[10px]">
                     {(currentChapter?.questions ?? []).map((q, i) => {
                       const ans = answers[q.id]?.answer;
                       const isCurrent = i === currentQuestionIndex;
@@ -555,11 +548,14 @@ export function ComplianceReviewPage() {
                           key={q.id}
                           onClick={() => setCurrentQuestionIndex(i)}
                           title={`Question ${i + 1}${ans === 'yes' ? ' · Yes' : ans === 'no' ? ' · No' : ''}`}
-                          className={`flex-1 h-1.5 rounded-full transition-all duration-200 ${
+                          className={`flex-1 rounded-full transition-all duration-200 ${
+                            isCurrent ? 'h-[10px]' : 'h-[6px]'
+                          } ${
                             ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#15803d]' :
                             ans === 'no'  ? 'bg-[#dc2626] hover:bg-[#b91c1c]' :
-                            'bg-[#e4e4e7] hover:bg-[#d4d4d8]'
-                          } ${!isCurrent ? 'opacity-40' : ''}`}
+                            isCurrent     ? 'bg-[#a1a1aa] hover:bg-[#71717a]' :
+                                            'bg-[#e4e4e7] hover:bg-[#d4d4d8]'
+                          }`}
                         />
                       );
                     })}

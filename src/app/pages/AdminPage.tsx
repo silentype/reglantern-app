@@ -41,6 +41,7 @@ import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 
 import { Button } from '../components/design-system/Button';
 import { BackButton } from '../components/design-system/BackButton';
+import { SearchInput } from '../components/design-system/SearchInput';
 
 import { HEALTH_CENTERS } from '../constants';
 import { resolveTaskDueDates, findTasksAnchoredTo } from '../utils/helpers';
@@ -469,16 +470,13 @@ export function AdminPage({
               </Button>
             </div>
           </div>
-          <div className="relative w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa]" />
-            <input
-              type="text"
-              value={taskSearch}
-              onChange={(e) => setTaskSearch(e.target.value)}
-              placeholder="Search tasks…"
-              className="w-full h-[36px] pl-9 pr-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
-            />
-          </div>
+          <SearchInput
+            value={taskSearch}
+            onChange={(e) => setTaskSearch(e.target.value)}
+            onClear={() => setTaskSearch('')}
+            placeholder="Search tasks…"
+            className="w-80"
+          />
         </div>
 
         {/* Edit-project modal -- mirrors the Delete confirmation style.
@@ -673,16 +671,13 @@ export function AdminPage({
             </Button>
           </div>
         </div>
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa]" />
-          <input
-            type="text"
-            value={projectSearch}
-            onChange={(e) => setProjectSearch(e.target.value)}
-            placeholder="Search projects…"
-            className="w-full h-[36px] pl-9 pr-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
-          />
-        </div>
+        <SearchInput
+          value={projectSearch}
+          onChange={(e) => setProjectSearch(e.target.value)}
+          onClear={() => setProjectSearch('')}
+          placeholder="Search projects…"
+          className="w-80"
+        />
       </div>
 
       {/* Content */}
