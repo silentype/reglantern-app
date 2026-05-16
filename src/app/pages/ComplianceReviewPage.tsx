@@ -310,14 +310,16 @@ export function ComplianceReviewPage() {
   if (!framework) {
     return (
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[0px]">
-          <div className="mb-4">
-            <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
-              Compliance Review
-            </h1>
-            <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-              Select a framework to begin your review
-            </p>
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0">
+          <div className="flex items-end justify-between gap-4 mb-1">
+            <div>
+              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
+                Compliance Review
+              </h1>
+              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+                Select a framework to begin your review
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-2 my-[16px]">
             <SearchInput
@@ -367,19 +369,19 @@ export function ComplianceReviewPage() {
   return (
     <div className="h-full flex flex-col bg-white relative">
       {/* Page Header */}
-      <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] flex items-start justify-between">
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] flex items-end justify-between">
         <div>
           <BackButton onClick={() => navigate('/admin/compliance-review')} className="mb-3">
             Compliance Review
           </BackButton>
-          <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
+          <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
             {framework.name}
           </h1>
           <p className="text-sm font-medium text-[#71717a] leading-[14px]">
             Walk through each chapter and confirm compliance for every element
           </p>
         </div>
-        <button className="bg-white h-[36px] px-4 py-[6px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-medium text-[12px] hover:bg-[#f9fafb] transition-colors">
+        <button className="bg-white h-[32px] px-4 rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-medium text-[12px] hover:bg-[#f9fafb] transition-colors shrink-0">
           CSV Export
         </button>
       </div>
