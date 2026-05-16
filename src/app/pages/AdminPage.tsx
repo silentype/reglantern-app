@@ -423,7 +423,7 @@ export function AdminPage({
         {/* Sticky Top Section - Header. No bottom border here -- the
             table section runs straight into the header on the same
             page background. */}
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0">
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
           <div className="mb-1 flex items-end justify-between gap-4">
             <div className="flex-1 min-w-0">
               <BackButton onClick={() => { onSelectProject(null); setTaskSearch(''); }} className="mb-3">
@@ -476,7 +476,6 @@ export function AdminPage({
               className="w-80"
             />
           </div>
-          <div className="border-b border-[#e4e4e7]" />
         </div>
 
         {/* Edit-project modal -- mirrors the Delete confirmation style.
@@ -653,7 +652,7 @@ export function AdminPage({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0">
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
         <div className="flex items-end justify-between gap-4 mb-1">
           <div>
             <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">Project Builder</h1>
@@ -680,7 +679,6 @@ export function AdminPage({
             className="w-80"
           />
         </div>
-        <div className="border-b border-[#e4e4e7]" />
       </div>
 
       {/* Content */}

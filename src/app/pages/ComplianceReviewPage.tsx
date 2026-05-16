@@ -310,7 +310,7 @@ export function ComplianceReviewPage() {
   if (!framework) {
     return (
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0">
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
           <div className="flex items-end justify-between gap-4 mb-1">
             <div>
               <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
@@ -330,7 +330,6 @@ export function ComplianceReviewPage() {
               className="w-[280px]"
             />
           </div>
-          <div className="border-b border-[#e4e4e7]" />
         </div>
         <div className="flex-1 overflow-y-auto px-[24px] py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl">

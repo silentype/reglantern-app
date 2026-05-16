@@ -653,7 +653,7 @@ export function HealthCenterAdminPage({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[0px]">
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
         <div className="flex items-end justify-between gap-4 mb-1">
           <div>
             <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
@@ -788,7 +788,6 @@ export function HealthCenterAdminPage({
           </DropdownMenu>
         </div>
 
-        <div className="border-b border-[#e4e4e7]" />
       </div>
 
       {/* Table */}
