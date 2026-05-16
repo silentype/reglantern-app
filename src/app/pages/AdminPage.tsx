@@ -467,7 +467,7 @@ export function AdminPage({
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2 my-[16px]">
+          <div className="flex items-center gap-2 mt-[16px] mb-[22px]">
             <SearchInput
               value={taskSearch}
               onChange={(e) => setTaskSearch(e.target.value)}
@@ -670,7 +670,7 @@ export function AdminPage({
             </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2 my-[16px]">
+        <div className="flex items-center gap-2 mt-[16px] mb-[22px]">
           <SearchInput
             value={projectSearch}
             onChange={(e) => setProjectSearch(e.target.value)}

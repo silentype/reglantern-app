@@ -321,7 +321,7 @@ export function ComplianceReviewPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 my-[16px]">
+          <div className="flex items-center gap-2 mt-[16px] mb-[22px]">
             <SearchInput
               placeholder="Search frameworks..."
               value={frameworkSearch}

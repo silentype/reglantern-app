@@ -670,7 +670,7 @@ export function HealthCenterAdminPage({
         </div>
 
         {/* Filter chip bar — same pattern as TasksPage */}
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none my-[16px]">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none mt-[16px] mb-[22px]">
           {/* Search */}
           <SearchInput
             placeholder="Search..."
