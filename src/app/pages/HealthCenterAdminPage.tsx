@@ -9,6 +9,7 @@
 
 import * as React from 'react';
 import { useState, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import { format, parse, isValid } from 'date-fns';
 import {
   Building2,
@@ -65,6 +66,21 @@ const TABS = [
   'Dates',
 ] as const;
 type Tab = (typeof TABS)[number];
+
+const TAB_SLUGS: Record<Tab, string> = {
+  'Overview':          'overview',
+  'Compliance':        'compliance',
+  'Expirations':       'expirations',
+  'Services & Funding':'services-funding',
+  'Technology':        'technology',
+  'Sales':             'sales',
+  'Notes':             'notes',
+  'Dates':             'dates',
+};
+
+const SLUG_TO_TAB: Record<string, Tab> = Object.fromEntries(
+  (Object.entries(TAB_SLUGS) as [Tab, string][]).map(([tab, slug]) => [slug, tab])
+);
 
 // ── Column config ──────────────────────────────────────────────────────────
 
@@ -138,7 +154,7 @@ function applyFilters(centers: HealthCenter[], f: FilterState): HealthCenter[] {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-[12px] font-semibold text-[#71717a] uppercase tracking-wide mb-1">
+    <div className="text-[13px] font-medium text-[#52525b] mb-1.5">
       {children}
     </div>
   );
@@ -210,10 +226,10 @@ function SectionCard({ title, children }: { title?: string; children: React.Reac
     <div className="border border-[#e4e4e7] rounded-[6px] bg-white mb-4">
       {title && (
         <div className="px-5 py-3 border-b border-[#e4e4e7]">
-          <h3 className="text-[13px] font-semibold text-[#52525b] uppercase tracking-wide">{title}</h3>
+          <h3 className="text-[14px] font-semibold text-[#18181b]">{title}</h3>
         </div>
       )}
-      <div className="px-5 py-4">{children}</div>
+      <div className="px-5 py-5">{children}</div>
     </div>
   );
 }
@@ -505,7 +521,7 @@ function FilterPanel({
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           <div>
-            <div className="text-[12px] font-semibold text-[#52525b] mb-1.5">State</div>
+            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">State</div>
             <Select size="sm" value={draft.state} onChange={(e) => set('state', e.target.value)}>
               <option value="">All</option>
               {uniqueStates.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -513,7 +529,7 @@ function FilterPanel({
           </div>
 
           <div>
-            <div className="text-[12px] font-semibold text-[#52525b] mb-1.5">Test Health Center</div>
+            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">Test Health Center</div>
             <Select size="sm" value={draft.testHc} onChange={(e) => set('testHc', e.target.value)}>
               <option value="">All</option>
               <option value="yes">Yes</option>
@@ -522,7 +538,7 @@ function FilterPanel({
           </div>
 
           <div>
-            <div className="text-[12px] font-semibold text-[#52525b] mb-1.5">RegPathway Customer</div>
+            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">RegPathway Customer</div>
             <Select size="sm" value={draft.regPathway} onChange={(e) => set('regPathway', e.target.value)}>
               <option value="">All</option>
               <option value="has">Has expiration</option>
@@ -531,7 +547,7 @@ function FilterPanel({
           </div>
 
           <div>
-            <div className="text-[12px] font-semibold text-[#52525b] mb-1.5">Ryan White Customer</div>
+            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">Ryan White Customer</div>
             <Select size="sm" value={draft.ryanWhite} onChange={(e) => set('ryanWhite', e.target.value)}>
               <option value="">All</option>
               <option value="has">Has expiration</option>
@@ -540,7 +556,7 @@ function FilterPanel({
           </div>
 
           <div>
-            <div className="text-[12px] font-semibold text-[#52525b] mb-1.5">FTCA Application Customer</div>
+            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">FTCA Application Customer</div>
             <Select size="sm" value={draft.ftcaApp} onChange={(e) => set('ftcaApp', e.target.value)}>
               <option value="">All</option>
               <option value="has">Has expiration</option>
@@ -549,7 +565,7 @@ function FilterPanel({
           </div>
 
           <div>
-            <div className="text-[12px] font-semibold text-[#52525b] mb-1.5">Quality Training Expiration Date Range</div>
+            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">Quality Training Expiration Date Range</div>
             <div className="space-y-2">
               <DatePickerField value={draft.qualTrainingStart} onChange={(v) => set('qualTrainingStart', v)} />
               <DatePickerField value={draft.qualTrainingEnd} onChange={(v) => set('qualTrainingEnd', v)} />
@@ -557,7 +573,7 @@ function FilterPanel({
           </div>
 
           <div>
-            <div className="text-[12px] font-semibold text-[#52525b] mb-1.5">Ultra Opt-In</div>
+            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">Ultra Opt-In</div>
             <Select size="sm" value={draft.ultraOptIn} onChange={(e) => set('ultraOptIn', e.target.value)}>
               <option value="">All</option>
               <option value="Yes">Yes</option>
@@ -599,6 +615,9 @@ export function HealthCenterAdminPage({
   selectedCenterName: string | null;
   onSelectCenter: (name: string | null) => void;
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // List view state
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -610,8 +629,20 @@ export function HealthCenterAdminPage({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  // Detail view state
-  const [activeTab, setActiveTab] = useState<Tab>('Overview');
+  // Active tab is derived from the URL:
+  // /admin/health-centers/:name/:tabSlug  (defaults to 'overview')
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const tabSlug = pathParts[3] ?? 'overview';
+  const activeTab: Tab = SLUG_TO_TAB[tabSlug] ?? 'Overview';
+
+  const navigateToTab = useCallback(
+    (tab: Tab) => {
+      if (selectedCenterName) {
+        navigate(`/admin/health-centers/${encodeURIComponent(selectedCenterName)}/${TAB_SLUGS[tab]}`);
+      }
+    },
+    [navigate, selectedCenterName],
+  );
 
   const selectedCenter = useMemo(
     () => (selectedCenterName ? healthCenters.find((c) => c.name === selectedCenterName) ?? null : null),
@@ -698,7 +729,7 @@ export function HealthCenterAdminPage({
     return (
       <div className="h-full flex flex-col">
         <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
-          <BackButton onClick={() => { onSelectCenter(null); setActiveTab('Overview'); }} className="mb-3">
+          <BackButton onClick={() => onSelectCenter(null)} className="mb-3">
             Health Centers
           </BackButton>
           <div className="flex items-center gap-2 mb-1">
@@ -714,7 +745,7 @@ export function HealthCenterAdminPage({
             {TABS.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
+                onClick={() => navigateToTab(tab)}
                 className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-[#fc6] text-[#18181b]'
