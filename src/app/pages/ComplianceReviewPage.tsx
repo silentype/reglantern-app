@@ -521,16 +521,19 @@ export function ComplianceReviewPage() {
                     </span>
                   </div>
                   <div className="flex gap-1">
-                    {(currentChapter?.questions ?? []).map((q) => {
+                    {(currentChapter?.questions ?? []).map((q, i) => {
                       const ans = answers[q.id]?.answer;
+                      const isCurrent = i === currentQuestionIndex;
                       return (
-                        <div
+                        <button
                           key={q.id}
+                          onClick={() => setCurrentQuestionIndex(i)}
+                          title={`Question ${i + 1}${ans === 'yes' ? ' · Yes' : ans === 'no' ? ' · No' : ''}`}
                           className={`flex-1 h-1.5 rounded-full transition-colors duration-200 ${
-                            ans === 'yes' ? 'bg-[#16a34a]' :
-                            ans === 'no'  ? 'bg-[#dc2626]' :
-                            'bg-[#f4f4f5]'
-                          }`}
+                            ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#15803d]' :
+                            ans === 'no'  ? 'bg-[#dc2626] hover:bg-[#b91c1c]' :
+                            'bg-[#f4f4f5] hover:bg-[#d4d4d8]'
+                          } ${isCurrent ? 'ring-1 ring-offset-1 ring-[#71717a]' : ''}`}
                         />
                       );
                     })}
