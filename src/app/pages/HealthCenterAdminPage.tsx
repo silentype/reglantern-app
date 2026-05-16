@@ -14,16 +14,15 @@ import { format, parse, isValid } from 'date-fns';
 import {
   Building2,
   Calendar as CalendarIcon,
-  Download,
-  Filter,
+  Check,
   MoreHorizontal,
   Plus,
   Columns3,
-  BarChart2,
   ChevronFirst,
   ChevronLast,
   ChevronLeft,
   ChevronRight,
+  Search,
   X,
 } from 'lucide-react';
 
@@ -37,9 +36,16 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from '../components/ui/dropdown-menu';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '../components/ui/command';
 import { Button } from '../components/design-system/Button';
 import { BackButton } from '../components/design-system/BackButton';
-import { SearchInput } from '../components/design-system/SearchInput';
 import { Select } from '../components/design-system/Select';
 import type {
   HealthCenter,
@@ -102,52 +108,14 @@ function getCellValue(center: HealthCenter, key: ColKey): string {
   return isValid(d) ? format(d, 'M/d/yyyy') : '—';
 }
 
-// ── Filter state ───────────────────────────────────────────────────────────
+// ── Filter chip helpers ────────────────────────────────────────────────────
 
-interface FilterState {
-  state: string;
-  testHc: string;       // '' | 'yes' | 'no'
-  regPathway: string;   // '' | 'has' | 'none'
-  ryanWhite: string;
-  ftcaApp: string;
-  qualTrainingStart: string;
-  qualTrainingEnd: string;
-  ultraOptIn: string;   // '' | 'Yes' | 'No'
-}
+type CenterTypeFilter = 'all' | 'regPathway' | 'ryanWhite' | 'ftca';
 
-const EMPTY_FILTERS: FilterState = {
-  state: '', testHc: '', regPathway: '', ryanWhite: '',
-  ftcaApp: '', qualTrainingStart: '', qualTrainingEnd: '', ultraOptIn: '',
-};
-
-function countActiveFilters(f: FilterState) {
-  return Object.values(f).filter((v) => v !== '').length;
-}
-
-function applyFilters(centers: HealthCenter[], f: FilterState): HealthCenter[] {
-  return centers.filter((c) => {
-    if (f.state && c.state !== f.state) return false;
-    if (f.testHc === 'yes' && !c.overview.isTestHc) return false;
-    if (f.testHc === 'no' && c.overview.isTestHc) return false;
-    if (f.regPathway === 'has' && !c.expirations.regPathway) return false;
-    if (f.regPathway === 'none' && c.expirations.regPathway) return false;
-    if (f.ryanWhite === 'has' && !c.expirations.ryanWhite) return false;
-    if (f.ryanWhite === 'none' && c.expirations.ryanWhite) return false;
-    if (f.ftcaApp === 'has' && !c.expirations.ftcaApp) return false;
-    if (f.ftcaApp === 'none' && c.expirations.ftcaApp) return false;
-    if (f.ultraOptIn && c.compliance.ultraOptIn !== f.ultraOptIn) return false;
-    if (f.qualTrainingStart && c.expirations.qualityTraining) {
-      const val = parse(c.expirations.qualityTraining, 'MM/dd/yyyy', new Date());
-      const start = parse(f.qualTrainingStart, 'MM/dd/yyyy', new Date());
-      if (isValid(val) && isValid(start) && val < start) return false;
-    }
-    if (f.qualTrainingEnd && c.expirations.qualityTraining) {
-      const val = parse(c.expirations.qualityTraining, 'MM/dd/yyyy', new Date());
-      const end = parse(f.qualTrainingEnd, 'MM/dd/yyyy', new Date());
-      if (isValid(val) && isValid(end) && val > end) return false;
-    }
-    return true;
-  });
+function chip(active: boolean, extra?: string) {
+  return `px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${extra ?? ''} ${
+    active ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+  }`;
 }
 
 // ── Shared field primitives (detail view) ─────────────────────────────────
@@ -487,115 +455,6 @@ function DatesTab({ center, fieldDefs, onSetFieldValue }: {
   );
 }
 
-// ── Filter panel ───────────────────────────────────────────────────────────
-
-function FilterPanel({
-  draft,
-  setDraft,
-  uniqueStates,
-  onDone,
-  onClose,
-}: {
-  draft: FilterState;
-  setDraft: React.Dispatch<React.SetStateAction<FilterState>>;
-  uniqueStates: string[];
-  onDone: () => void;
-  onClose: () => void;
-}) {
-  const set = <K extends keyof FilterState>(key: K, val: FilterState[K]) =>
-    setDraft((prev) => ({ ...prev, [key]: val }));
-
-  return (
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/20" onClick={onClose} />
-
-      {/* Panel */}
-      <div className="fixed right-0 top-0 h-full w-[320px] z-50 bg-white border-l border-[#e4e4e7] flex flex-col shadow-xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#e4e4e7]">
-          <span className="text-[15px] font-semibold text-[#18181b]">Filters</span>
-          <button onClick={onClose} className="p-1 rounded hover:bg-[#f4f4f5] transition-colors">
-            <X className="w-4 h-4 text-[#71717a]" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-          <div>
-            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">State</div>
-            <Select size="sm" value={draft.state} onChange={(e) => set('state', e.target.value)}>
-              <option value="">All</option>
-              {uniqueStates.map((s) => <option key={s} value={s}>{s}</option>)}
-            </Select>
-          </div>
-
-          <div>
-            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">Test Health Center</div>
-            <Select size="sm" value={draft.testHc} onChange={(e) => set('testHc', e.target.value)}>
-              <option value="">All</option>
-              <option value="yes">Yes</option>
-              <option value="no">No</option>
-            </Select>
-          </div>
-
-          <div>
-            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">RegPathway Customer</div>
-            <Select size="sm" value={draft.regPathway} onChange={(e) => set('regPathway', e.target.value)}>
-              <option value="">All</option>
-              <option value="has">Has expiration</option>
-              <option value="none">No expiration</option>
-            </Select>
-          </div>
-
-          <div>
-            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">Ryan White Customer</div>
-            <Select size="sm" value={draft.ryanWhite} onChange={(e) => set('ryanWhite', e.target.value)}>
-              <option value="">All</option>
-              <option value="has">Has expiration</option>
-              <option value="none">No expiration</option>
-            </Select>
-          </div>
-
-          <div>
-            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">FTCA Application Customer</div>
-            <Select size="sm" value={draft.ftcaApp} onChange={(e) => set('ftcaApp', e.target.value)}>
-              <option value="">All</option>
-              <option value="has">Has expiration</option>
-              <option value="none">No expiration</option>
-            </Select>
-          </div>
-
-          <div>
-            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">Quality Training Expiration Date Range</div>
-            <div className="space-y-2">
-              <DatePickerField value={draft.qualTrainingStart} onChange={(v) => set('qualTrainingStart', v)} />
-              <DatePickerField value={draft.qualTrainingEnd} onChange={(v) => set('qualTrainingEnd', v)} />
-            </div>
-          </div>
-
-          <div>
-            <div className="text-[13px] font-medium text-[#52525b] mb-1.5">Ultra Opt-In</div>
-            <Select size="sm" value={draft.ultraOptIn} onChange={(e) => set('ultraOptIn', e.target.value)}>
-              <option value="">All</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </Select>
-          </div>
-        </div>
-
-        <div className="border-t border-[#e4e4e7] px-5 py-4 flex items-center justify-between gap-3">
-          <button
-            onClick={() => setDraft(EMPTY_FILTERS)}
-            className="text-[13px] text-[#71717a] hover:text-[#18181b] transition-colors"
-          >
-            Clear All Filters
-          </button>
-          <Button size="sm" onClick={onDone}>Done</Button>
-        </div>
-      </div>
-    </>
-  );
-}
-
 // ── Main component ─────────────────────────────────────────────────────────
 
 export function HealthCenterAdminPage({
@@ -620,9 +479,12 @@ export function HealthCenterAdminPage({
 
   // List view state
   const [search, setSearch] = useState('');
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [appliedFilters, setAppliedFilters] = useState<FilterState>(EMPTY_FILTERS);
-  const [draftFilters, setDraftFilters] = useState<FilterState>(EMPTY_FILTERS);
+  const [centerTypeFilter, setCenterTypeFilter] = useState<CenterTypeFilter>('all');
+  const [stateFilter, setStateFilter] = useState('');
+  const [ultraOptInFilter, setUltraOptInFilter] = useState('');
+  const [testHcFilter, setTestHcFilter] = useState<boolean | null>(null);
+  const [stateOpen, setStateOpen] = useState(false);
+  const [ultraOptInOpen, setUltraOptInOpen] = useState(false);
   const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(
     new Set(PROFILE_COLS.map((c) => c.key))
   );
@@ -685,26 +547,26 @@ export function HealthCenterAdminPage({
     [healthCenters],
   );
 
-  const searchFiltered = useMemo(() => {
+  const filteredCenters = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const base = q
-      ? healthCenters.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.city.toLowerCase().includes(q) ||
-            c.state.toLowerCase().includes(q),
-        )
-      : healthCenters;
-    return applyFilters(base, appliedFilters);
-  }, [healthCenters, search, appliedFilters]);
+    return healthCenters.filter((c) => {
+      if (q && !c.name.toLowerCase().includes(q) && !c.city.toLowerCase().includes(q) && !c.state.toLowerCase().includes(q)) return false;
+      if (centerTypeFilter === 'regPathway' && !c.expirations.regPathway) return false;
+      if (centerTypeFilter === 'ryanWhite' && !c.expirations.ryanWhite) return false;
+      if (centerTypeFilter === 'ftca' && !c.expirations.ftcaApp) return false;
+      if (stateFilter && c.state !== stateFilter) return false;
+      if (ultraOptInFilter && c.compliance.ultraOptIn !== ultraOptInFilter) return false;
+      if (testHcFilter === true && !c.overview.isTestHc) return false;
+      if (testHcFilter === false && c.overview.isTestHc) return false;
+      return true;
+    });
+  }, [healthCenters, search, centerTypeFilter, stateFilter, ultraOptInFilter, testHcFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(searchFiltered.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(filteredCenters.length / pageSize));
   const pagedCenters = useMemo(
-    () => searchFiltered.slice((page - 1) * pageSize, page * pageSize),
-    [searchFiltered, page, pageSize],
+    () => filteredCenters.slice((page - 1) * pageSize, page * pageSize),
+    [filteredCenters, page, pageSize],
   );
-
-  const activeFilterCount = countActiveFilters(appliedFilters);
 
   const toggleCol = (key: ColKey) =>
     setVisibleCols((prev) => {
@@ -713,16 +575,6 @@ export function HealthCenterAdminPage({
       else next.add(key);
       return next;
     });
-
-  const openFilters = () => {
-    setDraftFilters(appliedFilters);
-    setFiltersOpen(true);
-  };
-  const applyFiltersAndClose = () => {
-    setAppliedFilters(draftFilters);
-    setPage(1);
-    setFiltersOpen(false);
-  };
 
   // ── Detail view ────────────────────────────────────────────────────────
   if (selectedCenter) {
@@ -802,8 +654,8 @@ export function HealthCenterAdminPage({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
-        <div className="flex items-end justify-between gap-4 mb-4">
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[0px]">
+        <div className="flex items-end justify-between gap-4 mb-1">
           <div>
             <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
               Health Centers
@@ -818,40 +670,120 @@ export function HealthCenterAdminPage({
           </Button>
         </div>
 
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <SearchInput
-            size="sm"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            placeholder="Search health centers…"
-            className="w-64"
-          />
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={openFilters}
-            className={activeFilterCount > 0 ? 'border-[#fc6]' : ''}
-          >
-            <Filter className="w-3.5 h-3.5" />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="ml-0.5 bg-[#fc6] text-[#18181b] text-[11px] font-bold rounded-full w-4 h-4 inline-flex items-center justify-center leading-none">
-                {activeFilterCount}
-              </span>
+        {/* Filter chip bar — same pattern as TasksPage */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none my-[16px]">
+          {/* Search */}
+          <div className="relative shrink-0">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717a]" />
+            <input
+              type="text"
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              className="bg-[#f9fafb] border border-[#e4e4e7] rounded-md pl-8 pr-8 py-1.5 text-sm hover:bg-white transition-colors focus:outline-none focus:border-[#fc6] w-[240px]"
+            />
+            {search && (
+              <button onClick={() => { setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 hover:bg-[#e5e5e5] rounded transition-colors">
+                <X className="w-3.5 h-3.5 text-[#71717a]" />
+              </button>
             )}
-          </Button>
+          </div>
+
+          <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+          {/* Center type chips */}
+          {(
+            [
+              { key: 'all', label: 'All Centers' },
+              { key: 'regPathway', label: 'RegPathway' },
+              { key: 'ryanWhite', label: 'Ryan White' },
+              { key: 'ftca', label: 'FTCA' },
+            ] as { key: CenterTypeFilter; label: string }[]
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => { setCenterTypeFilter(key); setPage(1); }}
+              className={chip(centerTypeFilter === key)}
+            >
+              {label}
+            </button>
+          ))}
+
+          <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+          {/* State dropdown chip */}
+          <Popover open={stateOpen} onOpenChange={setStateOpen}>
+            <PopoverTrigger asChild>
+              <button className={chip(!!stateFilter, 'flex items-center gap-1.5')}>
+                <Building2 className="h-3.5 w-3.5" />
+                {stateFilter ? stateFilter : 'State'}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search states…" />
+                <CommandList>
+                  <CommandEmpty>No states found.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem onSelect={() => { setStateFilter(''); setStateOpen(false); setPage(1); }}>
+                      <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${!stateFilter ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                        {!stateFilter && <Check className="h-3 w-3" />}
+                      </div>
+                      All States
+                    </CommandItem>
+                    {uniqueStates.map((s) => (
+                      <CommandItem key={s} onSelect={() => { setStateFilter(s); setStateOpen(false); setPage(1); }}>
+                        <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${stateFilter === s ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                          {stateFilter === s && <Check className="h-3 w-3" />}
+                        </div>
+                        {s}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Ultra Opt-In chip */}
+          <Popover open={ultraOptInOpen} onOpenChange={setUltraOptInOpen}>
+            <PopoverTrigger asChild>
+              <button className={chip(!!ultraOptInFilter, 'flex items-center gap-1.5')}>
+                Ultra Opt-In{ultraOptInFilter ? ` (${ultraOptInFilter})` : ''}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[140px] p-1" align="start">
+              {(['', 'Yes', 'No'] as const).map((v) => (
+                <button
+                  key={v || 'all'}
+                  onClick={() => { setUltraOptInFilter(v); setUltraOptInOpen(false); setPage(1); }}
+                  className={`w-full text-left px-3 py-2 text-[13px] rounded hover:bg-[#f5f5f5] transition-colors ${ultraOptInFilter === v ? 'font-semibold text-[#18181b]' : 'text-[#52525b]'}`}
+                >
+                  {v || 'All'}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+
+          {/* Test HC toggle chip */}
+          <button
+            onClick={() => { setTestHcFilter((prev) => prev === true ? null : true); setPage(1); }}
+            className={chip(testHcFilter === true)}
+          >
+            Test HC
+          </button>
+
+          <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
 
           {/* View Columns */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="sm">
-                <Columns3 className="w-3.5 h-3.5" />
-                View Columns
-              </Button>
+              <button className={chip(false, 'flex items-center gap-1.5')}>
+                <Columns3 className="h-3.5 w-3.5" />
+                Columns
+              </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-52">
+            <DropdownMenuContent align="end" className="w-52">
               {PROFILE_COLS.map((col) => (
                 <DropdownMenuCheckboxItem
                   key={col.key}
@@ -863,53 +795,9 @@ export function HealthCenterAdminPage({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Button variant="secondary" size="sm" onClick={() => {}}>
-            <BarChart2 className="w-3.5 h-3.5" />
-            Reports
-          </Button>
-
-          <Button variant="secondary" size="sm" onClick={() => {}}>
-            <Download className="w-3.5 h-3.5" />
-            Download
-          </Button>
         </div>
 
-        {/* Active filter chips */}
-        {activeFilterCount > 0 && (
-          <div className="flex items-center gap-2 mt-3 flex-wrap">
-            {appliedFilters.state && (
-              <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full bg-[#f4f4f5] text-[12px] text-[#52525b]">
-                State: {appliedFilters.state}
-                <button onClick={() => { setAppliedFilters((p) => ({ ...p, state: '' })); setPage(1); }}>
-                  <X className="w-3 h-3 text-[#71717a] hover:text-[#18181b]" />
-                </button>
-              </span>
-            )}
-            {appliedFilters.testHc && (
-              <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full bg-[#f4f4f5] text-[12px] text-[#52525b]">
-                Test HC: {appliedFilters.testHc === 'yes' ? 'Yes' : 'No'}
-                <button onClick={() => { setAppliedFilters((p) => ({ ...p, testHc: '' })); setPage(1); }}>
-                  <X className="w-3 h-3 text-[#71717a] hover:text-[#18181b]" />
-                </button>
-              </span>
-            )}
-            {appliedFilters.ultraOptIn && (
-              <span className="inline-flex items-center gap-1 h-6 px-2.5 rounded-full bg-[#f4f4f5] text-[12px] text-[#52525b]">
-                Ultra Opt-In: {appliedFilters.ultraOptIn}
-                <button onClick={() => { setAppliedFilters((p) => ({ ...p, ultraOptIn: '' })); setPage(1); }}>
-                  <X className="w-3 h-3 text-[#71717a] hover:text-[#18181b]" />
-                </button>
-              </span>
-            )}
-            <button
-              onClick={() => { setAppliedFilters(EMPTY_FILTERS); setPage(1); }}
-              className="text-[12px] text-[#71717a] hover:text-[#18181b] transition-colors"
-            >
-              Clear all
-            </button>
-          </div>
-        )}
+        <div className="border-b border-[#e4e4e7]" />
       </div>
 
       {/* Table */}
@@ -932,7 +820,7 @@ export function HealthCenterAdminPage({
             {pagedCenters.length === 0 ? (
               <tr>
                 <td colSpan={4 + visibleCols.size + 1} className="px-6 py-12 text-center text-[14px] text-[#71717a]">
-                  {search || activeFilterCount > 0 ? 'No health centers match your search or filters.' : 'No health centers found.'}
+                  {search || centerTypeFilter !== 'all' || stateFilter || ultraOptInFilter || testHcFilter !== null ? 'No health centers match your search or filters.' : 'No health centers found.'}
                 </td>
               </tr>
             ) : (
@@ -994,7 +882,7 @@ export function HealthCenterAdminPage({
 
         <div className="flex items-center gap-1 text-[13px] text-[#71717a]">
           <span className="mr-2">
-            Page {page} of {totalPages} ({searchFiltered.length} total items)
+            Page {page} of {totalPages} ({filteredCenters.length} total items)
           </span>
           <button
             onClick={() => setPage(1)}
@@ -1027,16 +915,6 @@ export function HealthCenterAdminPage({
         </div>
       </div>
 
-      {/* Filter panel */}
-      {filtersOpen && (
-        <FilterPanel
-          draft={draftFilters}
-          setDraft={setDraftFilters}
-          uniqueStates={uniqueStates}
-          onDone={applyFiltersAndClose}
-          onClose={() => setFiltersOpen(false)}
-        />
-      )}
     </div>
   );
 }

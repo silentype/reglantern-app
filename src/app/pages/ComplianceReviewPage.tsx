@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { format, parse, isValid } from 'date-fns';
-import { Calendar as CalendarIcon, User, AlertCircle, X, ArrowUpRight, FileText, Check, ExternalLink, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, User, AlertCircle, X, ArrowUpRight, FileText, Check, ExternalLink, Download, Search } from 'lucide-react';
 import MultiFileUpload1 from '../components/MultiFileUploadPanel';
 import { type Task } from '../components/TaskTableDynamic';
 import { StatusBadge } from '../components/design-system/StatusBadge';
@@ -88,6 +88,8 @@ export function ComplianceReviewPage() {
     },
     [searchParams, setSearchParams]
   );
+
+  const [frameworkSearch, setFrameworkSearch] = useState('');
 
   const [answers, setAnswers] = useState<
     Record<string, { answer: 'yes' | 'no' | null; explanation: string }>
@@ -307,17 +309,41 @@ export function ComplianceReviewPage() {
   if (!framework) {
     return (
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
-          <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
-            Compliance Review
-          </h1>
-          <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-            Select a framework to begin your review
-          </p>
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[0px]">
+          <div className="mb-4">
+            <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
+              Compliance Review
+            </h1>
+            <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+              Select a framework to begin your review
+            </p>
+          </div>
+          <div className="flex items-center gap-2 my-[16px]">
+            <div className="relative shrink-0">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717a] pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search frameworks..."
+                value={frameworkSearch}
+                onChange={(e) => setFrameworkSearch(e.target.value)}
+                className="bg-[#f9fafb] border border-[#e4e4e7] rounded-md pl-8 pr-10 py-1.5 text-sm hover:bg-white transition-colors focus:outline-none focus:border-[#fc6] w-[280px]"
+              />
+              {frameworkSearch && (
+                <button onClick={() => setFrameworkSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[#e5e5e5] rounded transition-colors">
+                  <X className="w-3.5 h-3.5 text-[#71717a]" />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="border-b border-[#e4e4e7]" />
         </div>
         <div className="flex-1 overflow-y-auto px-[24px] py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl">
-            {FRAMEWORKS.map((fw) => (
+            {FRAMEWORKS.filter((fw) =>
+              !frameworkSearch.trim() ||
+              fw.name.toLowerCase().includes(frameworkSearch.toLowerCase()) ||
+              fw.category.toLowerCase().includes(frameworkSearch.toLowerCase())
+            ).map((fw) => (
               <button
                 key={fw.id}
                 onClick={() => navigate(`/admin/compliance-review/${fw.id}/chapter-1/q-1`)}
