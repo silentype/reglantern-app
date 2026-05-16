@@ -33,16 +33,6 @@ function getChapterHasNo(chapter: ComplianceChapter, answers: Answers) {
   return chapter.questions.some((q) => answers[q.id]?.answer === 'no');
 }
 
-function getChapterHasAttention(chapter: ComplianceChapter, allChapterTasks: Record<number, Task[]>) {
-  return (allChapterTasks[chapter.id] ?? []).some((task) => {
-    if (task.attention) return true;
-    if (task.taskType === 'system') {
-      const fileCount = task.files?.reduce((acc, fg) => acc + (fg.uploadedFiles?.length || 0), 0) || 0;
-      return fileCount === 0;
-    }
-    return false;
-  });
-}
 
 function toggleMultiFilter(current: string[], value: string): string[] {
   if (value === 'all') return ['all'];
@@ -79,13 +69,6 @@ export function ComplianceReviewPage() {
       return `/admin/compliance-review/${frameworkId}/chapter-${chapter}/q-${userQ}${location.search}`;
     },
     [frameworkId, location.search]
-  );
-
-  const setSelectedChapter = useCallback(
-    (chapter: number) => {
-      navigate(buildPath(chapter, 0));
-    },
-    [navigate, buildPath]
   );
 
   const setCurrentQuestionIndex = useCallback(
@@ -236,8 +219,7 @@ export function ComplianceReviewPage() {
   };
 
   const handleChapterChange = (chapterId: number) => {
-    setSelectedChapter(chapterId);
-    setPreviewFile(null);
+    navigate(`/admin/compliance-review/${frameworkId}/chapter-${chapterId}/q-1`);
     setRightTab('tasks');
   };
 
@@ -392,36 +374,48 @@ export function ComplianceReviewPage() {
             const { completed, total } = getChapterCompletion(chapter, answers);
             const isActive = selectedChapter === chapter.id;
             const isComplete = completed === total && total > 0;
-            const isPartial = completed > 0 && completed < total;
-            const hasAttention = getChapterHasAttention(chapter, allChapterTasks);
             const hasNo = getChapterHasNo(chapter, answers);
+            const pct = total > 0 ? completed / total : 0;
+            // SVG ring: r=17 → circumference ≈ 106.8
+            const r = 17;
+            const circ = 2 * Math.PI * r;
+            const dash = pct * circ;
+            const ringColor = isComplete && !hasNo ? '#16a34a' : hasNo ? '#7c3aed' : '#fc6';
             return (
               <button
                 key={chapter.id}
                 onClick={() => handleChapterChange(chapter.id)}
                 title={`${chapter.name} · ${completed}/${total} answered`}
-                className={`relative w-10 h-10 rounded-full text-[13px] font-semibold transition-colors flex items-center justify-center flex-none ${
-                  isActive
-                    ? 'bg-[#cdd7e1] text-[#18181b]'
-                    : isPartial
-                    ? 'bg-transparent border border-[#e4e4e7] text-[#18181b] hover:border-[#a1a1aa]'
-                    : 'bg-transparent border border-[#e4e4e7] text-[#71717a] hover:border-[#a1a1aa]'
-                }`}
+                className="relative w-10 h-10 flex items-center justify-center flex-none group"
               >
-                {chapter.id}
-                {isComplete && !hasNo && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#16a34a] rounded-full border border-white flex items-center justify-center">
-                    <Check className="w-2 h-2 text-white" strokeWidth={3} />
-                  </span>
+                <svg width="40" height="40" className="absolute inset-0 -rotate-90">
+                  {/* Track */}
+                  <circle
+                    cx="20" cy="20" r={r}
+                    fill="none"
+                    stroke={isActive ? '#cdd7e1' : '#e4e4e7'}
+                    strokeWidth="2.5"
+                  />
+                  {/* Progress arc */}
+                  {pct > 0 && (
+                    <circle
+                      cx="20" cy="20" r={r}
+                      fill="none"
+                      stroke={ringColor}
+                      strokeWidth="2.5"
+                      strokeDasharray={`${dash} ${circ}`}
+                      strokeLinecap="round"
+                      style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                    />
+                  )}
+                </svg>
+                {/* Active fill */}
+                {isActive && (
+                  <span className="absolute inset-[4px] rounded-full bg-[#cdd7e1]" />
                 )}
-                {hasNo && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-[#7c3aed] rounded-full border border-white flex items-center justify-center">
-                    <X className="w-2 h-2 text-white" strokeWidth={3} />
-                  </span>
-                )}
-                {hasAttention && !isComplete && !hasNo && (
-                  <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border border-white" />
-                )}
+                <span className={`relative text-[13px] font-semibold ${isActive ? 'text-[#18181b]' : completed > 0 ? 'text-[#18181b]' : 'text-[#71717a]'} group-hover:text-[#18181b] transition-colors`}>
+                  {chapter.id}
+                </span>
               </button>
             );
           })}
@@ -529,7 +523,7 @@ export function ComplianceReviewPage() {
                   <div className="h-1.5 bg-[#f4f4f5] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-[#fc6] rounded-full transition-all duration-300 ease-out"
-                      style={{ width: `${totalQuestions > 1 ? (currentQuestionIndex / (totalQuestions - 1)) * 100 : 100}%` }}
+                      style={{ width: `${totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
