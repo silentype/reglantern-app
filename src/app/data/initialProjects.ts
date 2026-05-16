@@ -20,7 +20,6 @@ export const INITIAL_PROJECTS: Project[] = [
     id: 1,
     name: 'Site Compliance Review',
     description: 'Comprehensive review of all site compliance requirements and documentation',
-    category: 'Compliance',
     createdAt: '2026-04-01',
     tasks: [
       {
@@ -118,7 +117,6 @@ export const INITIAL_PROJECTS: Project[] = [
     id: 2,
     name: 'FTCA Documentation Update',
     description: 'Update all FTCA-related documentation and procedures',
-    category: 'Documentation',
     createdAt: '2026-03-15',
     tasks: [
       {
@@ -143,7 +141,6 @@ export const INITIAL_PROJECTS: Project[] = [
     id: 3,
     name: 'Annual UDS Submission',
     description: 'Compile and submit the annual UDS dataset to HRSA',
-    category: 'Compliance',
     createdAt: '2026-01-05',
     startDate: '01/10/2026',
     endDate: '04/30/2026',
@@ -222,7 +219,6 @@ export const INITIAL_PROJECTS: Project[] = [
     id: 4,
     name: 'Q2 Quality Improvement Initiative',
     description: 'Cross-site quality push with mid-quarter checkpoint and outcome report',
-    category: 'Quality Assurance',
     createdAt: '2026-03-28',
     startDate: '04/01/2026',
     endDate: '06/30/2026',

@@ -529,11 +529,11 @@ export function ComplianceReviewPage() {
                           key={q.id}
                           onClick={() => setCurrentQuestionIndex(i)}
                           title={`Question ${i + 1}${ans === 'yes' ? ' · Yes' : ans === 'no' ? ' · No' : ''}`}
-                          className={`flex-1 h-1.5 rounded-full transition-colors duration-200 ${
+                          className={`flex-1 h-1.5 rounded-full transition-all duration-200 ${
                             ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#15803d]' :
                             ans === 'no'  ? 'bg-[#dc2626] hover:bg-[#b91c1c]' :
-                            'bg-[#f4f4f5] hover:bg-[#d4d4d8]'
-                          } ${isCurrent ? 'ring-1 ring-offset-1 ring-[#71717a]' : ''}`}
+                            'bg-[#e4e4e7] hover:bg-[#d4d4d8]'
+                          } ${!isCurrent ? 'opacity-40' : ''}`}
                         />
                       );
                     })}

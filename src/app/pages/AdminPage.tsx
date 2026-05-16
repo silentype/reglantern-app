@@ -35,13 +35,6 @@ import {
   CommandItem,
   CommandList,
 } from '../components/ui/command';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
 
 import { SaveIndicator } from '../components/SaveIndicator';
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
@@ -60,7 +53,7 @@ export interface Project {
   id: number;
   name: string;
   description: string;
-  category: string;
+
   createdAt: string;
   /**
    * MM/dd/yyyy. The day work on the project actually begins -- distinct
@@ -126,7 +119,8 @@ export function AdminPage({
   // In-progress form contents stay local; only the form's visibility (path
   // /admin/project-builder/new) and the open/closed state of popovers/selects
   // are URL-driven.
-  const [newProject, setNewProject] = useState({ name: '', description: '', category: '' });
+  const [newProject, setNewProject] = useState({ name: '', description: '' });
+  const [projectSearch, setProjectSearch] = useState('');
   // Pending assign-to-health-center selection. Only one project can have
   // a pending selection at a time; opening another card's popover wipes
   // any previous in-progress state. The selection persists across
@@ -139,11 +133,11 @@ export function AdminPage({
   // (not a project id) because only the currently-selected project can
   // be deleted from the detail view.
   const [confirmDeleteProjectOpen, setConfirmDeleteProjectOpen] = useState(false);
-  // Edit-project modal: holds a working copy of name / description /
-  // category while open. `null` = modal closed. Discarded on Cancel,
-  // written back to the project on Save.
+  // Edit-project modal: holds a working copy of name / description
+  // while open. `null` = modal closed. Discarded on Cancel, written
+  // back to the project on Save.
   const [editProjectDraft, setEditProjectDraft] = useState<
-    { name: string; description: string; category: string } | null
+    { name: string; description: string } | null
   >(null);
   // selectedProject is derived from URL (selectedProjectId prop) so it survives
   // refresh and is shareable. Mutations to the projects array auto-flow through.
@@ -183,7 +177,6 @@ export function AdminPage({
     }, { replace: true });
   }, [setSearchParams]);
 
-  const categories = ['Compliance', 'Documentation', 'Training', 'Quality Assurance', 'Operational'];
 
   const healthCenters = HEALTH_CENTERS;
 
@@ -292,7 +285,6 @@ export function AdminPage({
     setEditProjectDraft({
       name: selectedProject.name,
       description: selectedProject.description,
-      category: selectedProject.category,
     });
     setEditProjectOpen(true);
   }, [selectedProject, setEditProjectOpen]);
@@ -311,7 +303,6 @@ export function AdminPage({
       setEditProjectDraft({
         name: selectedProject.name,
         description: selectedProject.description,
-        category: selectedProject.category,
       });
     }
     if (!editProjectOpen && editProjectDraft) {
@@ -332,7 +323,6 @@ export function AdminPage({
               ...p,
               name: editProjectDraft.name.trim(),
               description: editProjectDraft.description,
-              category: editProjectDraft.category,
             }
           : p
       )
@@ -394,8 +384,8 @@ export function AdminPage({
   );
 
   const handleCreateProject = () => {
-    if (!newProject.name || !newProject.category) {
-      toast.error('Please fill in all required fields');
+    if (!newProject.name) {
+      toast.error('Please enter a project name');
       return;
     }
 
@@ -403,13 +393,12 @@ export function AdminPage({
       id: Math.max(...projects.map(p => p.id), 0) + 1,
       name: newProject.name,
       description: newProject.description,
-      category: newProject.category,
       createdAt: format(new Date(), 'yyyy-MM-dd'),
       tasks: []
     };
 
     setProjects([...projects, project]);
-    setNewProject({ name: '', description: '', category: '' });
+    setNewProject({ name: '', description: '' });
     onCreatingNewProjectChange(false);
     toast.success('Project created successfully');
   };
@@ -440,11 +429,6 @@ export function AdminPage({
                   {selectedProject.description}
                 </p>
               )}
-              <div className="mt-3 flex items-center gap-2">
-                <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] bg-[#f4f4f5] text-[#18181b] text-[12px] font-medium">
-                  {selectedProject.category}
-                </span>
-              </div>
             </div>
             {/* Header actions: Edit + Trash pair sits in its own row
                 above Add Task, so the destructive actions are visually
@@ -524,26 +508,6 @@ export function AdminPage({
                     placeholder="Add a description"
                     rows={3}
                   />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
-                    Category <span className="text-[#dc2626]">*</span>
-                  </label>
-                  <Select
-                    value={editProjectDraft.category}
-                    onValueChange={(value) =>
-                      setEditProjectDraft((prev) => (prev ? { ...prev, category: value } : prev))
-                    }
-                  >
-                    <SelectTrigger className="w-full h-[40px] focus:border-[#fc6]">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-5">
@@ -671,11 +635,9 @@ export function AdminPage({
     <div className="h-full flex flex-col">
       {/* Sticky Top Section - Header */}
       <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
-        <div className="mb-0 flex items-end justify-between gap-6">
+        <div className="flex items-end justify-between gap-6 mb-4">
           <div className="flex-1">
-            <div className="mb-2">
-              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px]">Project Builder</h1>
-            </div>
+            <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">Project Builder</h1>
             <p className="text-sm font-medium text-[#71717a] leading-[14px]">
               Create and manage projects with custom tasks
             </p>
@@ -690,6 +652,16 @@ export function AdminPage({
             </Button>
           </div>
         </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa]" />
+          <input
+            type="text"
+            value={projectSearch}
+            onChange={(e) => setProjectSearch(e.target.value)}
+            placeholder="Search projects…"
+            className="w-full h-[36px] pl-9 pr-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
+          />
+        </div>
       </div>
 
       {/* Content */}
@@ -703,7 +675,7 @@ export function AdminPage({
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
             onClick={() => {
               onCreatingNewProjectChange(false);
-              setNewProject({ name: '', description: '', category: '' });
+              setNewProject({ name: '', description: '' });
             }}
           >
             <div
@@ -737,33 +709,13 @@ export function AdminPage({
                     rows={3}
                   />
                 </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
-                    Category <span className="text-[#dc2626]">*</span>
-                  </label>
-                  <Select
-                    value={newProject.category}
-                    onValueChange={(value) => setNewProject({ ...newProject, category: value })}
-                    open={popover === 'newCat'}
-                    onOpenChange={(o) => setPopover(o ? 'newCat' : null)}
-                  >
-                    <SelectTrigger className="w-full h-[40px] focus:border-[#fc6]">
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
               <div className="flex justify-end gap-2 pt-5">
                 <Button
                   variant="secondary"
                   onClick={() => {
                     onCreatingNewProjectChange(false);
-                    setNewProject({ name: '', description: '', category: '' });
+                    setNewProject({ name: '', description: '' });
                   }}
                 >
                   Cancel
@@ -777,7 +729,13 @@ export function AdminPage({
         {/* Projects Grid */}
         {projects.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((project) => {
+            {projects
+              .filter((p) =>
+                projectSearch.trim() === '' ||
+                p.name.toLowerCase().includes(projectSearch.toLowerCase()) ||
+                p.description.toLowerCase().includes(projectSearch.toLowerCase())
+              )
+              .map((project) => {
               const openProject = () => onSelectProject(project.id);
               return (
                 <div
@@ -793,13 +751,10 @@ export function AdminPage({
                   }}
                   className="p-5 border border-[#e4e4e7] rounded-[6px] bg-white cursor-pointer hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-all text-left"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-[#18181b] text-[16px] leading-[24px] flex-1 pr-2">
+                  <div className="mb-3">
+                    <h3 className="font-semibold text-[#18181b] text-[16px] leading-[24px]">
                       {project.name}
                     </h3>
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] text-[12px] font-medium bg-[#f4f4f5] text-[#18181b] shrink-0">
-                      {project.category}
-                    </span>
                   </div>
                   <p className="text-[14px] text-[#71717a] mb-4 line-clamp-2 leading-[20px]">
                     {project.description}
@@ -979,6 +934,15 @@ export function AdminPage({
               );
             })}
           </div>
+        )}
+
+        {projects.length > 0 && projectSearch.trim() !== '' &&
+          !projects.some(
+            (p) =>
+              p.name.toLowerCase().includes(projectSearch.toLowerCase()) ||
+              p.description.toLowerCase().includes(projectSearch.toLowerCase())
+          ) && (
+          <p className="text-[14px] text-[#71717a] py-8 text-center">No projects match "{projectSearch}"</p>
         )}
 
         {projects.length === 0 && !creatingNewProject && (
