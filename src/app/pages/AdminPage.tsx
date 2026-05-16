@@ -121,6 +121,7 @@ export function AdminPage({
   // are URL-driven.
   const [newProject, setNewProject] = useState({ name: '', description: '' });
   const [projectSearch, setProjectSearch] = useState('');
+  const [taskSearch, setTaskSearch] = useState('');
   // Pending assign-to-health-center selection. Only one project can have
   // a pending selection at a time; opening another card's popover wipes
   // any previous in-progress state. The selection persists across
@@ -383,6 +384,12 @@ export function AdminPage({
     [selectedProject, otherProjects, healthCenterRecords, healthCenterFieldIds]
   );
 
+  const filteredProjectTasks = useMemo(() => {
+    const q = taskSearch.trim().toLowerCase();
+    if (!q) return resolvedProjectTasks;
+    return resolvedProjectTasks.filter((t) => t.title.toLowerCase().includes(q));
+  }, [resolvedProjectTasks, taskSearch]);
+
   const handleCreateProject = () => {
     if (!newProject.name) {
       toast.error('Please enter a project name');
@@ -415,10 +422,10 @@ export function AdminPage({
         {/* Sticky Top Section - Header. No bottom border here -- the
             table section runs straight into the header on the same
             page background. */}
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px]">
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
           <div className="mb-4 flex items-end justify-between gap-6">
             <div className="flex-1 min-w-0">
-              <BackButton onClick={() => onSelectProject(null)} className="mb-3">
+              <BackButton onClick={() => { onSelectProject(null); setTaskSearch(''); }} className="mb-3">
                 Project Builder
               </BackButton>
               <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
@@ -461,6 +468,16 @@ export function AdminPage({
                 </svg>
               </Button>
             </div>
+          </div>
+          <div className="relative w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa]" />
+            <input
+              type="text"
+              value={taskSearch}
+              onChange={(e) => setTaskSearch(e.target.value)}
+              placeholder="Search tasks…"
+              className="w-full h-[36px] pl-9 pr-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
+            />
           </div>
         </div>
 
@@ -570,10 +587,14 @@ export function AdminPage({
                 <p className="text-[#71717a] text-[14px] mt-1">Click "Add Task" to create your first custom task.</p>
               </div>
             </div>
+          ) : filteredProjectTasks.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-[#71717a] text-[14px]">No tasks match "{taskSearch}"</p>
+            </div>
           ) : (
             <div className="flex-1 overflow-y-auto overflow-x-auto px-[24px] pb-6">
               <TaskTableDynamic
-                tasks={resolvedProjectTasks}
+                tasks={filteredProjectTasks}
                 onTaskClick={handleProjectTaskClick}
                 handleToggleTaskComplete={handleToggleProjectTaskComplete}
                 handleUpdateTaskStatus={handleUpdateProjectTaskStatus}
@@ -652,7 +673,7 @@ export function AdminPage({
             </Button>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative w-80">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa]" />
           <input
             type="text"
