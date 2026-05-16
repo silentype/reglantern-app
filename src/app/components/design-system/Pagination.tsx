@@ -10,6 +10,8 @@ export interface PaginationProps {
   /** Custom labels — default to title-case "Back" / "Next". */
   prevLabel?: string;
   nextLabel?: string;
+  /** Hide the "X/Y" counter between the buttons. Default false. */
+  hideCounter?: boolean;
   className?: string;
 }
 
@@ -24,6 +26,7 @@ export function Pagination({
   onNext,
   prevLabel = 'Back',
   nextLabel = 'Next',
+  hideCounter = false,
   className,
 }: PaginationProps) {
   const atStart = current <= 1;
@@ -33,9 +36,11 @@ export function Pagination({
       <Button variant="secondary" onClick={onPrev} disabled={atStart}>
         {prevLabel}
       </Button>
-      <div className="text-[14px] font-medium text-[#71717a]">
-        {current}/{total}
-      </div>
+      {!hideCounter && (
+        <div className="text-[14px] font-medium text-[#71717a]">
+          {current}/{total}
+        </div>
+      )}
       <Button onClick={onNext} disabled={atEnd}>
         {nextLabel}
       </Button>
