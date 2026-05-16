@@ -579,7 +579,7 @@ export function ComplianceReviewPage() {
                   title={allChapterFiles.length === 0 ? 'No files in this chapter' : `Download all ${allChapterFiles.length} files`}
                 >
                   <Download className="w-3.5 h-3.5" />
-                  Download all{allChapterFiles.length > 0 ? ` (${allChapterFiles.length})` : ''}
+                  Download All Documents
                 </button>
               </div>
             </div>
