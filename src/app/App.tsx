@@ -62,7 +62,7 @@ const NAV_ITEM_TO_URL: Record<string, string> = {
   'FTCA Site Visit Protocol': '/checklists/ftca-site-visit-protocol',
   'Project Builder': '/admin/project-builder',
   'Compliance Review': '/admin/compliance-review',
-  'Health Center Information': '/admin/health-centers',
+  'Health Centers': '/admin/health-centers',
 };
 
 const URL_TO_NAV_ITEM: Record<string, string> = {
@@ -72,7 +72,7 @@ const URL_TO_NAV_ITEM: Record<string, string> = {
   'ftca-site-visit-protocol': 'FTCA Site Visit Protocol',
   'project-builder': 'Project Builder',
   'compliance-review': 'Compliance Review',
-  'health-centers': 'Health Center Information',
+  'health-centers': 'Health Centers',
 };
 
 export default function App() {
@@ -534,7 +534,7 @@ export default function App() {
               setFieldDefs={setHealthCenterFieldDefs}
               setHealthCenters={setHealthCenters}
             />
-          ) : selectedNavItem === 'Health Center Information' ? (
+          ) : selectedNavItem === 'Health Centers' ? (
             <HealthCenterAdminPage
               onToggleSideNav={toggleSideNav}
               sideNavOpen={sideNavOpen}

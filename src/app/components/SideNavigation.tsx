@@ -15,14 +15,14 @@ const CHECKLISTS_ITEMS = [
   'Ryan White Part C/D',
   'FTCA Site Visit Protocol',
 ] as const;
-const ADMIN_ITEMS = ['Project Builder', 'Compliance Review', 'Health Center Information'] as const;
+const ADMIN_ITEMS = ['Project Builder', 'Compliance Review', 'Health Centers'] as const;
 const SETTINGS_ITEMS = ['Health Center Fields'] as const;
 
 const NAV_ICONS: Record<string, LucideIcon> = {
   'My Tasks': CheckSquare,
   'Project Builder': FolderKanban,
   'Compliance Review': ClipboardCheck,
-  'Health Center Information': Building2,
+  'Health Centers': Building2,
   'Site Visit Protocol Checklist': ClipboardList,
   'Ryan White Part C/D': ClipboardList,
   'FTCA Site Visit Protocol': ClipboardList,
