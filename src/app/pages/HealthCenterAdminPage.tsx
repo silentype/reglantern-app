@@ -1,21 +1,629 @@
 /**
  * HealthCenterAdminPage
  *
- * Admin > Health Centers. List view is a searchable table (Name, City,
- * State + one column per date field def). Detail view (URL:
- * /admin/health-centers/:name) is an inline date editor per field def.
+ * List view: searchable, filterable table with column visibility toggle,
+ * pagination, and per-row kebab menu.
+ * Detail view: tabbed profile page (Overview, Compliance, Expirations,
+ * Services & Funding, Technology, Sales, Notes, Dates).
  */
 
 import * as React from 'react';
 import { useState, useMemo, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import { format, parse, isValid } from 'date-fns';
-import { Building2, Calendar as CalendarIcon, Search } from 'lucide-react';
+import {
+  Building2,
+  Calendar as CalendarIcon,
+  Check,
+  MoreHorizontal,
+  Plus,
+  Columns3,
+  ChevronFirst,
+  ChevronLast,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ExternalLink,
+  FolderOpen,
+} from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Calendar } from '../components/ui/calendar';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '../components/ui/dropdown-menu';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '../components/ui/command';
 import { Button } from '../components/design-system/Button';
 import { BackButton } from '../components/design-system/BackButton';
-import type { HealthCenter, HealthCenterDateFieldDef } from '../data/healthCenters';
+import { SearchInput } from '../components/design-system/SearchInput';
+import { Select } from '../components/design-system/Select';
+import type {
+  HealthCenter,
+  HealthCenterDateFieldDef,
+  YesNo,
+  HealthCenterOverview,
+  HealthCenterCompliance,
+  HealthCenterExpirations,
+  HealthCenterServices,
+  HealthCenterTechnology,
+  HealthCenterSales,
+} from '../data/healthCenters';
+import type { Project } from './AdminPage';
+import type { Task } from '../components/task-table/types';
+import { StatusBadge } from '../components/design-system/StatusBadge';
+import type { TaskStatus } from '../components/design-system/StatusBadge';
+import { CheckboxIcon } from '../components/task-table/CheckboxIcon';
+import { UserAvatar } from '../components/task-table/UserAvatar';
+import { AttentionBadge } from '../components/task-table/AttentionBadge';
+
+// ── Tab definitions ────────────────────────────────────────────────────────
+
+const TABS = [
+  'Overview',
+  'Projects',
+  'Compliance',
+  'Expirations',
+  'Services & Funding',
+  'Technology',
+  'Sales',
+  'Notes',
+  'Dates',
+] as const;
+type Tab = (typeof TABS)[number];
+
+const TAB_SLUGS: Record<Tab, string> = {
+  'Overview':          'overview',
+  'Projects':          'projects',
+  'Compliance':        'compliance',
+  'Expirations':       'expirations',
+  'Services & Funding':'services-funding',
+  'Technology':        'technology',
+  'Sales':             'sales',
+  'Notes':             'notes',
+  'Dates':             'dates',
+};
+
+const SLUG_TO_TAB: Record<string, Tab> = Object.fromEntries(
+  (Object.entries(TAB_SLUGS) as [Tab, string][]).map(([tab, slug]) => [slug, tab])
+);
+
+// ── Column config ──────────────────────────────────────────────────────────
+
+type ColKey = 'regPathway' | 'ftcaApp' | 'ryanWhite' | 'qualityTraining' | 'ultraOptIn';
+
+const PROFILE_COLS: { key: ColKey; label: string }[] = [
+  { key: 'regPathway',      label: 'RegPathway Expiration' },
+  { key: 'ftcaApp',         label: 'FTCA Expiration' },
+  { key: 'ryanWhite',       label: 'Ryan White Expiration' },
+  { key: 'qualityTraining', label: 'Quality Training Expiration' },
+  { key: 'ultraOptIn',      label: 'Ultra Opt-In' },
+];
+
+function getCellValue(center: HealthCenter, key: ColKey): string {
+  if (key === 'ultraOptIn') return center.compliance.ultraOptIn || '—';
+  const raw = center.expirations[key];
+  if (!raw) return '—';
+  const d = parse(raw, 'MM/dd/yyyy', new Date());
+  return isValid(d) ? format(d, 'M/d/yyyy') : '—';
+}
+
+// ── Filter chip helpers ────────────────────────────────────────────────────
+
+type CenterTypeFilter = 'all' | 'regPathway' | 'ryanWhite' | 'ftca';
+
+function chip(active: boolean, extra?: string) {
+  return `px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${extra ?? ''} ${
+    active ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+  }`;
+}
+
+// ── Shared field primitives (detail view) ─────────────────────────────────
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="text-[13px] font-medium text-[#52525b] mb-1.5">
+      {children}
+    </div>
+  );
+}
+
+function FieldValue({ children }: { children: React.ReactNode }) {
+  const isEmpty = children === '' || children === null || children === undefined;
+  return (
+    <div className={`text-[14px] ${isEmpty ? 'text-[#a1a1aa] italic' : 'text-[#18181b]'}`}>
+      {isEmpty ? '—' : children}
+    </div>
+  );
+}
+
+function TextInput({ value, onChange, placeholder }: {
+  value: string; onChange: (v: string) => void; placeholder?: string;
+}) {
+  return (
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder ?? ''}
+      className="w-full h-[36px] px-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
+    />
+  );
+}
+
+function YesNoSelect({ value, onChange }: { value: YesNo; onChange: (v: YesNo) => void }) {
+  return (
+    <Select value={value} onChange={(e) => onChange(e.target.value as YesNo)} size="sm">
+      <option value="">—</option>
+      <option value="Yes">Yes</option>
+      <option value="No">No</option>
+    </Select>
+  );
+}
+
+function DatePickerField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parsed = value ? parse(value, 'MM/dd/yyyy', new Date()) : null;
+  const display = parsed && isValid(parsed) ? format(parsed, 'MMM d, yyyy') : 'Not set';
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button className="inline-flex items-center gap-1.5 h-[36px] px-3 rounded-[6px] border border-[#e4e4e7] bg-white text-[13px] hover:border-[#cdd7e1] transition-colors w-full">
+          <CalendarIcon className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
+          <span className={parsed && isValid(parsed) ? 'text-[#18181b]' : 'text-[#a1a1aa]'}>{display}</span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={parsed && isValid(parsed) ? parsed : undefined}
+          onSelect={(date) => { if (date) onChange(format(date, 'MM/dd/yyyy')); }}
+          initialFocus
+        />
+        {value && (
+          <div className="border-t border-[#e4e4e7] p-2">
+            <Button size="sm" variant="secondary" onClick={() => onChange('')}>Clear date</Button>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function SectionCard({ title, children }: { title?: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-[#e4e4e7] rounded-[6px] bg-white mb-4">
+      {title && (
+        <div className="px-5 py-3 border-b border-[#e4e4e7]">
+          <h3 className="text-[14px] font-semibold text-[#18181b]">{title}</h3>
+        </div>
+      )}
+      <div className="px-5 py-5">{children}</div>
+    </div>
+  );
+}
+
+function FieldGrid({ cols = 2, children }: { cols?: 2 | 3; children: React.ReactNode }) {
+  return (
+    <div className={`grid gap-x-6 gap-y-4 ${cols === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <FieldLabel>{label}</FieldLabel>
+      {children}
+    </div>
+  );
+}
+
+// ── SP Populations ─────────────────────────────────────────────────────────
+
+const SP_POPULATION_OPTIONS = [
+  'Homeless','Migrant','Public Housing','Ryan White','School-Based',
+  'Veterans','LGBTQ+','Elderly','Pediatric',
+];
+
+function SpPopulationsField({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const toggle = (opt: string) =>
+    onChange(value.includes(opt) ? value.filter((v) => v !== opt) : [...value, opt]);
+  return (
+    <div className="flex flex-wrap gap-2">
+      {SP_POPULATION_OPTIONS.map((opt) => (
+        <button
+          key={opt}
+          onClick={() => toggle(opt)}
+          className={`h-[28px] px-3 rounded-full text-[12px] font-medium border transition-colors ${
+            value.includes(opt)
+              ? 'bg-[#fc6] border-[#fc6] text-[#18181b]'
+              : 'bg-white border-[#e4e4e7] text-[#52525b] hover:border-[#cdd7e1]'
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Detail tab panels ──────────────────────────────────────────────────────
+
+function OverviewTab({ center, data, onChange }: {
+  center: HealthCenter; data: HealthCenterOverview; onChange: (p: Partial<HealthCenterOverview>) => void;
+}) {
+  return (
+    <>
+      <SectionCard title="Identity">
+        <FieldGrid>
+          <Field label="Health Center Name"><FieldValue>{center.name}</FieldValue></Field>
+          <Field label="DBA Name"><TextInput value={data.dbaName} onChange={(v) => onChange({ dbaName: v })} placeholder="Doing business as…" /></Field>
+          <Field label="Org Legal Name"><TextInput value={data.orgLegalName} onChange={(v) => onChange({ orgLegalName: v })} placeholder="Legal entity name" /></Field>
+          <Field label="HRSA Grantee Number"><TextInput value={data.hrsaGranteeNumber} onChange={(v) => onChange({ hrsaGranteeNumber: v })} placeholder="e.g. H80CS00000" /></Field>
+        </FieldGrid>
+      </SectionCard>
+      <SectionCard title="Location & Contact">
+        <FieldGrid>
+          <div className="col-span-2">
+            <Field label="Address"><TextInput value={data.address} onChange={(v) => onChange({ address: v })} placeholder="Street address" /></Field>
+          </div>
+          <Field label="City"><FieldValue>{center.city}</FieldValue></Field>
+          <Field label="State"><FieldValue>{center.state}</FieldValue></Field>
+          <Field label="Phone"><TextInput value={data.phone} onChange={(v) => onChange({ phone: v })} placeholder="(555) 000-0000" /></Field>
+        </FieldGrid>
+      </SectionCard>
+      <SectionCard title="Configuration">
+        <div className="flex items-center gap-3">
+          <input id="is-test-hc" type="checkbox" checked={data.isTestHc} onChange={(e) => onChange({ isTestHc: e.target.checked })} className="w-4 h-4 rounded border-[#e4e4e7] accent-[#fc6] cursor-pointer" />
+          <label htmlFor="is-test-hc" className="text-[14px] text-[#18181b] cursor-pointer">Test Health Center</label>
+        </div>
+      </SectionCard>
+    </>
+  );
+}
+
+function ProjectsTab({ center, assignedProjects, setProjects, onOpenProject }: {
+  center: HealthCenter;
+  assignedProjects: Project[];
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+  onOpenProject: (projectId: number) => void;
+}) {
+  const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+
+  const toggleCollapse = (projectId: number) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectId)) next.delete(projectId);
+      else next.add(projectId);
+      return next;
+    });
+  };
+
+  const toggleTaskComplete = (projectId: number, task: Task) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          tasks: p.tasks.map((t) =>
+            t.id === task.id
+              ? { ...t, completed: !t.completed, status: t.completed ? 'In Progress' : 'Complete' }
+              : t
+          ),
+        };
+      })
+    );
+  };
+
+  if (assignedProjects.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-2 text-[#71717a]">
+        <FolderOpen className="w-10 h-10 text-[#e4e4e7]" />
+        <p className="text-[14px] font-medium text-[#18181b]">No projects assigned</p>
+        <p className="text-[13px]">Assign this health center to a project in the Project Builder.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {assignedProjects.map((project) => {
+        const assignment = project.assignedHealthCenters?.find((c) => c.name === center.name);
+        const completedCount = project.tasks.filter((t) => t.completed).length;
+        const isCollapsed = collapsed.has(project.id);
+
+        return (
+          <div key={project.id} className="border border-[#e4e4e7] rounded-[6px] overflow-hidden">
+            {/* Project header */}
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[#f9fafb] border-b border-[#e4e4e7]">
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  onClick={() => toggleCollapse(project.id)}
+                  className="shrink-0 p-0.5 rounded hover:bg-[#e4e4e7] transition-colors"
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 text-[#71717a] transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                  />
+                </button>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-[#18181b] truncate">{project.name}</p>
+                  <p className="text-[12px] text-[#71717a]">
+                    {completedCount}/{project.tasks.length} tasks complete
+                    {assignment && <> · Assigned {assignment.assignedAt}</>}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => onOpenProject(project.id)}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:text-[#18181b] rounded-md hover:bg-[#e4e4e7] transition-colors"
+              >
+                Open in Builder
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Task list */}
+            {!isCollapsed && (
+              project.tasks.length === 0 ? (
+                <p className="px-5 py-4 text-[13px] text-[#71717a]">No tasks in this project yet.</p>
+              ) : (
+                <div>
+                  {/* Column headers */}
+                  <div className="grid grid-cols-[32px_1fr_140px_180px_130px] gap-2 px-4 py-2 border-b border-[#e4e4e7] bg-white">
+                    <div />
+                    <span className="text-[12px] font-medium text-[#71717a]">Task</span>
+                    <span className="text-[12px] font-medium text-[#71717a]">Due Date</span>
+                    <span className="text-[12px] font-medium text-[#71717a]">Assigned To</span>
+                    <span className="text-[12px] font-medium text-[#71717a]">Status</span>
+                  </div>
+                  {project.tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="grid grid-cols-[32px_1fr_140px_180px_130px] gap-2 items-center px-4 py-2.5 border-b border-[#f4f4f5] hover:bg-[#f9fafb] transition-colors group/row"
+                    >
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => toggleTaskComplete(project.id, task)}
+                        className="flex items-center justify-center"
+                      >
+                        <CheckboxIcon completed={task.completed} />
+                      </button>
+
+                      {/* Title + attention */}
+                      <div className="min-w-0">
+                        <button
+                          onClick={() => navigate(`/admin/project-builder/${project.id}/${task.id}`)}
+                          className={`text-[13px] font-medium text-left truncate w-full hover:underline ${task.completed ? 'line-through text-[#71717a]' : 'text-[#18181b]'}`}
+                        >
+                          {task.title}
+                        </button>
+                        {task.attention && (
+                          <div className="mt-0.5">
+                            <AttentionBadge attention={task.attention} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Due date */}
+                      <span className="text-[13px] text-[#71717a]">
+                        {task.dueDate ?? <span className="text-[#d4d4d8]">—</span>}
+                      </span>
+
+                      {/* Assigned to */}
+                      <div>
+                        {task.assignedTo ? (
+                          <UserAvatar user={task.assignedTo} />
+                        ) : (
+                          <span className="text-[13px] text-[#d4d4d8]">—</span>
+                        )}
+                      </div>
+
+                      {/* Status */}
+                      <div>
+                        {task.status ? (
+                          <StatusBadge status={task.status as TaskStatus} />
+                        ) : (
+                          <span className="text-[13px] text-[#d4d4d8]">—</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ComplianceTab({ data, onChange }: {
+  data: HealthCenterCompliance; onChange: (p: Partial<HealthCenterCompliance>) => void;
+}) {
+  const fields: { label: string; key: keyof HealthCenterCompliance }[] = [
+    { label: 'FQHC', key: 'fqhc' }, { label: 'FTCA', key: 'ftca' },
+    { label: 'LAL', key: 'lal' }, { label: '340B', key: 'status340b' },
+    { label: 'Co-Applicant', key: 'coApplicant' }, { label: 'Sub-Recipient', key: 'subRecipient' },
+    { label: 'Indian Tribe', key: 'indianTribe' }, { label: 'Non-State / Gov / Tribe', key: 'nonStateGovTribe' },
+    { label: 'Ultra Opt-In', key: 'ultraOptIn' },
+  ];
+  return (
+    <SectionCard title="Compliance Status">
+      <FieldGrid cols={3}>
+        {fields.map(({ label, key }) => (
+          <Field key={key} label={label}>
+            <YesNoSelect value={data[key]} onChange={(v) => onChange({ [key]: v })} />
+          </Field>
+        ))}
+      </FieldGrid>
+    </SectionCard>
+  );
+}
+
+function ExpirationsTab({ data, onChange }: {
+  data: HealthCenterExpirations; onChange: (p: Partial<HealthCenterExpirations>) => void;
+}) {
+  const fields: { label: string; key: keyof HealthCenterExpirations }[] = [
+    { label: 'Reg Pathway', key: 'regPathway' }, { label: 'Ryan White', key: 'ryanWhite' },
+    { label: 'FTCA Application', key: 'ftcaApp' }, { label: 'Quality Training', key: 'qualityTraining' },
+    { label: 'Cont. Compliance Due', key: 'contComplianceDue' }, { label: 'Compliance Review', key: 'complianceReview' },
+    { label: 'Review Tool', key: 'reviewTool' }, { label: 'Future Modules', key: 'futureModules' },
+    { label: 'SVPC', key: 'svpc' }, { label: 'O&A', key: 'oa' },
+    { label: 'LMS', key: 'lms' }, { label: 'Form 6A', key: 'form6a' },
+    { label: 'C&P', key: 'cp' }, { label: 'Doc Repository', key: 'docRepository' },
+    { label: 'Form 5A', key: 'form5a' }, { label: 'TA Hours Expiration', key: 'taHoursExp' },
+    { label: 'FTCA App Open', key: 'ftcaAppOpen' },
+  ];
+  return (
+    <SectionCard title="Expiration Dates">
+      <FieldGrid cols={3}>
+        {fields.map(({ label, key }) => (
+          <Field key={key} label={label}>
+            <DatePickerField value={data[key]} onChange={(v) => onChange({ [key]: v })} />
+          </Field>
+        ))}
+      </FieldGrid>
+    </SectionCard>
+  );
+}
+
+function ServicesTab({ data, onChange }: {
+  data: HealthCenterServices; onChange: (p: Partial<HealthCenterServices>) => void;
+}) {
+  return (
+    <>
+      <SectionCard title="Special Populations Served">
+        <SpPopulationsField value={data.spPopulations} onChange={(v) => onChange({ spPopulations: v })} />
+      </SectionCard>
+      <SectionCard title="Capacity">
+        <FieldGrid>
+          <Field label="Patients Served (annual)"><TextInput value={data.patientsServed} onChange={(v) => onChange({ patientsServed: v })} placeholder="e.g. 12,000" /></Field>
+          <Field label="Locations"><TextInput value={data.locations} onChange={(v) => onChange({ locations: v })} placeholder="Number of sites" /></Field>
+          <Field label="Budget Start"><TextInput value={data.budgetStart} onChange={(v) => onChange({ budgetStart: v })} placeholder="MM/dd/yyyy" /></Field>
+        </FieldGrid>
+      </SectionCard>
+      <SectionCard title="TA Hours">
+        <FieldGrid cols={3}>
+          <Field label="Purchased"><TextInput value={data.taHoursPurchased} onChange={(v) => onChange({ taHoursPurchased: v })} placeholder="0" /></Field>
+          <Field label="Used"><TextInput value={data.taHoursUsed} onChange={(v) => onChange({ taHoursUsed: v })} placeholder="0" /></Field>
+          <Field label="Comments"><TextInput value={data.taHoursComments} onChange={(v) => onChange({ taHoursComments: v })} /></Field>
+        </FieldGrid>
+      </SectionCard>
+      <SectionCard title="Funding Programs">
+        <FieldGrid>
+          {(['fundingHomeless','fundingMigrant','fundingPublicHousing','fundingRyanWhite'] as const).map((key) => (
+            <Field key={key} label={key.replace('funding','').replace(/([A-Z])/g,' $1').trim()}>
+              <YesNoSelect value={data[key]} onChange={(v) => onChange({ [key]: v })} />
+            </Field>
+          ))}
+        </FieldGrid>
+      </SectionCard>
+    </>
+  );
+}
+
+function TechnologyTab({ data, onChange }: {
+  data: HealthCenterTechnology; onChange: (p: Partial<HealthCenterTechnology>) => void;
+}) {
+  return (
+    <>
+      <SectionCard title="Learning Management System">
+        <FieldGrid cols={3}>
+          <Field label="Has LMS"><YesNoSelect value={data.hasLms} onChange={(v) => onChange({ hasLms: v })} /></Field>
+          <Field label="LMS Vendor"><TextInput value={data.lmsVendor} onChange={(v) => onChange({ lmsVendor: v })} /></Field>
+          <Field label="LMS Level"><TextInput value={data.lmsLevel} onChange={(v) => onChange({ lmsLevel: v })} /></Field>
+          <Field label="LMS Cost"><TextInput value={data.lmsCost} onChange={(v) => onChange({ lmsCost: v })} placeholder="$" /></Field>
+          <Field label="LMS Contract End"><DatePickerField value={data.lmsContractEnd} onChange={(v) => onChange({ lmsContractEnd: v })} /></Field>
+          <Field label="Compliatric"><YesNoSelect value={data.compliatric} onChange={(v) => onChange({ compliatric: v })} /></Field>
+        </FieldGrid>
+        <div className="mt-4">
+          <Field label="LMS Notes">
+            <textarea value={data.lmsNotes} onChange={(e) => onChange({ lmsNotes: e.target.value })} rows={3} className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white resize-none" />
+          </Field>
+        </div>
+      </SectionCard>
+      <SectionCard title="Other Software">
+        <FieldGrid>
+          <Field label="IR Vendor"><TextInput value={data.irVendor} onChange={(v) => onChange({ irVendor: v })} /></Field>
+          <Field label="Other Software"><TextInput value={data.otherSoftware} onChange={(v) => onChange({ otherSoftware: v })} /></Field>
+        </FieldGrid>
+      </SectionCard>
+    </>
+  );
+}
+
+function SalesTab({ data, onChange }: {
+  data: HealthCenterSales; onChange: (p: Partial<HealthCenterSales>) => void;
+}) {
+  return (
+    <>
+      <SectionCard title="Pipeline">
+        <FieldGrid cols={3}>
+          <Field label="Engagement Level"><TextInput value={data.engagementLevel} onChange={(v) => onChange({ engagementLevel: v })} /></Field>
+          <Field label="Deal Status"><TextInput value={data.dealStatus} onChange={(v) => onChange({ dealStatus: v })} /></Field>
+          <Field label="Demo Completed"><YesNoSelect value={data.demoCompleted} onChange={(v) => onChange({ demoCompleted: v })} /></Field>
+          <Field label="Invoice Sent"><YesNoSelect value={data.invoiceSent} onChange={(v) => onChange({ invoiceSent: v })} /></Field>
+          <Field label="Contract Signed"><YesNoSelect value={data.contractSigned} onChange={(v) => onChange({ contractSigned: v })} /></Field>
+          <Field label="Deal Lost Reason"><TextInput value={data.dealLostReason} onChange={(v) => onChange({ dealLostReason: v })} /></Field>
+          <Field label="Deal Lost Date"><DatePickerField value={data.dealLostDate} onChange={(v) => onChange({ dealLostDate: v })} /></Field>
+        </FieldGrid>
+      </SectionCard>
+      <SectionCard title="Referral & Contacts">
+        <FieldGrid>
+          <Field label="Referred From"><TextInput value={data.referredFrom} onChange={(v) => onChange({ referredFrom: v })} /></Field>
+          <Field label="Reference"><TextInput value={data.reference} onChange={(v) => onChange({ reference: v })} /></Field>
+          <Field label="Proposal CC"><TextInput value={data.proposalCc} onChange={(v) => onChange({ proposalCc: v })} placeholder="email@example.com" /></Field>
+          <Field label="Signer"><TextInput value={data.signer} onChange={(v) => onChange({ signer: v })} /></Field>
+        </FieldGrid>
+      </SectionCard>
+      <SectionCard title="Marketing Notes">
+        <textarea value={data.marketingNotes} onChange={(e) => onChange({ marketingNotes: e.target.value })} rows={4} placeholder="Notes visible to marketing team…" className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white resize-none" />
+      </SectionCard>
+    </>
+  );
+}
+
+function DatesTab({ center, fieldDefs, onSetFieldValue }: {
+  center: HealthCenter; fieldDefs: HealthCenterDateFieldDef[];
+  onSetFieldValue: (fieldId: string, value: string) => void;
+}) {
+  if (fieldDefs.length === 0) {
+    return (
+      <SectionCard>
+        <div className="py-6 text-center text-[#71717a] text-[14px]">
+          No date fields configured yet. Add fields in Settings → Health Center Fields.
+        </div>
+      </SectionCard>
+    );
+  }
+  return (
+    <SectionCard title="Relative Due-Date Anchors">
+      <FieldGrid cols={3}>
+        {fieldDefs.map((def) => (
+          <Field key={def.id} label={def.label}>
+            <DatePickerField value={center.dateFields[def.id] ?? ''} onChange={(v) => onSetFieldValue(def.id, v)} />
+          </Field>
+        ))}
+      </FieldGrid>
+    </SectionCard>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────
 
 export function HealthCenterAdminPage({
   onToggleSideNav: _onToggleSideNav,
@@ -24,6 +632,8 @@ export function HealthCenterAdminPage({
   setHealthCenters,
   fieldDefs,
   selectedCenterName,
+  projects,
+  setProjects,
   onSelectCenter,
 }: {
   onToggleSideNav: () => void;
@@ -32,17 +642,65 @@ export function HealthCenterAdminPage({
   setHealthCenters: React.Dispatch<React.SetStateAction<HealthCenter[]>>;
   fieldDefs: HealthCenterDateFieldDef[];
   selectedCenterName: string | null;
+  projects: Project[];
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   onSelectCenter: (name: string | null) => void;
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // List view state
   const [search, setSearch] = useState('');
+  const [centerTypeFilter, setCenterTypeFilter] = useState<CenterTypeFilter>('all');
+  const [stateFilter, setStateFilter] = useState('');
+  const [ultraOptInFilter, setUltraOptInFilter] = useState('');
+  const [testHcFilter, setTestHcFilter] = useState<boolean | null>(null);
+  const [stateOpen, setStateOpen] = useState(false);
+  const [ultraOptInOpen, setUltraOptInOpen] = useState(false);
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(
+    new Set(PROFILE_COLS.map((c) => c.key))
+  );
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Active tab is derived from the URL:
+  // /admin/health-centers/:name/:tabSlug  (defaults to 'overview')
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const tabSlug = pathParts[3] ?? 'overview';
+  const activeTab: Tab = SLUG_TO_TAB[tabSlug] ?? 'Overview';
+
+  const navigateToTab = useCallback(
+    (tab: Tab) => {
+      if (selectedCenterName) {
+        navigate(`/admin/health-centers/${encodeURIComponent(selectedCenterName)}/${TAB_SLUGS[tab]}`);
+      }
+    },
+    [navigate, selectedCenterName],
+  );
 
   const selectedCenter = useMemo(
     () => (selectedCenterName ? healthCenters.find((c) => c.name === selectedCenterName) ?? null : null),
-    [healthCenters, selectedCenterName]
+    [healthCenters, selectedCenterName],
   );
 
-  const setFieldValue = useCallback(
-    (centerName: string, fieldId: string, value: string | undefined) => {
+  const patchCenter = useCallback(
+    <K extends keyof HealthCenter>(centerName: string, key: K, patch: Partial<HealthCenter[K]> | HealthCenter[K]) => {
+      setHealthCenters((prev) =>
+        prev.map((c) => {
+          if (c.name !== centerName) return c;
+          const current = c[key];
+          if (typeof current === 'object' && current !== null && !Array.isArray(current) && typeof patch === 'object' && patch !== null) {
+            return { ...c, [key]: { ...current, ...patch } };
+          }
+          return { ...c, [key]: patch };
+        }),
+      );
+    },
+    [setHealthCenters],
+  );
+
+  const setDateFieldValue = useCallback(
+    (centerName: string, fieldId: string, value: string) => {
       setHealthCenters((prev) =>
         prev.map((c) => {
           if (c.name !== centerName) return c;
@@ -50,28 +708,51 @@ export function HealthCenterAdminPage({
           if (value) next[fieldId] = value;
           else delete next[fieldId];
           return { ...c, dateFields: next };
-        })
+        }),
       );
     },
-    [setHealthCenters]
+    [setHealthCenters],
+  );
+
+  const uniqueStates = useMemo(
+    () => [...new Set(healthCenters.map((c) => c.state))].sort(),
+    [healthCenters],
   );
 
   const filteredCenters = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return healthCenters;
-    return healthCenters.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.city.toLowerCase().includes(q) ||
-        c.state.toLowerCase().includes(q)
-    );
-  }, [healthCenters, search]);
+    return healthCenters.filter((c) => {
+      if (q && !c.name.toLowerCase().includes(q) && !c.city.toLowerCase().includes(q) && !c.state.toLowerCase().includes(q)) return false;
+      if (centerTypeFilter === 'regPathway' && !c.expirations.regPathway) return false;
+      if (centerTypeFilter === 'ryanWhite' && !c.expirations.ryanWhite) return false;
+      if (centerTypeFilter === 'ftca' && !c.expirations.ftcaApp) return false;
+      if (stateFilter && c.state !== stateFilter) return false;
+      if (ultraOptInFilter && c.compliance.ultraOptIn !== ultraOptInFilter) return false;
+      if (testHcFilter === true && !c.overview.isTestHc) return false;
+      if (testHcFilter === false && c.overview.isTestHc) return false;
+      return true;
+    });
+  }, [healthCenters, search, centerTypeFilter, stateFilter, ultraOptInFilter, testHcFilter]);
 
-  // ── Detail view ────────────────────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(filteredCenters.length / pageSize));
+  const pagedCenters = useMemo(
+    () => filteredCenters.slice((page - 1) * pageSize, page * pageSize),
+    [filteredCenters, page, pageSize],
+  );
+
+  const toggleCol = (key: ColKey) =>
+    setVisibleCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
+  // ── Detail view ────────────────────────────────────────────────────────
   if (selectedCenter) {
     return (
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
           <BackButton onClick={() => onSelectCenter(null)} className="mb-3">
             Health Centers
           </BackButton>
@@ -81,65 +762,69 @@ export function HealthCenterAdminPage({
               {selectedCenter.name}
             </h1>
           </div>
-          <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-            {selectedCenter.city}, {selectedCenter.state} · Enter date values used by relative-due-date rules.
+          <p className="text-sm font-medium text-[#71717a] leading-[14px] mb-4">
+            {selectedCenter.city}, {selectedCenter.state}
           </p>
+          <div className="flex gap-0 -mb-px">
+            {TABS.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => navigateToTab(tab)}
+                className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === tab
+                    ? 'border-[#fc6] text-[#18181b]'
+                    : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex-1 overflow-auto px-[24px] py-6">
-          <div className="max-w-[720px] border border-[#e4e4e7] rounded-[6px] bg-white">
-            {fieldDefs.length === 0 ? (
-              <div className="px-4 py-6 text-center text-[#71717a] text-[14px]">
-                No fields configured yet. Add fields in Settings → Health Center Fields.
-              </div>
-            ) : (
-              <ul className="divide-y divide-[#f4f4f5]">
-                {fieldDefs.map((def) => {
-                  const raw = selectedCenter.dateFields[def.id];
-                  const parsed = raw ? parse(raw, 'MM/dd/yyyy', new Date()) : null;
-                  const display = parsed && isValid(parsed) ? format(parsed, 'MMM d, yyyy') : 'Not set';
-                  return (
-                    <li key={def.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[14px] font-medium text-[#18181b] truncate">{def.label}</div>
-                        <div className="text-[11px] text-[#a1a1aa] font-mono">{def.id}</div>
-                      </div>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="inline-flex items-center gap-1.5 h-[36px] px-3 rounded-[6px] border border-[#e4e4e7] bg-white text-[13px] hover:border-[#cdd7e1] transition-colors">
-                            <CalendarIcon className="w-3.5 h-3.5 text-[#71717a]" />
-                            <span className={parsed && isValid(parsed) ? 'text-[#18181b]' : 'text-[#71717a]'}>
-                              {display}
-                            </span>
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                          <Calendar
-                            mode="single"
-                            selected={parsed && isValid(parsed) ? parsed : undefined}
-                            onSelect={(date) => {
-                              if (!date) return;
-                              setFieldValue(selectedCenter.name, def.id, format(date, 'MM/dd/yyyy'));
-                            }}
-                            initialFocus
-                          />
-                          {raw && (
-                            <div className="border-t border-[#e4e4e7] p-2">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => setFieldValue(selectedCenter.name, def.id, undefined)}
-                              >
-                                Clear date
-                              </Button>
-                            </div>
-                          )}
-                        </PopoverContent>
-                      </Popover>
-                    </li>
-                  );
-                })}
-              </ul>
+          <div className={activeTab === 'Projects' ? '' : 'max-w-[860px]'}>
+            {activeTab === 'Overview' && (
+              <OverviewTab center={selectedCenter} data={selectedCenter.overview} onChange={(p) => patchCenter(selectedCenter.name, 'overview', p)} />
+            )}
+            {activeTab === 'Projects' && (
+              <ProjectsTab
+                center={selectedCenter}
+                assignedProjects={projects.filter((proj) =>
+                  proj.assignedHealthCenters?.some((c) => c.name === selectedCenter.name)
+                )}
+                setProjects={setProjects}
+                onOpenProject={(id) => navigate(`/admin/project-builder/${id}`)}
+              />
+            )}
+            {activeTab === 'Compliance' && (
+              <ComplianceTab data={selectedCenter.compliance} onChange={(p) => patchCenter(selectedCenter.name, 'compliance', p)} />
+            )}
+            {activeTab === 'Expirations' && (
+              <ExpirationsTab data={selectedCenter.expirations} onChange={(p) => patchCenter(selectedCenter.name, 'expirations', p)} />
+            )}
+            {activeTab === 'Services & Funding' && (
+              <ServicesTab data={selectedCenter.services} onChange={(p) => patchCenter(selectedCenter.name, 'services', p)} />
+            )}
+            {activeTab === 'Technology' && (
+              <TechnologyTab data={selectedCenter.technology} onChange={(p) => patchCenter(selectedCenter.name, 'technology', p)} />
+            )}
+            {activeTab === 'Sales' && (
+              <SalesTab data={selectedCenter.sales} onChange={(p) => patchCenter(selectedCenter.name, 'sales', p)} />
+            )}
+            {activeTab === 'Notes' && (
+              <SectionCard title="General Notes">
+                <textarea
+                  value={selectedCenter.notes}
+                  onChange={(e) => patchCenter(selectedCenter.name, 'notes', e.target.value as HealthCenter['notes'])}
+                  rows={12}
+                  placeholder="Enter any general notes about this health center…"
+                  className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white resize-none"
+                />
+              </SectionCard>
+            )}
+            {activeTab === 'Dates' && (
+              <DatesTab center={selectedCenter} fieldDefs={fieldDefs} onSetFieldValue={(id, v) => setDateFieldValue(selectedCenter.name, id, v)} />
             )}
           </div>
         </div>
@@ -147,104 +832,262 @@ export function HealthCenterAdminPage({
     );
   }
 
-  // ── List view ──────────────────────────────────────────────────────────────
+  // ── List view ──────────────────────────────────────────────────────────
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
-        <div className="flex items-end justify-between gap-4 mb-4">
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+        <div className="flex items-end justify-between gap-4 mb-1">
           <div>
             <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
               Health Centers
             </h1>
             <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-              Per-center date values that anchor relative-due-date rules.
+              {healthCenters.length} centers
             </p>
           </div>
-          <span className="text-[13px] text-[#71717a] shrink-0">
-            {healthCenters.length} centers
-          </span>
+          <Button size="sm" onClick={() => {}}>
+            <Plus className="w-4 h-4" />
+            Add
+          </Button>
         </div>
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa]" />
-          <input
-            type="text"
+
+        {/* Filter chip bar — same pattern as TasksPage */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none mt-[16px] mb-[22px]">
+          {/* Search */}
+          <SearchInput
+            placeholder="Search..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search health centers…"
-            className="w-full h-[36px] pl-9 pr-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onClear={() => { setSearch(''); setPage(1); }}
+            className="w-[240px]"
           />
+
+          <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+          {/* Center type chips */}
+          {(
+            [
+              { key: 'all', label: 'All Centers' },
+              { key: 'regPathway', label: 'RegPathway' },
+              { key: 'ryanWhite', label: 'Ryan White' },
+              { key: 'ftca', label: 'FTCA' },
+            ] as { key: CenterTypeFilter; label: string }[]
+          ).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => { setCenterTypeFilter(key); setPage(1); }}
+              className={chip(centerTypeFilter === key)}
+            >
+              {label}
+            </button>
+          ))}
+
+          <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+          {/* State dropdown chip */}
+          <Popover open={stateOpen} onOpenChange={setStateOpen}>
+            <PopoverTrigger asChild>
+              <button className={chip(!!stateFilter, 'flex items-center gap-1.5')}>
+                <Building2 className="h-3.5 w-3.5" />
+                {stateFilter ? stateFilter : 'State'}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Search states…" />
+                <CommandList>
+                  <CommandEmpty>No states found.</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem onSelect={() => { setStateFilter(''); setStateOpen(false); setPage(1); }}>
+                      <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${!stateFilter ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                        {!stateFilter && <Check className="h-3 w-3" />}
+                      </div>
+                      All States
+                    </CommandItem>
+                    {uniqueStates.map((s) => (
+                      <CommandItem key={s} onSelect={() => { setStateFilter(s); setStateOpen(false); setPage(1); }}>
+                        <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${stateFilter === s ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                          {stateFilter === s && <Check className="h-3 w-3" />}
+                        </div>
+                        {s}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+
+          {/* Ultra Opt-In chip */}
+          <Popover open={ultraOptInOpen} onOpenChange={setUltraOptInOpen}>
+            <PopoverTrigger asChild>
+              <button className={chip(!!ultraOptInFilter, 'flex items-center gap-1.5')}>
+                Ultra Opt-In{ultraOptInFilter ? ` (${ultraOptInFilter})` : ''}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[140px] p-1" align="start">
+              {(['', 'Yes', 'No'] as const).map((v) => (
+                <button
+                  key={v || 'all'}
+                  onClick={() => { setUltraOptInFilter(v); setUltraOptInOpen(false); setPage(1); }}
+                  className={`w-full text-left px-3 py-2 text-[13px] rounded hover:bg-[#f5f5f5] transition-colors ${ultraOptInFilter === v ? 'font-semibold text-[#18181b]' : 'text-[#52525b]'}`}
+                >
+                  {v || 'All'}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+
+          {/* Test HC toggle chip */}
+          <button
+            onClick={() => { setTestHcFilter((prev) => prev === true ? null : true); setPage(1); }}
+            className={chip(testHcFilter === true)}
+          >
+            Test HC
+          </button>
+
+          <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+          {/* View Columns */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className={chip(false, 'flex items-center gap-1.5')}>
+                <Columns3 className="h-3.5 w-3.5" />
+                Columns
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              {PROFILE_COLS.map((col) => (
+                <DropdownMenuCheckboxItem
+                  key={col.key}
+                  checked={visibleCols.has(col.key)}
+                  onCheckedChange={() => toggleCol(col.key)}
+                >
+                  {col.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
+
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto px-[24px] py-6">
         <table className="w-full border-collapse text-[14px]">
           <thead className="sticky top-0 bg-[#f9fafb] z-10">
             <tr className="border-b border-[#e4e4e7]">
-              <th className="text-left px-6 py-3 text-[12px] font-semibold text-[#71717a] uppercase tracking-wide whitespace-nowrap">
-                Name
-              </th>
-              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] uppercase tracking-wide whitespace-nowrap">
-                City
-              </th>
-              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] uppercase tracking-wide whitespace-nowrap">
-                State
-              </th>
-              {fieldDefs.map((def) => (
-                <th
-                  key={def.id}
-                  className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] uppercase tracking-wide whitespace-nowrap"
-                >
-                  {def.label}
+              <th className="text-left px-6 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">Name</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">City</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">State</th>
+              {PROFILE_COLS.filter((c) => visibleCols.has(c.key)).map((col) => (
+                <th key={col.key} className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">
+                  {col.label}
                 </th>
               ))}
+              <th className="w-10 px-4 py-3" />
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-[#f4f4f5]">
-            {filteredCenters.length === 0 ? (
+            {pagedCenters.length === 0 ? (
               <tr>
-                <td
-                  colSpan={3 + fieldDefs.length}
-                  className="px-6 py-12 text-center text-[14px] text-[#71717a]"
-                >
-                  {search ? `No health centers match "${search}"` : 'No health centers found.'}
+                <td colSpan={4 + visibleCols.size + 1} className="px-6 py-12 text-center text-[14px] text-[#71717a]">
+                  {search || centerTypeFilter !== 'all' || stateFilter || ultraOptInFilter || testHcFilter !== null ? 'No health centers match your search or filters.' : 'No health centers found.'}
                 </td>
               </tr>
             ) : (
-              filteredCenters.map((center) => (
+              pagedCenters.map((center) => (
                 <tr
                   key={center.name}
-                  onClick={() => onSelectCenter(center.name)}
-                  className="cursor-pointer hover:bg-[#f9fafb] transition-colors group"
+                  className="hover:bg-[#f9fafb] transition-colors group"
                 >
-                  <td className="px-6 py-3">
+                  <td className="px-6 py-3 cursor-pointer" onClick={() => onSelectCenter(center.name)}>
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-[#a1a1aa] shrink-0" />
-                      <span className="font-medium text-[#18181b] group-hover:text-[#18181b]">
-                        {center.name}
-                      </span>
+                      <span className="font-medium text-[#18181b] hover:underline">{center.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[#52525b]">{center.city}</td>
-                  <td className="px-4 py-3 text-[#52525b]">{center.state}</td>
-                  {fieldDefs.map((def) => {
-                    const raw = center.dateFields[def.id];
-                    const parsed = raw ? parse(raw, 'MM/dd/yyyy', new Date()) : null;
-                    const display =
-                      parsed && isValid(parsed) ? format(parsed, 'M/d/yyyy') : '—';
-                    return (
-                      <td key={def.id} className="px-4 py-3 text-[#52525b] whitespace-nowrap">
-                        {display}
-                      </td>
-                    );
-                  })}
+                  <td className="px-4 py-3 text-[#52525b] cursor-pointer" onClick={() => onSelectCenter(center.name)}>{center.city}</td>
+                  <td className="px-4 py-3 text-[#52525b] cursor-pointer" onClick={() => onSelectCenter(center.name)}>{center.state}</td>
+                  {PROFILE_COLS.filter((c) => visibleCols.has(c.key)).map((col) => (
+                    <td key={col.key} className="px-4 py-3 text-[#52525b] whitespace-nowrap cursor-pointer" onClick={() => onSelectCenter(center.name)}>
+                      {getCellValue(center, col.key)}
+                    </td>
+                  ))}
+                  <td className="px-2 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="p-1.5 rounded hover:bg-[#f4f4f5] transition-colors opacity-0 group-hover:opacity-100">
+                          <MoreHorizontal className="w-4 h-4 text-[#71717a]" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={() => onSelectCenter(center.name)}>View profile</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-[#dc2626] focus:text-[#dc2626]">Remove</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+
+      {/* Footer / Pagination */}
+      <div className="border-t border-[#e4e4e7] px-6 py-3 flex items-center justify-between bg-white gap-4 shrink-0">
+        <div className="flex items-center gap-2 text-[13px] text-[#71717a]">
+          <span>Items per page:</span>
+          <Select
+            size="sm"
+            value={String(pageSize)}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+            className="w-20"
+          >
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-1 text-[13px] text-[#71717a]">
+          <span className="mr-2">
+            Page {page} of {totalPages} ({filteredCenters.length} total items)
+          </span>
+          <button
+            onClick={() => setPage(1)}
+            disabled={page <= 1}
+            className="p-1.5 rounded hover:bg-[#f4f4f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronFirst className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="p-1.5 rounded hover:bg-[#f4f4f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="p-1.5 rounded hover:bg-[#f4f4f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setPage(totalPages)}
+            disabled={page >= totalPages}
+            className="p-1.5 rounded hover:bg-[#f4f4f5] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLast className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }

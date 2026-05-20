@@ -15,17 +15,16 @@ export interface PageHeaderProps {
 
 /**
  * Standard page-top header. Flex row with title + optional description on the
- * left and a slot for action buttons / save indicators on the right. Matches
- * the Project Builder, Compliance Review, etc. page tops.
+ * left and a slot for action buttons / save indicators on the right.
  */
 export function PageHeader({ title, description, actions, eyebrow, className }: PageHeaderProps) {
   return (
-    <div className={clsx('flex items-start justify-between gap-4', className)}>
+    <div className={clsx('flex items-end justify-between gap-4', className)}>
       <div className="min-w-0">
         {eyebrow && <div className="mb-2">{eyebrow}</div>}
-        <h1 className="text-[24px] font-bold text-[#18181b] leading-tight">{title}</h1>
+        <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">{title}</h1>
         {description && (
-          <p className="mt-1 text-[14px] text-[#71717a]">{description}</p>
+          <p className="text-sm font-medium text-[#71717a] leading-[14px]">{description}</p>
         )}
       </div>
       {actions && <div className="flex items-center gap-3 shrink-0">{actions}</div>}

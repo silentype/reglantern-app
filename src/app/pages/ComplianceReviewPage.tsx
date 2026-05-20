@@ -10,6 +10,7 @@ import { Pagination } from '../components/design-system/Pagination';
 import { UserAvatar } from '../components/task-table/UserAvatar';
 import { FileRow } from '../components/design-system/FileRow';
 import { BackButton } from '../components/design-system/BackButton';
+import { SearchInput } from '../components/design-system/SearchInput';
 import { getFileType } from '../components/multi-file-upload-panel/helpers';
 import type { UploadedFile } from '../components/multi-file-upload-panel/types';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -88,6 +89,8 @@ export function ComplianceReviewPage() {
     },
     [searchParams, setSearchParams]
   );
+
+  const [frameworkSearch, setFrameworkSearch] = useState('');
 
   const [answers, setAnswers] = useState<
     Record<string, { answer: 'yes' | 'no' | null; explanation: string }>
@@ -307,17 +310,34 @@ export function ComplianceReviewPage() {
   if (!framework) {
     return (
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
-          <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
-            Compliance Review
-          </h1>
-          <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-            Select a framework to begin your review
-          </p>
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+          <div className="flex items-end justify-between gap-4 mb-1">
+            <div>
+              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
+                Compliance Review
+              </h1>
+              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+                Select a framework to begin your review
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mt-[16px] mb-[22px]">
+            <SearchInput
+              placeholder="Search frameworks..."
+              value={frameworkSearch}
+              onChange={(e) => setFrameworkSearch(e.target.value)}
+              onClear={() => setFrameworkSearch('')}
+              className="w-[280px]"
+            />
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto px-[24px] py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl">
-            {FRAMEWORKS.map((fw) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl">
+            {FRAMEWORKS.filter((fw) =>
+              !frameworkSearch.trim() ||
+              fw.name.toLowerCase().includes(frameworkSearch.toLowerCase()) ||
+              fw.category.toLowerCase().includes(frameworkSearch.toLowerCase())
+            ).map((fw) => (
               <button
                 key={fw.id}
                 onClick={() => navigate(`/admin/compliance-review/${fw.id}/chapter-1/q-1`)}
@@ -348,19 +368,19 @@ export function ComplianceReviewPage() {
   return (
     <div className="h-full flex flex-col bg-white relative">
       {/* Page Header */}
-      <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] flex items-start justify-between">
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] flex items-end justify-between">
         <div>
           <BackButton onClick={() => navigate('/admin/compliance-review')} className="mb-3">
             Compliance Review
           </BackButton>
-          <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
+          <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
             {framework.name}
           </h1>
           <p className="text-sm font-medium text-[#71717a] leading-[14px]">
             Walk through each chapter and confirm compliance for every element
           </p>
         </div>
-        <button className="bg-white h-[36px] px-4 py-[6px] rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-medium text-[12px] hover:bg-[#f9fafb] transition-colors">
+        <button className="bg-white h-[32px] px-4 rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-medium text-[12px] hover:bg-[#f9fafb] transition-colors shrink-0">
           CSV Export
         </button>
       </div>
@@ -422,11 +442,11 @@ export function ComplianceReviewPage() {
         </div>
 
         {/* Question Panel */}
-        <div className="w-[44%] overflow-y-auto border-r border-[#e4e4e7] p-8">
+        <div className="w-[44%] overflow-y-auto border-r border-[#e4e4e7] p-6">
           {currentQuestion ? (
             <div className="max-w-2xl">
               {/* Breadcrumb */}
-              <div className="flex gap-[10px] items-center mb-4 flex-wrap">
+              <div className="flex gap-[10px] items-center mb-3 flex-wrap">
                 {currentQuestion.breadcrumb.split(' > ').map((part, index, arr) => (
                   <div key={index} className="flex gap-[10px] items-center">
                     <p
@@ -452,13 +472,13 @@ export function ComplianceReviewPage() {
               </div>
 
               {/* Question */}
-              <h2 className="text-[24px] font-semibold text-[#18181b] mb-6">{currentQuestion.text}</h2>
+              <h2 className="text-[22px] font-semibold text-[#18181b] mb-4">{currentQuestion.text}</h2>
 
               {/* Yes / No */}
-              <div className="flex gap-4 mb-6">
+              <div className="flex gap-3 mb-4">
                 <button
                   onClick={() => handleAnswerChange('yes')}
-                  className={`flex items-center gap-3 px-6 py-4 rounded-lg border-2 transition-all ${
+                  className={`flex items-center gap-3 px-5 py-3 rounded-lg border-2 transition-all ${
                     currentAnswer?.answer === 'yes'
                       ? 'border-green-500 bg-green-50'
                       : 'border-[#e4e4e7] hover:border-[#d4d4d8]'
@@ -478,7 +498,7 @@ export function ComplianceReviewPage() {
 
                 <button
                   onClick={() => handleAnswerChange('no')}
-                  className={`flex items-center gap-3 px-6 py-4 rounded-lg border-2 transition-all ${
+                  className={`flex items-center gap-3 px-5 py-3 rounded-lg border-2 transition-all ${
                     currentAnswer?.answer === 'no'
                       ? 'border-red-500 bg-red-50'
                       : 'border-[#e4e4e7] hover:border-[#d4d4d8]'
@@ -498,20 +518,20 @@ export function ComplianceReviewPage() {
               </div>
 
               {/* Explanation */}
-              <div className="mb-8">
-                <label className="block text-[14px] font-medium text-[#18181b] mb-2">Explanation</label>
+              <div className="mb-5">
+                <label className="block text-[13px] font-medium text-[#52525b] mb-1.5">Explanation</label>
                 <textarea
                   value={currentAnswer?.explanation || ''}
                   onChange={(e) => handleExplanationChange(e.target.value)}
-                  className="w-full px-4 py-3 border border-[#e4e4e7] rounded-lg focus:outline-none focus:border-[#fc6] transition-colors text-[14px] min-h-[120px]"
+                  className="w-full px-3 py-2.5 border border-[#e4e4e7] rounded-lg focus:outline-none focus:border-[#fc6] transition-colors text-[14px] min-h-[100px]"
                   placeholder="Provide additional context or explanation..."
                 />
               </div>
 
               {/* Progress + Pagination */}
-              <div className="pt-6 border-t border-[#e4e4e7]">
+              <div className="pt-4 border-t border-[#e4e4e7]">
                 {/* Progress bar */}
-                <div className="mb-5">
+                <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-[12px] font-medium text-[#71717a]">
                       Question {currentQuestionIndex + 1} of {totalQuestions}
@@ -520,7 +540,7 @@ export function ComplianceReviewPage() {
                       {answeredCount} of {totalQuestions} answered
                     </span>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1 h-[10px]">
                     {(currentChapter?.questions ?? []).map((q, i) => {
                       const ans = answers[q.id]?.answer;
                       const isCurrent = i === currentQuestionIndex;
@@ -529,11 +549,14 @@ export function ComplianceReviewPage() {
                           key={q.id}
                           onClick={() => setCurrentQuestionIndex(i)}
                           title={`Question ${i + 1}${ans === 'yes' ? ' · Yes' : ans === 'no' ? ' · No' : ''}`}
-                          className={`flex-1 h-1.5 rounded-full transition-all duration-200 ${
+                          className={`flex-1 rounded-full transition-all duration-200 ${
+                            isCurrent ? 'h-[10px]' : 'h-[6px]'
+                          } ${
                             ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#15803d]' :
                             ans === 'no'  ? 'bg-[#dc2626] hover:bg-[#b91c1c]' :
-                            'bg-[#e4e4e7] hover:bg-[#d4d4d8]'
-                          } ${!isCurrent ? 'opacity-40' : ''}`}
+                            isCurrent     ? 'bg-[#a1a1aa] hover:bg-[#71717a]' :
+                                            'bg-[#e4e4e7] hover:bg-[#d4d4d8]'
+                          }`}
                         />
                       );
                     })}

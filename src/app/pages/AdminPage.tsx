@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as React from 'react';
-import { useSearchParams } from 'react-router';
+import { useSearchParams, useNavigate } from 'react-router';
 import { format } from 'date-fns';
 import {
   X,
@@ -41,6 +41,7 @@ import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 
 import { Button } from '../components/design-system/Button';
 import { BackButton } from '../components/design-system/BackButton';
+import { SearchInput } from '../components/design-system/SearchInput';
 
 import { HEALTH_CENTERS } from '../constants';
 import { resolveTaskDueDates, findTasksAnchoredTo } from '../utils/helpers';
@@ -149,6 +150,7 @@ export function AdminPage({
   const [tableSaveStatus, _setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // popover: tracks which popover/select is open across the page. Values:
   // 'projectStart' | 'newCat' | 'assign:<projectId>' | 'kickoff:<pid>:<center>'.
@@ -422,30 +424,27 @@ export function AdminPage({
         {/* Sticky Top Section - Header. No bottom border here -- the
             table section runs straight into the header on the same
             page background. */}
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
-          <div className="mb-4 flex items-end justify-between gap-6">
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+          <div className="mb-1 flex items-end justify-between gap-4">
             <div className="flex-1 min-w-0">
               <BackButton onClick={() => { onSelectProject(null); setTaskSearch(''); }} className="mb-3">
                 Project Builder
               </BackButton>
-              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
+              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
                 {selectedProject.name}
               </h1>
               {selectedProject.description && (
-                <p className="text-sm font-medium text-[#71717a] leading-[20px]">
+                <p className="text-sm font-medium text-[#71717a] leading-[14px]">
                   {selectedProject.description}
                 </p>
               )}
             </div>
-            {/* Header actions: Edit + Trash pair sits in its own row
-                above Add Task, so the destructive actions are visually
-                grouped and separated from the primary CTA. */}
             <div className="flex flex-col items-end gap-2 shrink-0">
               <div className="flex items-center gap-2">
                 <SaveIndicator status={tableSaveStatus} />
                 <button
                   onClick={handleOpenEditProject}
-                  className="h-[36px] px-[12px] py-[6px] flex items-center justify-center gap-2 rounded-[6px] border border-[#e4e4e7] bg-white text-[#18181b] text-[13px] font-medium hover:bg-[#f9fafb] transition-colors shadow-sm hover:shadow active:shadow-none"
+                  className="h-[32px] px-[10px] flex items-center justify-center gap-2 rounded-[6px] border border-[#e4e4e7] bg-white text-[#18181b] text-[13px] font-medium hover:bg-[#f9fafb] transition-colors"
                   aria-label="Edit project"
                   title="Edit project"
                 >
@@ -454,14 +453,14 @@ export function AdminPage({
                 </button>
                 <button
                   onClick={() => setConfirmDeleteProjectOpen(true)}
-                  className="h-[36px] w-[36px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] bg-white text-[#71717a] hover:bg-[#fef2f2] hover:text-[#b91c1c] hover:border-[#fecaca] transition-colors shadow-sm hover:shadow active:shadow-none"
+                  className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] bg-white text-[#71717a] hover:bg-[#fef2f2] hover:text-[#b91c1c] hover:border-[#fecaca] transition-colors"
                   aria-label="Delete project"
                   title="Delete project"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              <Button onClick={() => onAddTaskToProject(selectedProject.id)}>
+              <Button size="sm" onClick={() => onAddTaskToProject(selectedProject.id)}>
                 Add Task
                 <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
                   <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="#18181b" fillRule="evenodd" />
@@ -469,14 +468,13 @@ export function AdminPage({
               </Button>
             </div>
           </div>
-          <div className="relative w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa]" />
-            <input
-              type="text"
+          <div className="flex items-center gap-2 mt-[16px] mb-[22px]">
+            <SearchInput
               value={taskSearch}
               onChange={(e) => setTaskSearch(e.target.value)}
+              onClear={() => setTaskSearch('')}
               placeholder="Search tasks…"
-              className="w-full h-[36px] pl-9 pr-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
+              className="w-80"
             />
           </div>
         </div>
@@ -654,10 +652,10 @@ export function AdminPage({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Sticky Top Section - Header */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
-        <div className="flex items-end justify-between gap-6 mb-4">
-          <div className="flex-1">
+      {/* Header */}
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+        <div className="flex items-end justify-between gap-4 mb-1">
+          <div>
             <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">Project Builder</h1>
             <p className="text-sm font-medium text-[#71717a] leading-[14px]">
               Create and manage projects with custom tasks
@@ -665,7 +663,7 @@ export function AdminPage({
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <SaveIndicator status={tableSaveStatus} />
-            <Button onClick={() => onCreatingNewProjectChange(true)}>
+            <Button size="sm" onClick={() => onCreatingNewProjectChange(true)}>
               Create New Project
               <svg className="size-4" fill="none" viewBox="0 0 10.6667 10.6667">
                 <path clipRule="evenodd" d={searchFilterSvgPaths.p1a739400} fill="#18181b" fillRule="evenodd" />
@@ -673,14 +671,13 @@ export function AdminPage({
             </Button>
           </div>
         </div>
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a1a1aa]" />
-          <input
-            type="text"
+        <div className="flex items-center gap-2 mt-[16px] mb-[22px]">
+          <SearchInput
             value={projectSearch}
             onChange={(e) => setProjectSearch(e.target.value)}
+            onClear={() => setProjectSearch('')}
             placeholder="Search projects…"
-            className="w-full h-[36px] pl-9 pr-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
+            className="w-80"
           />
         </div>
       </div>
@@ -749,7 +746,7 @@ export function AdminPage({
 
         {/* Projects Grid */}
         {projects.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl">
             {projects
               .filter((p) =>
                 projectSearch.trim() === '' ||
@@ -933,7 +930,13 @@ export function AdminPage({
                                 setPendingAssign(null);
                                 setPopover(null);
                                 toast.success(
-                                  `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`
+                                  `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`,
+                                  {
+                                    action: {
+                                      label: newCenters.length === 1 ? 'View Projects' : 'View first',
+                                      onClick: () => navigate(`/admin/health-centers/${encodeURIComponent(newCenters[0])}/projects`),
+                                    },
+                                  }
                                 );
                               }}
                             >
