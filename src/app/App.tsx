@@ -42,6 +42,9 @@ const SettingsPage = lazy(() =>
 const HealthCenterAdminPage = lazy(() =>
   import('./pages/HealthCenterAdminPage').then((m) => ({ default: m.HealthCenterAdminPage }))
 );
+const HomePage = lazy(() =>
+  import('./pages/HomePage').then((m) => ({ default: m.HomePage }))
+);
 
 // MultiFileUploadPanel only mounts when a task / new-task panel is open.
 // Keeping it eager would pull 1.6k lines + the relative-due-date picker into
@@ -54,8 +57,12 @@ const PageFallback = () => (
   </div>
 );
 
+const USER_ROLE_STORAGE_KEY = 'reglantern.userRole';
+const MEMBER_HC_STORAGE_KEY = 'reglantern.memberHealthCenter';
+
 // URL <-> sidebar nav item mappings. URL is the source of truth for navigation.
 const NAV_ITEM_TO_URL: Record<string, string> = {
+  'Home': '/home',
   'My Tasks': '/tasks/my-tasks',
   'Site Visit Protocol Checklist': '/checklists/site-visit-protocol',
   'Ryan White Part C/D': '/checklists/ryan-white-c-d',
@@ -95,7 +102,8 @@ export default function App() {
   const itemSeg = segments[1];
   const restSegs = segments.slice(2);
 
-  const currentPage: 'tasks' | 'checklists' | 'admin' | 'settings' =
+  const currentPage: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings' =
+    sectionSeg === 'home' ? 'home' :
     sectionSeg === 'admin' ? 'admin' :
     sectionSeg === 'checklists' ? 'checklists' :
     sectionSeg === 'settings' ? 'settings' :
@@ -147,7 +155,7 @@ export default function App() {
   // Redirect bare / and bare section URLs to canonical defaults
   useEffect(() => {
     if (location.pathname === '/') {
-      navigate('/tasks/my-tasks', { replace: true });
+      navigate('/home', { replace: true });
     } else if (location.pathname === '/tasks') {
       navigate('/tasks/my-tasks', { replace: true });
     } else if (location.pathname === '/checklists') {
@@ -160,6 +168,73 @@ export default function App() {
   // UI-only state (intentionally not in URL — user preference / transient)
   const [sideNavOpen, setSideNavOpen] = useState(true);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  // Role is stored in localStorage (persists across pages) AND reflected in
+  // the /home URL (?role=admin|member&hc=NAME) so html.to.design can capture
+  // both dashboard variants with a direct link.
+  const [userRole, setUserRole] = useState<'admin' | 'member'>(() => {
+    const saved = localStorage.getItem(USER_ROLE_STORAGE_KEY);
+    return saved === 'member' ? 'member' : 'admin';
+  });
+  // null = "All Health Centers" (admin default); string = specific HC
+  const [selectedHC, setSelectedHC] = useState<string | null>(() => {
+    return localStorage.getItem(MEMBER_HC_STORAGE_KEY) || null;
+  });
+
+  // URL params override localStorage — lets html.to.design load any variant
+  // via a direct URL: /home?role=member&hc=Downtown+Medical+Center
+  const urlSearchParams = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  );
+  const effectiveRole = useMemo((): 'admin' | 'member' => {
+    const r = urlSearchParams.get('role');
+    if (r === 'admin' || r === 'member') return r;
+    return userRole;
+  }, [urlSearchParams, userRole]);
+  const effectiveHC = useMemo((): string | null => {
+    return urlSearchParams.get('hc') || selectedHC;
+  }, [urlSearchParams, selectedHC]);
+
+  // Navigate to a path while preserving current ?role= and ?hc= params so
+  // the HC context survives page transitions and html.to.design captures work.
+  const appNavigate = useCallback((path: string, opts?: { replace?: boolean }) => {
+    const params = new URLSearchParams();
+    if (effectiveRole === 'member') params.set('role', 'member');
+    if (effectiveHC) params.set('hc', effectiveHC);
+    const search = params.toString();
+    navigate(search ? `${path}?${search}` : path, opts);
+  }, [navigate, effectiveRole, effectiveHC]);
+
+  const handleHCChange = useCallback((hc: string | null) => {
+    setSelectedHC(hc);
+    if (hc) {
+      localStorage.setItem(MEMBER_HC_STORAGE_KEY, hc);
+    } else {
+      localStorage.removeItem(MEMBER_HC_STORAGE_KEY);
+    }
+    const params = new URLSearchParams();
+    if (effectiveRole === 'member') params.set('role', 'member');
+    if (hc) params.set('hc', hc);
+    const search = params.toString();
+    navigate(`${location.pathname}${search ? '?' + search : ''}`, { replace: true });
+  }, [navigate, effectiveRole, location.pathname]);
+
+  const handleRoleChange = useCallback((role: 'admin' | 'member') => {
+    setUserRole(role);
+    localStorage.setItem(USER_ROLE_STORAGE_KEY, role);
+    let hc = selectedHC;
+    if (role === 'member' && !hc && INITIAL_HEALTH_CENTERS.length > 0) {
+      hc = INITIAL_HEALTH_CENTERS[0].name;
+      setSelectedHC(hc);
+      localStorage.setItem(MEMBER_HC_STORAGE_KEY, hc);
+    }
+    const params = new URLSearchParams();
+    if (role === 'member') params.set('role', 'member');
+    if (hc) params.set('hc', hc);
+    const search = params.toString();
+    navigate(search ? `/home?${search}` : '/home');
+  }, [selectedHC, navigate]);
 
   // Data state
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
@@ -434,17 +509,18 @@ export default function App() {
     setSideNavOpen(prev => !prev);
   }, []);
 
-  const handleNavChange = useCallback((page: 'tasks' | 'checklists' | 'admin' | 'settings') => {
-    if (page === 'tasks') navigate('/tasks/my-tasks');
-    else if (page === 'admin') navigate('/admin/project-builder');
-    else if (page === 'settings') navigate('/settings');
-    else navigate('/checklists/site-visit-protocol');
-  }, [navigate]);
+  const handleNavChange = useCallback((page: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings') => {
+    if (page === 'home') appNavigate('/home');
+    else if (page === 'tasks') appNavigate('/tasks/my-tasks');
+    else if (page === 'admin') appNavigate('/admin/project-builder');
+    else if (page === 'settings') appNavigate('/settings');
+    else appNavigate('/checklists/site-visit-protocol');
+  }, [appNavigate]);
 
   const handleSideNavItemSelect = useCallback((item: string) => {
     const url = NAV_ITEM_TO_URL[item];
-    if (url) navigate(url);
-  }, [navigate]);
+    if (url) appNavigate(url);
+  }, [appNavigate]);
 
   // Memoize current task to avoid recalculation on every render
   const currentTask = useMemo(() => {
@@ -495,23 +571,43 @@ export default function App() {
           },
         }}
       />
-      <TopNav currentPage={currentPage} onNavChange={handleNavChange} />
+      <TopNav
+        currentPage={currentPage}
+        onNavChange={handleNavChange}
+        userRole={effectiveRole}
+        onRoleChange={handleRoleChange}
+        healthCenterNames={healthCenters.map((hc) => hc.name)}
+        selectedHC={effectiveHC}
+        onHCChange={handleHCChange}
+      />
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Side Navigation */}
-        <SideNavigation
-          pageType={currentPage}
-          selectedItem={selectedNavItem}
-          onItemSelect={handleSideNavItemSelect}
-          isOpen={sideNavOpen}
-          onToggle={toggleSideNav}
-        />
+        {/* Side Navigation — hidden on home page */}
+        {currentPage !== 'home' && (
+          <SideNavigation
+            pageType={currentPage as 'tasks' | 'checklists' | 'admin' | 'settings'}
+            selectedItem={selectedNavItem}
+            onItemSelect={handleSideNavItemSelect}
+            isOpen={sideNavOpen}
+            onToggle={toggleSideNav}
+          />
+        )}
 
         {/* Main Page Content */}
-        <main className={`flex-1 overflow-auto transition-all duration-300 ${sideNavOpen ? 'ml-[280px]' : 'ml-[66px]'}`}>
+        <main className={`flex-1 overflow-auto transition-all duration-300 ${currentPage !== 'home' ? (sideNavOpen ? 'ml-[280px]' : 'ml-[66px]') : ''}`}>
           <Suspense fallback={<PageFallback />}>
-          {currentPage === 'tasks' ? (
+          {currentPage === 'home' ? (
+            <HomePage
+              userRole={effectiveRole}
+              memberHealthCenter={effectiveHC ?? ''}
+              tasks={allTasksIncludingProjects}
+              projects={projects}
+              healthCenters={healthCenters}
+              fieldDefs={healthCenterFieldDefs}
+              onTaskClick={handleTaskClick}
+            />
+          ) : currentPage === 'tasks' ? (
             <TasksPage
               onTaskClick={handleTaskClick}
               onToggleSideNav={toggleSideNav}
@@ -523,6 +619,7 @@ export default function App() {
               selectedTaskId={selectedTaskId}
               onAddTask={handleAddNewTask}
               onDeleteTask={handleDeleteTask}
+              defaultHCFilter={effectiveHC ?? undefined}
             />
           ) : currentPage === 'checklists' ? (
             <ChecklistsPage onToggleSideNav={toggleSideNav} sideNavOpen={sideNavOpen} />
@@ -542,6 +639,8 @@ export default function App() {
               setHealthCenters={setHealthCenters}
               fieldDefs={healthCenterFieldDefs}
               selectedCenterName={healthCenterDetail}
+              projects={projects}
+              setProjects={setProjects}
               onSelectCenter={(name) => {
                 navigate(
                   name !== null

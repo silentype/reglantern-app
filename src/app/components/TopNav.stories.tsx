@@ -34,7 +34,8 @@ export const SettingsActive: Story = { args: { currentPage: 'settings' } };
 export const CustomHealthCenter: Story = {
   args: {
     currentPage: 'tasks',
-    healthCenterLabel: 'Mountain View Clinic',
+    selectedHC: 'Mountain View Clinic',
+    healthCenterNames: ['Mountain View Clinic', 'Downtown Medical', 'Westside Clinic'],
   },
 };
 

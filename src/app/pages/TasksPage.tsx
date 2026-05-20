@@ -16,7 +16,6 @@ import {
   X,
   Calendar as CalendarIcon,
   Check,
-  Search,
   User,
   Building2,
   AlertCircle,
@@ -35,6 +34,7 @@ import { Calendar } from '../components/ui/calendar';
 
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 import { TasksHeader } from '../components/TasksHeader';
+import { SearchInput } from '../components/design-system/SearchInput';
 
 import {
   AVAILABLE_USERS,
@@ -43,15 +43,22 @@ import {
 } from '../constants';
 import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
 
-export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, sideNavOpen: _sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; }) {
+export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, sideNavOpen: _sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask, defaultHCFilter }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; defaultHCFilter?: string; }) {
   const [statusFilter, setStatusFilter] = useState<string[]>(['all']);
   const [dueDateFilter, setDueDateFilter] = useState<string>('');
   const [assignedToFilter, setAssignedToFilter] = useState<string[]>(['all']);
-  const [healthCenterFilter, setHealthCenterFilter] = useState<string[]>(['All Health Centers']);
+  const [healthCenterFilter, setHealthCenterFilter] = useState<string[]>(() =>
+    defaultHCFilter ? [defaultHCFilter] : ['All Health Centers']
+  );
   const [needsAttentionFilter, setNeedsAttentionFilter] = useState<string[]>(['all']);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [customDateInput, setCustomDateInput] = useState<string>('');
   const [assignedToOpen, setAssignedToOpen] = useState(false);
+
+  // Sync HC filter when the top-nav HC selector changes
+  useEffect(() => {
+    setHealthCenterFilter(defaultHCFilter ? [defaultHCFilter] : ['All Health Centers']);
+  }, [defaultHCFilter]);
   const [healthCenterOpen, setHealthCenterOpen] = useState(false);
   const [needsAttentionOpenChip, setNeedsAttentionOpenChip] = useState(false);
 
@@ -269,38 +276,19 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
   return (
     <div className="h-full flex flex-col">
       {/* Sticky Top Section - Header, Description, Filters, Column Headers */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[0px]">
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
         <TasksHeader tableSaveStatus={tableSaveStatus} onAddTask={onAddTask} />
 
-        {/* Header */}
-        <div className="mb-6">
-
-        </div>
-
         {/* Horizontal Filter Bar - Chip/Tag Style */}
-        <div className="my-[16px]">
-            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-              {/* Search Input - Compact */}
-              <div className="relative shrink-0">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-[#71717a]" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-[#f9fafb] border border-[#e4e4e7] rounded-md pl-8 pr-10 py-1.5 text-sm hover:bg-white transition-colors focus:outline-none focus:border-[#fc6] w-[320px]"
-                />
-                {/* Clear icon on the right */}
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[#e5e5e5] rounded transition-colors"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-4 h-4 text-[#71717a]" />
-                  </button>
-                )}
-              </div>
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none mt-[16px] mb-[22px]">
+              {/* Search Input */}
+              <SearchInput
+                placeholder="Search tasks…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onClear={() => setSearchQuery('')}
+                className="w-[200px]"
+              />
 
               {/* Divider */}
               <div className="h-5 w-px bg-[#e4e4e7] shrink-0"></div>
@@ -625,7 +613,6 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
                   </Command>
                 </PopoverContent>
               </Popover>
-            </div>
         </div>
       </div>
 
