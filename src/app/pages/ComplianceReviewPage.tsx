@@ -332,7 +332,7 @@ export function ComplianceReviewPage() {
           </div>
         </div>
         <div className="flex-1 overflow-y-auto px-[24px] py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl">
             {FRAMEWORKS.filter((fw) =>
               !frameworkSearch.trim() ||
               fw.name.toLowerCase().includes(frameworkSearch.toLowerCase()) ||

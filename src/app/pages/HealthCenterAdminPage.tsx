@@ -22,6 +22,9 @@ import {
   ChevronLast,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ExternalLink,
+  FolderOpen,
 } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -57,11 +60,19 @@ import type {
   HealthCenterTechnology,
   HealthCenterSales,
 } from '../data/healthCenters';
+import type { Project } from './AdminPage';
+import type { Task } from '../components/task-table/types';
+import { StatusBadge } from '../components/design-system/StatusBadge';
+import type { TaskStatus } from '../components/design-system/StatusBadge';
+import { CheckboxIcon } from '../components/task-table/CheckboxIcon';
+import { UserAvatar } from '../components/task-table/UserAvatar';
+import { AttentionBadge } from '../components/task-table/AttentionBadge';
 
 // ── Tab definitions ────────────────────────────────────────────────────────
 
 const TABS = [
   'Overview',
+  'Projects',
   'Compliance',
   'Expirations',
   'Services & Funding',
@@ -74,6 +85,7 @@ type Tab = (typeof TABS)[number];
 
 const TAB_SLUGS: Record<Tab, string> = {
   'Overview':          'overview',
+  'Projects':          'projects',
   'Compliance':        'compliance',
   'Expirations':       'expirations',
   'Services & Funding':'services-funding',
@@ -282,6 +294,163 @@ function OverviewTab({ center, data, onChange }: {
   );
 }
 
+function ProjectsTab({ center, assignedProjects, setProjects, onOpenProject }: {
+  center: HealthCenter;
+  assignedProjects: Project[];
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
+  onOpenProject: (projectId: number) => void;
+}) {
+  const navigate = useNavigate();
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+
+  const toggleCollapse = (projectId: number) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectId)) next.delete(projectId);
+      else next.add(projectId);
+      return next;
+    });
+  };
+
+  const toggleTaskComplete = (projectId: number, task: Task) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          tasks: p.tasks.map((t) =>
+            t.id === task.id
+              ? { ...t, completed: !t.completed, status: t.completed ? 'In Progress' : 'Complete' }
+              : t
+          ),
+        };
+      })
+    );
+  };
+
+  if (assignedProjects.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-2 text-[#71717a]">
+        <FolderOpen className="w-10 h-10 text-[#e4e4e7]" />
+        <p className="text-[14px] font-medium text-[#18181b]">No projects assigned</p>
+        <p className="text-[13px]">Assign this health center to a project in the Project Builder.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {assignedProjects.map((project) => {
+        const assignment = project.assignedHealthCenters?.find((c) => c.name === center.name);
+        const completedCount = project.tasks.filter((t) => t.completed).length;
+        const isCollapsed = collapsed.has(project.id);
+
+        return (
+          <div key={project.id} className="border border-[#e4e4e7] rounded-[6px] overflow-hidden">
+            {/* Project header */}
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[#f9fafb] border-b border-[#e4e4e7]">
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  onClick={() => toggleCollapse(project.id)}
+                  className="shrink-0 p-0.5 rounded hover:bg-[#e4e4e7] transition-colors"
+                >
+                  <ChevronDown
+                    className={`w-4 h-4 text-[#71717a] transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                  />
+                </button>
+                <div className="min-w-0">
+                  <p className="text-[14px] font-semibold text-[#18181b] truncate">{project.name}</p>
+                  <p className="text-[12px] text-[#71717a]">
+                    {completedCount}/{project.tasks.length} tasks complete
+                    {assignment && <> · Assigned {assignment.assignedAt}</>}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => onOpenProject(project.id)}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:text-[#18181b] rounded-md hover:bg-[#e4e4e7] transition-colors"
+              >
+                Open in Builder
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Task list */}
+            {!isCollapsed && (
+              project.tasks.length === 0 ? (
+                <p className="px-5 py-4 text-[13px] text-[#71717a]">No tasks in this project yet.</p>
+              ) : (
+                <div>
+                  {/* Column headers */}
+                  <div className="grid grid-cols-[32px_1fr_140px_180px_130px] gap-2 px-4 py-2 border-b border-[#e4e4e7] bg-white">
+                    <div />
+                    <span className="text-[12px] font-medium text-[#71717a]">Task</span>
+                    <span className="text-[12px] font-medium text-[#71717a]">Due Date</span>
+                    <span className="text-[12px] font-medium text-[#71717a]">Assigned To</span>
+                    <span className="text-[12px] font-medium text-[#71717a]">Status</span>
+                  </div>
+                  {project.tasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="grid grid-cols-[32px_1fr_140px_180px_130px] gap-2 items-center px-4 py-2.5 border-b border-[#f4f4f5] hover:bg-[#f9fafb] transition-colors group/row"
+                    >
+                      {/* Checkbox */}
+                      <button
+                        onClick={() => toggleTaskComplete(project.id, task)}
+                        className="flex items-center justify-center"
+                      >
+                        <CheckboxIcon completed={task.completed} />
+                      </button>
+
+                      {/* Title + attention */}
+                      <div className="min-w-0">
+                        <button
+                          onClick={() => navigate(`/admin/project-builder/${project.id}/${task.id}`)}
+                          className={`text-[13px] font-medium text-left truncate w-full hover:underline ${task.completed ? 'line-through text-[#71717a]' : 'text-[#18181b]'}`}
+                        >
+                          {task.title}
+                        </button>
+                        {task.attention && (
+                          <div className="mt-0.5">
+                            <AttentionBadge attention={task.attention} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Due date */}
+                      <span className="text-[13px] text-[#71717a]">
+                        {task.dueDate ?? <span className="text-[#d4d4d8]">—</span>}
+                      </span>
+
+                      {/* Assigned to */}
+                      <div>
+                        {task.assignedTo ? (
+                          <UserAvatar user={task.assignedTo} />
+                        ) : (
+                          <span className="text-[13px] text-[#d4d4d8]">—</span>
+                        )}
+                      </div>
+
+                      {/* Status */}
+                      <div>
+                        {task.status ? (
+                          <StatusBadge status={task.status as TaskStatus} />
+                        ) : (
+                          <span className="text-[13px] text-[#d4d4d8]">—</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ComplianceTab({ data, onChange }: {
   data: HealthCenterCompliance; onChange: (p: Partial<HealthCenterCompliance>) => void;
 }) {
@@ -463,6 +632,8 @@ export function HealthCenterAdminPage({
   setHealthCenters,
   fieldDefs,
   selectedCenterName,
+  projects,
+  setProjects,
   onSelectCenter,
 }: {
   onToggleSideNav: () => void;
@@ -471,6 +642,8 @@ export function HealthCenterAdminPage({
   setHealthCenters: React.Dispatch<React.SetStateAction<HealthCenter[]>>;
   fieldDefs: HealthCenterDateFieldDef[];
   selectedCenterName: string | null;
+  projects: Project[];
+  setProjects: React.Dispatch<React.SetStateAction<Project[]>>;
   onSelectCenter: (name: string | null) => void;
 }) {
   const navigate = useNavigate();
@@ -610,9 +783,19 @@ export function HealthCenterAdminPage({
         </div>
 
         <div className="flex-1 overflow-auto px-[24px] py-6">
-          <div className="max-w-[860px]">
+          <div className={activeTab === 'Projects' ? '' : 'max-w-[860px]'}>
             {activeTab === 'Overview' && (
               <OverviewTab center={selectedCenter} data={selectedCenter.overview} onChange={(p) => patchCenter(selectedCenter.name, 'overview', p)} />
+            )}
+            {activeTab === 'Projects' && (
+              <ProjectsTab
+                center={selectedCenter}
+                assignedProjects={projects.filter((proj) =>
+                  proj.assignedHealthCenters?.some((c) => c.name === selectedCenter.name)
+                )}
+                setProjects={setProjects}
+                onOpenProject={(id) => navigate(`/admin/project-builder/${id}`)}
+              />
             )}
             {activeTab === 'Compliance' && (
               <ComplianceTab data={selectedCenter.compliance} onChange={(p) => patchCenter(selectedCenter.name, 'compliance', p)} />
@@ -791,15 +974,15 @@ export function HealthCenterAdminPage({
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto px-[24px] py-6">
         <table className="w-full border-collapse text-[14px]">
           <thead className="sticky top-0 bg-[#f9fafb] z-10">
             <tr className="border-b border-[#e4e4e7]">
-              <th className="text-left px-6 py-3 text-[12px] font-semibold text-[#71717a] uppercase tracking-wide whitespace-nowrap">Name</th>
-              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] uppercase tracking-wide whitespace-nowrap">City</th>
-              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] uppercase tracking-wide whitespace-nowrap">State</th>
+              <th className="text-left px-6 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">Name</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">City</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">State</th>
               {PROFILE_COLS.filter((c) => visibleCols.has(c.key)).map((col) => (
-                <th key={col.key} className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] uppercase tracking-wide whitespace-nowrap">
+                <th key={col.key} className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">
                   {col.label}
                 </th>
               ))}

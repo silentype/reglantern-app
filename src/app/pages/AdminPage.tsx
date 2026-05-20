@@ -14,7 +14,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as React from 'react';
-import { useSearchParams } from 'react-router';
+import { useSearchParams, useNavigate } from 'react-router';
 import { format } from 'date-fns';
 import {
   X,
@@ -150,6 +150,7 @@ export function AdminPage({
   const [tableSaveStatus, _setTableSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // popover: tracks which popover/select is open across the page. Values:
   // 'projectStart' | 'newCat' | 'assign:<projectId>' | 'kickoff:<pid>:<center>'.
@@ -745,7 +746,7 @@ export function AdminPage({
 
         {/* Projects Grid */}
         {projects.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl">
             {projects
               .filter((p) =>
                 projectSearch.trim() === '' ||
@@ -929,7 +930,13 @@ export function AdminPage({
                                 setPendingAssign(null);
                                 setPopover(null);
                                 toast.success(
-                                  `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`
+                                  `Project assigned to ${newCenters.length} health center${newCenters.length > 1 ? 's' : ''}`,
+                                  {
+                                    action: {
+                                      label: newCenters.length === 1 ? 'View Projects' : 'View first',
+                                      onClick: () => navigate(`/admin/health-centers/${encodeURIComponent(newCenters[0])}/projects`),
+                                    },
+                                  }
                                 );
                               }}
                             >
