@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Inter, sans-serif; padding: 16px; margin: 0; background: #1e1e1e; color: #fff; }
+    h3 { margin: 0 0 8px; font-size: 14px; }
+    p  { margin: 0 0 16px; font-size: 12px; color: #aaa; line-height: 1.5; }
+    button {
+      width: 100%; padding: 10px; background: #ffcc66; color: #18181b;
+      border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { background: #eab308; }
+    #status { margin-top: 12px; font-size: 12px; color: #aaa; min-height: 18px; }
+    #status.ok  { color: #4ade80; }
+    #status.err { color: #f87171; }
+  </style>
+</head>
+<body>
+  <h3>Reglantern Tokens</h3>
+  <p>Creates 3 Variable collections (Core, Semantic, Component) with all design tokens from tokens/tokens.json.</p>
+  <button id="btn" onclick="run()">Create Variables</button>
+  <div id="status"></div>
+  <script>
+    function run() {
+      document.getElementById('btn').disabled = true;
+      document.getElementById('status').textContent = 'Creating variables…';
+      document.getElementById('status').className = '';
+      parent.postMessage({ pluginMessage: { type: 'create' } }, '*');
+    }
+    window.onmessage = (e) => {
+      const { type, message } = e.data.pluginMessage || {};
+      const el = document.getElementById('status');
+      if (type === 'done') { el.textContent = message; el.className = 'ok'; }
+      if (type === 'error') { el.textContent = message; el.className = 'err'; document.getElementById('btn').disabled = false; }
+    };
+  </script>
+</body>
+</html>
