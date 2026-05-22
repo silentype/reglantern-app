@@ -12,9 +12,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "chromatic": "npx chromatic --project-token=chpt_927228e59430635"
   },
   "dependencies": {
+    "@figma/code-connect": "^1.4.5",
     "@radix-ui/react-dropdown-menu": "2.1.6",
     "@radix-ui/react-popover": "1.1.6",
     "@radix-ui/react-select": "2.1.6",
@@ -47,6 +49,7 @@
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "4.7.0",
+    "chromatic": "^17.0.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",

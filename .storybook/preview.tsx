@@ -10,7 +10,7 @@ import '../src/styles/index.css';
 // Grab a frame URL by right-clicking the frame in Figma -> Copy/paste as ->
 // Copy link to selection. Strip the trailing &t=... session token before pasting.
 const FIGMA_FILE_URL =
-  'https://www.figma.com/design/nTGtK5YYRFtaX07IsucNqw/Reglantern-Shadcn-Figma-kit?node-id=55570-574';
+  'https://www.figma.com/design/oGbyq96g9IQCvH6oTUgn7o/Reglantern?node-id=0-1';
 
 /** @type { import('@storybook/react-vite').Preview } */
 const preview = {
