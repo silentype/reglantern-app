@@ -4,35 +4,59 @@
   <style>
     body { font-family: Inter, sans-serif; padding: 16px; margin: 0; background: #1e1e1e; color: #fff; }
     h3 { margin: 0 0 8px; font-size: 14px; }
-    p  { margin: 0 0 16px; font-size: 12px; color: #aaa; line-height: 1.5; }
-    button {
+    p  { margin: 0 0 12px; font-size: 12px; color: #aaa; line-height: 1.5; }
+    .btn-primary {
       width: 100%; padding: 10px; background: #ffcc66; color: #18181b;
       border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
-      cursor: pointer;
+      cursor: pointer; margin-bottom: 8px; display: block;
     }
-    button:hover { background: #eab308; }
+    .btn-primary:hover { background: #eab308; }
+    .btn-danger {
+      width: 100%; padding: 10px; background: transparent; color: #f87171;
+      border: 1px solid #f87171; border-radius: 6px; font-size: 13px; font-weight: 600;
+      cursor: pointer; display: block;
+    }
+    .btn-danger:hover { background: #f871711a; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
     #status { margin-top: 12px; font-size: 12px; color: #aaa; min-height: 18px; }
     #status.ok  { color: #4ade80; }
     #status.err { color: #f87171; }
+    hr { border: none; border-top: 1px solid #333; margin: 12px 0; }
   </style>
 </head>
 <body>
   <h3>Reglantern Tokens</h3>
-  <p>Creates 3 Variable collections (Core, Semantic, Component) with all design tokens from tokens/tokens.json.</p>
-  <button id="btn" onclick="run()">Create Variables</button>
+  <p>Creates 3 Variable collections (Core, Semantic, Component) with all design tokens.</p>
+  <button class="btn-primary" id="btn-create" onclick="create()">Create Variables</button>
+  <hr>
+  <p style="margin-bottom:8px">Remove all local Color Styles, Text Styles, and Effect Styles from this file.</p>
+  <button class="btn-danger" id="btn-clean" onclick="clean()">🗑 Delete All Styles</button>
   <div id="status"></div>
   <script>
-    function run() {
-      document.getElementById('btn').disabled = true;
-      document.getElementById('status').textContent = 'Creating variables…';
-      document.getElementById('status').className = '';
+    function setStatus(msg, cls) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = cls || '';
+    }
+    function create() {
+      document.getElementById('btn-create').disabled = true;
+      setStatus('Creating variables…');
       parent.postMessage({ pluginMessage: { type: 'create' } }, '*');
+    }
+    function clean() {
+      if (!confirm('Delete ALL local styles in this file? This cannot be undone.')) return;
+      document.getElementById('btn-clean').disabled = true;
+      setStatus('Deleting styles…');
+      parent.postMessage({ pluginMessage: { type: 'clean-styles' } }, '*');
     }
     window.onmessage = (e) => {
       const { type, message } = e.data.pluginMessage || {};
-      const el = document.getElementById('status');
-      if (type === 'done') { el.textContent = message; el.className = 'ok'; }
-      if (type === 'error') { el.textContent = message; el.className = 'err'; document.getElementById('btn').disabled = false; }
+      if (type === 'done')  { setStatus(message, 'ok'); }
+      if (type === 'error') {
+        setStatus(message, 'err');
+        document.getElementById('btn-create').disabled = false;
+        document.getElementById('btn-clean').disabled = false;
+      }
     };
   </script>
 </body>

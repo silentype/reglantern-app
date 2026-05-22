@@ -162,32 +162,45 @@ const COLLECTION_NAMES = {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-figma.showUI(__html__, { width: 320, height: 200 });
+figma.showUI(__html__, { width: 320, height: 280 });
 
 figma.ui.onmessage = async (msg) => {
-  if (msg.type !== 'create') return;
+  if (msg.type === 'create') {
+    try {
+      let total = 0;
 
-  try {
-    let total = 0;
+      for (const [setKey, tokenMap] of Object.entries(TOKENS)) {
+        const collection = figma.variables.createVariableCollection(COLLECTION_NAMES[setKey]);
+        const modeId     = collection.defaultModeId;
+        collection.renameMode(modeId, 'Default');
 
-    for (const [setKey, tokenMap] of Object.entries(TOKENS)) {
-      const collection = figma.variables.createVariableCollection(COLLECTION_NAMES[setKey]);
-      const modeId     = collection.defaultModeId;
-
-      // Rename the default mode to "Default"
-      collection.renameMode(modeId, 'Default');
-
-      for (const [name, { type, value }] of Object.entries(tokenMap)) {
-        const variable = figma.variables.createVariable(name, collection, type);
-        const figmaVal = type === 'COLOR' ? hexToRgb(value) : value;
-        variable.setValueForMode(modeId, figmaVal);
-        total++;
+        for (const [name, { type, value }] of Object.entries(tokenMap)) {
+          const variable = figma.variables.createVariable(name, collection, type);
+          const figmaVal = type === 'COLOR' ? hexToRgb(value) : value;
+          variable.setValueForMode(modeId, figmaVal);
+          total++;
+        }
       }
-    }
 
-    figma.ui.postMessage({ type: 'done', message: `✅ ${total} variables created across 3 collections!` });
-    figma.closePlugin(`✅ ${total} variables created`);
-  } catch (err) {
-    figma.ui.postMessage({ type: 'error', message: `❌ ${err.message}` });
+      figma.ui.postMessage({ type: 'done', message: `✅ ${total} variables created across 3 collections!` });
+    } catch (err) {
+      figma.ui.postMessage({ type: 'error', message: `❌ ${err.message}` });
+    }
+  }
+
+  if (msg.type === 'clean-styles') {
+    try {
+      const paint  = figma.getLocalPaintStyles();
+      const text   = figma.getLocalTextStyles();
+      const effect = figma.getLocalEffectStyles();
+      const grid   = figma.getLocalGridStyles();
+
+      [...paint, ...text, ...effect, ...grid].forEach(s => s.remove());
+
+      const total = paint.length + text.length + effect.length + grid.length;
+      figma.ui.postMessage({ type: 'done', message: `✅ ${total} styles deleted.` });
+    } catch (err) {
+      figma.ui.postMessage({ type: 'error', message: `❌ ${err.message}` });
+    }
   }
 };
