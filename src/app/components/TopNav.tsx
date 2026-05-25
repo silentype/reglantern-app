@@ -6,7 +6,7 @@
  */
 
 import { useRef, useState, useEffect } from 'react';
-import { ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check, UserCircle } from 'lucide-react';
 
 import reglanternLogo from 'figma:asset/5c768d7f259dcbb31703dfef4853e9bbf108c1dc.png';
 import { TopNavButton } from './design-system/TopNavButton';
@@ -37,7 +37,9 @@ export function TopNav({
   onRoleChange,
 }: TopNavProps) {
   const [hcDropOpen, setHcDropOpen] = useState(false);
+  const [avatarDropOpen, setAvatarDropOpen] = useState(false);
   const hcRef = useRef<HTMLDivElement>(null);
+  const avatarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!hcDropOpen) return;
@@ -49,6 +51,17 @@ export function TopNav({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [hcDropOpen]);
+
+  useEffect(() => {
+    if (!avatarDropOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (avatarRef.current && !avatarRef.current.contains(e.target as Node)) {
+        setAvatarDropOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [avatarDropOpen]);
 
   const hcLabel = selectedHC ?? 'All Health Centers';
 
@@ -100,32 +113,6 @@ export function TopNav({
           )}
         </div>
 
-        {/* Role toggle pill */}
-        {onRoleChange && (
-          <div className="flex items-center bg-[#232a30] rounded-md p-0.5 gap-0.5">
-            <button
-              onClick={() => onRoleChange('admin')}
-              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-                userRole === 'admin'
-                  ? 'bg-[#fc6] text-[#18181b]'
-                  : 'text-[#9ca3af] hover:text-white'
-              }`}
-            >
-              Admin
-            </button>
-            <button
-              onClick={() => onRoleChange('member')}
-              className={`px-3 py-1 rounded text-xs font-medium transition-all ${
-                userRole === 'member'
-                  ? 'bg-[#fc6] text-[#18181b]'
-                  : 'text-[#9ca3af] hover:text-white'
-              }`}
-            >
-              Member
-            </button>
-          </div>
-        )}
-
         <nav className="flex items-center gap-6">
           <TopNavButton active={currentPage === 'home'} onClick={() => onNavChange('home')}>Home</TopNavButton>
           <TopNavButton active={currentPage === 'tasks'} onClick={() => onNavChange('tasks')}>
@@ -148,19 +135,59 @@ export function TopNav({
       <div className="flex items-center gap-4">
         <img src={reglanternLogo} alt="RegLantern Logo" className="h-[30px] w-auto" />
 
-        <div className="flex items-center gap-2">
-          {/* Profile avatar — always brand yellow as identity, not deterministic palette. */}
-          <Avatar initials={user.initials} name={user.name} size="lg" color="#fc6" className="font-bold" />
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            className="transform rotate-90"
-            aria-hidden="true"
+        {/* Avatar + profile dropdown */}
+        <div ref={avatarRef} className="relative">
+          <button
+            onClick={() => setAvatarDropOpen((v) => !v)}
+            className="flex items-center gap-2 cursor-pointer"
           >
-            <path d="M6.47 4L5.53 4.94L8.58333 8L5.53 11.06L6.47 12L10.47 8L6.47 4Z" fill="#fc6" />
-          </svg>
+            <Avatar initials={user.initials} name={user.name} size="lg" color="#fc6" className="font-bold" />
+            <ChevronDown
+              size={14}
+              className={`text-[#fc6] transition-transform duration-150 ${avatarDropOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {avatarDropOpen && (
+            <div className="absolute top-full right-0 mt-2 bg-[#232a30] border border-[#3d444b] rounded-md shadow-xl z-50 min-w-[200px]">
+              {/* User info */}
+              <div className="px-4 py-3 border-b border-[#3d444b]">
+                <div className="flex items-center gap-2">
+                  <UserCircle size={16} className="text-[#9ca3af]" />
+                  <span className="text-sm text-white font-medium">{user.name}</span>
+                </div>
+              </div>
+
+              {/* Role toggle */}
+              {onRoleChange && (
+                <div className="px-4 py-3">
+                  <p className="text-[11px] text-[#71717a] uppercase tracking-wide mb-2">View as</p>
+                  <div className="flex items-center bg-[#32383e] rounded-md p-0.5 gap-0.5">
+                    <button
+                      onClick={() => { onRoleChange('admin'); setAvatarDropOpen(false); }}
+                      className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                        userRole === 'admin'
+                          ? 'bg-[#fc6] text-[#18181b]'
+                          : 'text-[#9ca3af] hover:text-white'
+                      }`}
+                    >
+                      Admin
+                    </button>
+                    <button
+                      onClick={() => { onRoleChange('member'); setAvatarDropOpen(false); }}
+                      className={`flex-1 px-3 py-1.5 rounded text-xs font-medium transition-all ${
+                        userRole === 'member'
+                          ? 'bg-[#fc6] text-[#18181b]'
+                          : 'text-[#9ca3af] hover:text-white'
+                      }`}
+                    >
+                      Member
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </header>

@@ -606,6 +606,10 @@ export default function App() {
               healthCenters={healthCenters}
               fieldDefs={healthCenterFieldDefs}
               onTaskClick={handleTaskClick}
+              handleToggleTaskComplete={handleToggleTaskComplete}
+              handleUpdateTaskStatus={handleUpdateTaskStatus}
+              handleUpdateTaskDetails={handleUpdateTaskDetails}
+              selectedTaskId={selectedTaskId}
             />
           ) : currentPage === 'tasks' ? (
             <TasksPage
