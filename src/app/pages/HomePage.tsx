@@ -13,6 +13,7 @@ import { Calendar } from '../components/ui/calendar';
 
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 import { SearchInput } from '../components/design-system/SearchInput';
+import { Tab, TabStrip } from '../components/design-system/Tab';
 import type { Project } from './AdminPage';
 import type { HealthCenter, HealthCenterDateFieldDef } from '../data/healthCenters';
 
@@ -323,24 +324,16 @@ function AdminDashboard({
           ))}
         </div>
 
-        {/* Tab chips */}
-        <div className={`flex items-center gap-2 mt-[16px] ${activeTab === 'tasks' ? 'mb-[16px]' : 'mb-[22px]'}`}>
-          <button
-            onClick={() => handleTabChange('health-centers')}
-            className={`px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors shrink-0 ${
-              activeTab === 'health-centers' ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
-            }`}
-          >
-            Health Centers
-          </button>
-          <button
-            onClick={() => handleTabChange('tasks')}
-            className={`px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors shrink-0 ${
-              activeTab === 'tasks' ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
-            }`}
-          >
-            Tasks
-          </button>
+        {/* Tab strip */}
+        <div className={`mt-[16px] ${activeTab === 'tasks' ? 'mb-[16px]' : 'mb-[22px]'}`}>
+          <TabStrip className="w-fit">
+            <Tab active={activeTab === 'health-centers'} flex={false} onClick={() => handleTabChange('health-centers')}>
+              Health Centers
+            </Tab>
+            <Tab active={activeTab === 'tasks'} flex={false} onClick={() => handleTabChange('tasks')}>
+              Tasks
+            </Tab>
+          </TabStrip>
         </div>
 
         {/* Filter bar — tasks tab only (same as TasksPage) */}
