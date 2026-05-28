@@ -595,17 +595,22 @@ export default function App() {
         )}
 
         {/* Main Page Content */}
-        <main className={`flex-1 overflow-auto transition-all duration-300 ${currentPage !== 'home' ? (sideNavOpen ? 'ml-[280px]' : 'ml-[66px]') : ''}`}>
+        <main className={`flex-1 overflow-auto transition-all duration-300 ${sideNavOpen ? 'ml-[280px]' : 'ml-[66px]'}`}>
           <Suspense fallback={<PageFallback />}>
           {currentPage === 'home' ? (
             <HomePage
               userRole={effectiveRole}
               memberHealthCenter={effectiveHC ?? ''}
+              homeTab={sectionSeg === 'home' && itemSeg === 'tasks' ? 'tasks' : 'health-centers'}
               tasks={allTasksIncludingProjects}
               projects={projects}
               healthCenters={healthCenters}
               fieldDefs={healthCenterFieldDefs}
               onTaskClick={handleTaskClick}
+              handleToggleTaskComplete={handleToggleTaskComplete}
+              handleUpdateTaskStatus={handleUpdateTaskStatus}
+              handleUpdateTaskDetails={handleUpdateTaskDetails}
+              selectedTaskId={selectedTaskId}
             />
           ) : currentPage === 'tasks' ? (
             <TasksPage
