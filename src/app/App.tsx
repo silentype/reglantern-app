@@ -102,6 +102,10 @@ export default function App() {
   const itemSeg = segments[1];
   const restSegs = segments.slice(2);
 
+  // On /home, second segment selects the tab
+  const homeTab: 'health-centers' | 'tasks' =
+    sectionSeg === 'home' && itemSeg === 'tasks' ? 'tasks' : 'health-centers';
+
   const currentPage: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings' =
     sectionSeg === 'home' ? 'home' :
     sectionSeg === 'admin' ? 'admin' :
@@ -583,19 +587,17 @@ export default function App() {
 
       {/* Main Content Area */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Side Navigation — hidden on home page */}
-        {currentPage !== 'home' && (
-          <SideNavigation
-            pageType={currentPage as 'tasks' | 'checklists' | 'admin' | 'settings'}
-            selectedItem={selectedNavItem}
-            onItemSelect={handleSideNavItemSelect}
-            isOpen={sideNavOpen}
-            onToggle={toggleSideNav}
-          />
-        )}
+        {/* Side Navigation — always rendered for consistent left margin */}
+        <SideNavigation
+          pageType={currentPage === 'home' ? 'tasks' : (currentPage as 'tasks' | 'checklists' | 'admin' | 'settings')}
+          selectedItem={currentPage === 'home' ? '' : selectedNavItem}
+          onItemSelect={handleSideNavItemSelect}
+          isOpen={sideNavOpen}
+          onToggle={toggleSideNav}
+        />
 
         {/* Main Page Content */}
-        <main className={`flex-1 overflow-auto transition-all duration-300 ${currentPage !== 'home' ? (sideNavOpen ? 'ml-[280px]' : 'ml-[66px]') : ''}`}>
+        <main className={`flex-1 overflow-auto transition-all duration-300 ${sideNavOpen ? 'ml-[280px]' : 'ml-[66px]'}`}>
           <Suspense fallback={<PageFallback />}>
           {currentPage === 'home' ? (
             <HomePage
@@ -610,6 +612,7 @@ export default function App() {
               handleUpdateTaskStatus={handleUpdateTaskStatus}
               handleUpdateTaskDetails={handleUpdateTaskDetails}
               selectedTaskId={selectedTaskId}
+              homeTab={homeTab}
             />
           ) : currentPage === 'tasks' ? (
             <TasksPage
