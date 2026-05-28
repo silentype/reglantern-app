@@ -617,9 +617,10 @@ function useTaskFilters(showAssignedTo = true, showHealthCenter = true) {
 interface HCTableProps {
   rows: Array<{ hc: HealthCenter; openCount: number; overdueCount: number }>;
   onView: (hcName: string) => void;
+  onViewTasks: (hcName: string) => void;
 }
 
-function HCTable({ rows, onView }: HCTableProps) {
+function HCTable({ rows, onView, onViewTasks }: HCTableProps) {
   return (
     <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
       <table className="w-full text-sm">
@@ -650,13 +651,21 @@ function HCTable({ rows, onView }: HCTableProps) {
               </td>
               <td className="px-4 py-3"><ComplianceDot value={hc.compliance.fqhc} /></td>
               <td className="px-4 py-3"><ComplianceDot value={hc.compliance.ftca} /></td>
-              <td className="px-4 py-3 text-right">
-                <button
-                  onClick={() => onView(hc.name)}
-                  className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
-                >
-                  View →
-                </button>
+              <td className="px-4 py-3">
+                <div className="flex items-center justify-end gap-3">
+                  <button
+                    onClick={() => onViewTasks(hc.name)}
+                    className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
+                  >
+                    Tasks
+                  </button>
+                  <button
+                    onClick={() => onView(hc.name)}
+                    className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
+                  >
+                    Profile →
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
@@ -832,7 +841,15 @@ function AdminDashboard({
           {/* HC Portfolio */}
           <div>
             <SectionTitle>Health Center Portfolio</SectionTitle>
-            <HCTable rows={hcRows} onView={(name) => navigate(`/admin/health-centers/${encodeURIComponent(name)}`)} />
+            <HCTable
+              rows={hcRows}
+              onView={(name) => navigate(`/admin/health-centers/${encodeURIComponent(name)}`)}
+              onViewTasks={(name) => {
+                const params = new URLSearchParams(location.search);
+                params.set('hc', name);
+                navigate(`/tasks/my-tasks?${params.toString()}`);
+              }}
+            />
           </div>
 
           {/* Projects */}
@@ -1055,7 +1072,15 @@ function MemberDashboard({
           {/* HC table */}
           <div>
             <SectionTitle>Health Center</SectionTitle>
-            <HCTable rows={hcRows} onView={(name) => navigate(`/admin/health-centers/${encodeURIComponent(name)}`)} />
+            <HCTable
+              rows={hcRows}
+              onView={(name) => navigate(`/admin/health-centers/${encodeURIComponent(name)}`)}
+              onViewTasks={(name) => {
+                const params = new URLSearchParams(location.search);
+                params.set('hc', name);
+                navigate(`/tasks/my-tasks?${params.toString()}`);
+              }}
+            />
           </div>
 
           {/* Assigned Projects */}
