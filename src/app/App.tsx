@@ -45,6 +45,9 @@ const HealthCenterAdminPage = lazy(() =>
 const HomePage = lazy(() =>
   import('./pages/HomePage').then((m) => ({ default: m.HomePage }))
 );
+const CompactRowTestPage = lazy(() =>
+  import('./pages/CompactRowTestPage').then((m) => ({ default: m.CompactRowTestPage }))
+);
 
 // MultiFileUploadPanel only mounts when a task / new-task panel is open.
 // Keeping it eager would pull 1.6k lines + the relative-due-date picker into
@@ -106,11 +109,12 @@ export default function App() {
   const homeTab: 'health-centers' | 'tasks' =
     sectionSeg === 'home' && itemSeg === 'tasks' ? 'tasks' : 'health-centers';
 
-  const currentPage: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings' =
+  const currentPage: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings' | 'test' =
     sectionSeg === 'home' ? 'home' :
     sectionSeg === 'admin' ? 'admin' :
     sectionSeg === 'checklists' ? 'checklists' :
     sectionSeg === 'settings' ? 'settings' :
+    sectionSeg === 'test' ? 'test' :
     'tasks';
 
   // /admin/health-centers and /admin/health-centers/:name resolve to the
@@ -136,6 +140,11 @@ export default function App() {
     if (restSegs[0] === 'new') {
       isCreatingNewTask = true;
     } else if (restSegs[0]) {
+      const id = Number(restSegs[0]);
+      if (Number.isInteger(id)) selectedTaskId = id;
+    }
+  } else if (currentPage === 'test' && itemSeg === 'compact-rows') {
+    if (restSegs[0]) {
       const id = Number(restSegs[0]);
       if (Number.isInteger(id)) selectedTaskId = id;
     }
@@ -388,7 +397,9 @@ export default function App() {
 
   const handleClosePanel = useCallback(() => {
     setNewTaskTitle('');
-    if (currentPage === 'admin' && itemSeg === 'project-builder' && selectedProjectId !== null) {
+    if (currentPage === 'test') {
+      navigate('/test/compact-rows');
+    } else if (currentPage === 'admin' && itemSeg === 'project-builder' && selectedProjectId !== null) {
       navigate(`/admin/project-builder/${selectedProjectId}`);
     } else {
       navigate('/tasks/my-tasks');
@@ -576,7 +587,7 @@ export default function App() {
         }}
       />
       <TopNav
-        currentPage={currentPage}
+        currentPage={currentPage === 'test' ? 'tasks' : currentPage}
         onNavChange={handleNavChange}
         userRole={effectiveRole}
         onRoleChange={handleRoleChange}
@@ -599,7 +610,15 @@ export default function App() {
         {/* Main Page Content */}
         <main className={`flex-1 overflow-auto transition-all duration-300 ${sideNavOpen ? 'ml-[280px]' : 'ml-[66px]'}`}>
           <Suspense fallback={<PageFallback />}>
-          {currentPage === 'home' ? (
+          {currentPage === 'test' ? (
+            <CompactRowTestPage
+              tasks={allTasksIncludingProjects}
+              selectedTaskId={selectedTaskId}
+              onTaskClick={handleTaskClick}
+              onUpdateTask={handleUpdateTaskDetails}
+              onToggleComplete={handleToggleTaskComplete}
+            />
+          ) : currentPage === 'home' ? (
             <HomePage
               userRole={effectiveRole}
               memberHealthCenter={effectiveHC ?? ''}

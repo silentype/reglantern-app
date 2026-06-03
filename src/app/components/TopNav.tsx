@@ -171,7 +171,7 @@ export function TopNav({
                           : 'text-[#9ca3af] hover:text-white'
                       }`}
                     >
-                      Admin
+                      Multi
                     </button>
                     <button
                       onClick={() => { onRoleChange('member'); setAvatarDropOpen(false); }}
@@ -181,7 +181,7 @@ export function TopNav({
                           : 'text-[#9ca3af] hover:text-white'
                       }`}
                     >
-                      Member
+                      Single
                     </button>
                   </div>
                 </div>
