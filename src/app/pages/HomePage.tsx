@@ -272,393 +272,402 @@ function AdminDashboard({
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex">
 
-      {/* ── Sticky header ── */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
-
-        {/* Title + date */}
-        <div className="flex items-end justify-between gap-4 mb-1">
-          <div>
-            <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
-              {greeting()}, Tim
-            </h1>
-            <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-              {format(new Date(), 'EEEE, MMMM d')}
-            </p>
-          </div>
-        </div>
-
-        {/* Stat chips */}
-        <div className="flex items-center gap-3 mt-4 mb-4">
-          {([
-            { label: 'Health Centers',  value: healthCenters.length },
-            { label: 'Open Tasks',      value: openTasks.length },
-            { label: 'Overdue',         value: overdueTasks.length,   danger: true },
-            { label: 'Active Projects', value: activeProjects.length },
-          ] as { label: string; value: number; danger?: boolean }[]).map(({ label, value, danger }) => (
-            <div key={label} className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full">
-              <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>
-                {value}
-              </span>
-              <span className="text-xs text-[#71717a]">{label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Underline tabs — same style as HealthCenterAdminPage */}
-        <div className={`flex gap-0 mt-[16px] ${activeTab === 'tasks' ? 'mb-[16px]' : '-mb-px'}`}>
-          {(['health-centers', 'tasks'] as const).map(tab => (
-            <button key={tab} onClick={() => handleTabChange(tab)}
-              className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab
-                  ? 'border-[#fc6] text-[#18181b]'
-                  : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
-              }`}>
-              {tab === 'health-centers' ? 'Health Centers' : 'Tasks'}
-            </button>
-          ))}
-        </div>
-
-        {/* Filter bar — tasks tab only (same as TasksPage) */}
-        {activeTab === 'tasks' && (
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none mb-[22px]">
-
-            <SearchInput
-              placeholder="Search tasks…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onClear={() => setSearchQuery('')}
-              className="w-[200px]"
-            />
-            <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
-
-            {/* Status */}
-            {(['all', 'incomplete', 'complete'] as const).map(v => (
-              <button
-                key={v}
-                onClick={() => toggleStatusFilter(v)}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${
-                  statusFilter.includes(v) ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
-                }`}
-              >
-                {v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1)}
-              </button>
-            ))}
-            <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
-
-            {/* Due Date */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                  dueDateFilter ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
-                }`}>
-                  <CalendarIcon className="h-3.5 w-3.5" />
-                  {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <div className="flex">
-                  <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
-                    <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
-                    <div className="flex flex-col gap-1">
-                      {DATE_FILTER_PRESETS.map(preset => (
-                        <button key={preset.value} onClick={() => setDueDateFilter(preset.value)}
-                          className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors">
-                          {preset.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="p-3 border-b border-[#e4e4e7]">
-                      <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
-                      <input
-                        type="text"
-                        value={customDateInput}
-                        onChange={e => setCustomDateInput(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            const ok = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(customDateInput);
-                            if (ok) {
-                              const d = parse(customDateInput, 'MM/dd/yyyy', new Date());
-                              if (isValid(d)) { setDueDateFilter(customDateInput); setCustomDateInput(''); }
-                            }
-                          }
-                        }}
-                        placeholder="mm/dd/yyyy"
-                        maxLength={10}
-                        className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
-                      />
-                    </div>
-                    <Calendar
-                      mode="single"
-                      selected={dueDateFilter && /^\d{2}\/\d{2}\/\d{4}$/.test(dueDateFilter)
-                        ? parse(dueDateFilter, 'MM/dd/yyyy', new Date()) : undefined}
-                      onSelect={date => { if (date) { setDueDateFilter(format(date, 'MM/dd/yyyy')); setCustomDateInput(''); } }}
-                      initialFocus
-                    />
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Assigned To */}
-            <Popover open={assignedToOpen} onOpenChange={setAssignedToOpen}>
-              <PopoverTrigger asChild>
-                <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                  !assignedToFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
-                }`}>
-                  <User className="h-3.5 w-3.5" />
-                  Assigned {!assignedToFilter.includes('all') && `(${assignedToFilter.length})`}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[280px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search users..." />
-                  <CommandList>
-                    <CommandEmpty>No users found.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem value="all" onSelect={() => { toggleAssignedToFilter('all'); setAssignedToOpen(false); }}>
-                        <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${assignedToFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                          {assignedToFilter.includes('all') && <Check className="h-3 w-3" />}
-                        </div>
-                        All Users
-                      </CommandItem>
-                      {AVAILABLE_USERS.map(user => (
-                        <CommandItem key={user.name} value={user.name} onSelect={() => toggleAssignedToFilter(user.name)}>
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${assignedToFilter.includes(user.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                            {assignedToFilter.includes(user.name) && <Check className="h-3 w-3" />}
-                          </div>
-                          {user.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            {/* Health Center */}
-            <Popover open={healthCenterOpen} onOpenChange={setHealthCenterOpen}>
-              <PopoverTrigger asChild>
-                <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                  !healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
-                }`}>
-                  <Building2 className="h-3.5 w-3.5" />
-                  Health Center {!healthCenterFilter.includes('All Health Centers') && `(${healthCenterFilter.length})`}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[280px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search health centers..." />
-                  <CommandList>
-                    <CommandEmpty>No health centers found.</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem value="all" onSelect={() => { toggleHealthCenterFilter('All Health Centers'); setHealthCenterOpen(false); }}>
-                        <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                          {healthCenterFilter.includes('All Health Centers') && <Check className="h-3 w-3" />}
-                        </div>
-                        All Health Centers
-                      </CommandItem>
-                      {HEALTH_CENTERS.map(center => (
-                        <CommandItem key={center} value={center} onSelect={() => toggleHealthCenterFilter(center)}>
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${healthCenterFilter.includes(center) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                            {healthCenterFilter.includes(center) && <Check className="h-3 w-3" />}
-                          </div>
-                          {center}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            {/* Needs Attention */}
-            <Popover open={needsAttentionOpen} onOpenChange={setNeedsAttentionOpen}>
-              <PopoverTrigger asChild>
-                <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                  !needsAttentionFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
-                }`}>
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  Needs Attention {!needsAttentionFilter.includes('all') && `(${needsAttentionFilter.length})`}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[280px] p-0" align="start">
-                <Command>
-                  <CommandList>
-                    <CommandGroup>
-                      {[
-                        { value: 'all',     label: 'All' },
-                        { value: 'needs',   label: 'Files need attention' },
-                        { value: 'missing', label: 'Missing Files' },
-                      ].map(({ value, label }) => (
-                        <CommandItem key={value} value={value} onSelect={() => {
-                          toggleNeedsAttentionFilter(value);
-                          if (value === 'all') setNeedsAttentionOpen(false);
-                        }}>
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${needsAttentionFilter.includes(value) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                            {needsAttentionFilter.includes(value) && <Check className="h-3 w-3" />}
-                          </div>
-                          {label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            {/* Clear All */}
-            {activeFilterCount > 0 && (
-              <>
-                <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
-                <button
-                  onClick={() => {
-                    setStatusFilter(['all']);
-                    setDueDateFilter('');
-                    setAssignedToFilter(['all']);
-                    setHealthCenterFilter(['All Health Centers']);
-                    setNeedsAttentionFilter(['all']);
-                    setSearchQuery('');
-                  }}
-                  className="px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#3b82f6] hover:bg-[#f5f5f5] transition-colors flex items-center gap-1 shrink-0"
-                >
-                  <X className="h-3.5 w-3.5" />
-                  Clear All
-                </button>
-              </>
+      {/* ── Left sidebar: Projects ── */}
+      <div className="w-[280px] border-r border-[#e4e4e7] bg-[#f9fafb] overflow-y-auto">
+        <div className="px-[16px] py-6">
+          <h3 className="text-sm font-semibold text-[#18181b] mb-3">Projects</h3>
+          <div className="space-y-2">
+            {projects.length > 0 ? (
+              projects.map(p => {
+                const total = p.tasks.length;
+                const done  = p.tasks.filter(t => t.completed).length;
+                const count = p.assignedHealthCenters?.length ?? 0;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => navigate(`/admin/project-builder/${p.id}`)}
+                    className="w-full bg-white border border-[#e4e4e7] rounded-[6px] p-3 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
+                  >
+                    <p className="text-xs font-semibold text-[#18181b] mb-2 truncate">{p.name}</p>
+                    <ProgressBar done={done} total={total} />
+                    <p className="text-xs text-[#71717a] mt-2">
+                      {count === 0 ? 'No centers' : `${count} center${count > 1 ? 's' : ''}`}
+                    </p>
+                  </button>
+                );
+              })
+            ) : (
+              <p className="text-xs text-[#71717a] italic">No projects yet</p>
             )}
-
-            {/* Columns */}
-            <Popover open={columnsOpen} onOpenChange={setColumnsOpen}>
-              <PopoverTrigger asChild>
-                <button className="px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5] text-[12px] ml-auto">
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
-                    <path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                  Columns
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[280px] p-0" align="end">
-                <Command>
-                  <CommandList>
-                    <CommandGroup>
-                      {allColumns.map(col => (
-                        <CommandItem
-                          key={col.id}
-                          value={col.id}
-                          onSelect={() => { if (col.id !== 'title') toggleColumnVisibility(col.id); }}
-                          disabled={col.id === 'title'}
-                          className={col.id === 'title' ? 'opacity-50 cursor-not-allowed' : ''}
-                        >
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${visibleColumns.includes(col.id) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                            {visibleColumns.includes(col.id) && <Check className="h-3 w-3" />}
-                          </div>
-                          {col.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
           </div>
-        )}
+        </div>
       </div>
 
-      {/* ── Scrollable content ── */}
-      <div className={`flex-1 overflow-y-auto overflow-x-auto ${activeTab === 'tasks' ? 'px-[24px] pb-6' : 'px-[24px] py-6'}`}>
+      {/* ── Right side: Header + Content ── */}
+      <div className="flex-1 flex flex-col">
 
-        {/* Health Centers tab */}
-        {activeTab === 'health-centers' && (
-          <div className="space-y-8">
-            <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Health Center</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Open Tasks</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Overdue</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FQHC</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FTCA</th>
-                    <th className="px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {hcRows.map(({ hc, openCount, overdueCount }) => (
-                    <tr key={hc.name} className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors">
-                      <td className="px-4 py-3 font-medium text-[#18181b]">{hc.name}</td>
-                      <td className="px-4 py-3 text-[#18181b]">{openCount}</td>
-                      <td className="px-4 py-3">
-                        {overdueCount > 0
-                          ? <span className="inline-flex items-center gap-1 text-xs font-medium text-[#dc2626]">
-                              <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}
-                            </span>
-                          : <span className="text-[#71717a]">—</span>}
-                      </td>
-                      <td className="px-4 py-3"><ComplianceDot value={hc.compliance.fqhc} /></td>
-                      <td className="px-4 py-3"><ComplianceDot value={hc.compliance.ftca} /></td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`)}
-                          className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
-                        >
-                          View →
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {hcRows.length === 0 && (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-[#71717a]">No health centers yet</td></tr>
-                  )}
-                </tbody>
-              </table>
+        {/* ── Sticky header ── */}
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+
+          {/* Title + date */}
+          <div className="flex items-end justify-between gap-4 mb-1">
+            <div>
+              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
+                {greeting()}, Tim
+              </h1>
+              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+                {format(new Date(), 'EEEE, MMMM d')}
+              </p>
             </div>
-
-            {projects.length > 0 && (
-              <div>
-                <SectionTitle>Projects</SectionTitle>
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                  {projects.map(p => {
-                    const total = p.tasks.length;
-                    const done  = p.tasks.filter(t => t.completed).length;
-                    const count = p.assignedHealthCenters?.length ?? 0;
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => navigate(`/admin/project-builder/${p.id}`)}
-                        className="shrink-0 w-[240px] bg-white border border-[#e4e4e7] rounded-[8px] p-4 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
-                      >
-                        <p className="text-sm font-semibold text-[#18181b] mb-3 truncate">{p.name}</p>
-                        <ProgressBar done={done} total={total} />
-                        <p className="text-xs text-[#71717a] mt-2">
-                          {count === 0 ? 'No centers assigned' : `${count} center${count > 1 ? 's' : ''} assigned`}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </div>
-        )}
 
-        {/* Tasks tab — same TaskTableDynamic as TasksPage */}
-        {activeTab === 'tasks' && (
-          <TaskTableDynamic
-            tasks={filteredTasks}
-            onTaskClick={onTaskClick}
-            handleToggleTaskComplete={handleToggleTaskComplete ?? (() => {})}
-            handleUpdateTaskStatus={handleUpdateTaskStatus ?? (() => {})}
-            selectedTaskId={selectedTaskId ?? null}
-            onUpdateTask={onUpdateTask}
-            onDeleteTask={() => {}}
-            visibleColumns={visibleColumns}
-          />
-        )}
+          {/* Stat chips */}
+          <div className="flex items-center gap-3 mt-4 mb-4">
+            {([
+              { label: 'Health Centers',  value: healthCenters.length },
+              { label: 'Open Tasks',      value: openTasks.length },
+              { label: 'Overdue',         value: overdueTasks.length,   danger: true },
+              { label: 'Active Projects', value: activeProjects.length },
+            ] as { label: string; value: number; danger?: boolean }[]).map(({ label, value, danger }) => (
+              <div key={label} className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full">
+                <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>
+                  {value}
+                </span>
+                <span className="text-xs text-[#71717a]">{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Underline tabs — same style as HealthCenterAdminPage */}
+          <div className={`flex gap-0 mt-[16px] ${activeTab === 'tasks' ? 'mb-[16px]' : '-mb-px'}`}>
+            {(['health-centers', 'tasks'] as const).map(tab => (
+              <button key={tab} onClick={() => handleTabChange(tab)}
+                className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === tab
+                    ? 'border-[#fc6] text-[#18181b]'
+                    : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
+                }`}>
+                {tab === 'health-centers' ? 'Health Centers' : 'Tasks'}
+              </button>
+            ))}
+          </div>
+
+          {/* Filter bar — tasks tab only (same as TasksPage) */}
+          {activeTab === 'tasks' && (
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none mb-[22px]">
+
+              <SearchInput
+                placeholder="Search tasks…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onClear={() => setSearchQuery('')}
+                className="w-[200px]"
+              />
+              <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+              {/* Status */}
+              {(['all', 'incomplete', 'complete'] as const).map(v => (
+                <button
+                  key={v}
+                  onClick={() => toggleStatusFilter(v)}
+                  className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${
+                    statusFilter.includes(v) ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+                  }`}
+                >
+                  {v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1)}
+                </button>
+              ))}
+              <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+              {/* Due Date */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
+                    dueDateFilter ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+                  }`}>
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <div className="flex">
+                    <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
+                      <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
+                      <div className="flex flex-col gap-1">
+                        {DATE_FILTER_PRESETS.map(preset => (
+                          <button key={preset.value} onClick={() => setDueDateFilter(preset.value)}
+                            className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors">
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="p-3 border-b border-[#e4e4e7]">
+                        <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
+                        <input
+                          type="text"
+                          value={customDateInput}
+                          onChange={e => setCustomDateInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              const ok = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(customDateInput);
+                              if (ok) {
+                                const d = parse(customDateInput, 'MM/dd/yyyy', new Date());
+                                if (isValid(d)) { setDueDateFilter(customDateInput); setCustomDateInput(''); }
+                              }
+                            }
+                          }}
+                          placeholder="mm/dd/yyyy"
+                          maxLength={10}
+                          className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
+                        />
+                      </div>
+                      <Calendar
+                        mode="single"
+                        selected={dueDateFilter && /^\d{2}\/\d{2}\/\d{4}$/.test(dueDateFilter)
+                          ? parse(dueDateFilter, 'MM/dd/yyyy', new Date()) : undefined}
+                        onSelect={date => { if (date) { setDueDateFilter(format(date, 'MM/dd/yyyy')); setCustomDateInput(''); } }}
+                        initialFocus
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Assigned To */}
+              <Popover open={assignedToOpen} onOpenChange={setAssignedToOpen}>
+                <PopoverTrigger asChild>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
+                    !assignedToFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+                  }`}>
+                    <User className="h-3.5 w-3.5" />
+                    Assigned {!assignedToFilter.includes('all') && `(${assignedToFilter.length})`}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search users..." />
+                    <CommandList>
+                      <CommandEmpty>No users found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="all" onSelect={() => { toggleAssignedToFilter('all'); setAssignedToOpen(false); }}>
+                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${assignedToFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                            {assignedToFilter.includes('all') && <Check className="h-3 w-3" />}
+                          </div>
+                          All Users
+                        </CommandItem>
+                        {AVAILABLE_USERS.map(user => (
+                          <CommandItem key={user.name} value={user.name} onSelect={() => toggleAssignedToFilter(user.name)}>
+                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${assignedToFilter.includes(user.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                              {assignedToFilter.includes(user.name) && <Check className="h-3 w-3" />}
+                            </div>
+                            {user.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Health Center */}
+              <Popover open={healthCenterOpen} onOpenChange={setHealthCenterOpen}>
+                <PopoverTrigger asChild>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
+                    !healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+                  }`}>
+                    <Building2 className="h-3.5 w-3.5" />
+                    Health Center {!healthCenterFilter.includes('All Health Centers') && `(${healthCenterFilter.length})`}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search health centers..." />
+                    <CommandList>
+                      <CommandEmpty>No health centers found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="all" onSelect={() => { toggleHealthCenterFilter('All Health Centers'); setHealthCenterOpen(false); }}>
+                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                            {healthCenterFilter.includes('All Health Centers') && <Check className="h-3 w-3" />}
+                          </div>
+                          All Health Centers
+                        </CommandItem>
+                        {HEALTH_CENTERS.map(center => (
+                          <CommandItem key={center} value={center} onSelect={() => toggleHealthCenterFilter(center)}>
+                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${healthCenterFilter.includes(center) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                              {healthCenterFilter.includes(center) && <Check className="h-3 w-3" />}
+                            </div>
+                            {center}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Needs Attention */}
+              <Popover open={needsAttentionOpen} onOpenChange={setNeedsAttentionOpen}>
+                <PopoverTrigger asChild>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
+                    !needsAttentionFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+                  }`}>
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    Needs Attention {!needsAttentionFilter.includes('all') && `(${needsAttentionFilter.length})`}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandList>
+                      <CommandGroup>
+                        {[
+                          { value: 'all',     label: 'All' },
+                          { value: 'needs',   label: 'Files need attention' },
+                          { value: 'missing', label: 'Missing Files' },
+                        ].map(({ value, label }) => (
+                          <CommandItem key={value} value={value} onSelect={() => {
+                            toggleNeedsAttentionFilter(value);
+                            if (value === 'all') setNeedsAttentionOpen(false);
+                          }}>
+                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${needsAttentionFilter.includes(value) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                              {needsAttentionFilter.includes(value) && <Check className="h-3 w-3" />}
+                            </div>
+                            {label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Clear All */}
+              {activeFilterCount > 0 && (
+                <>
+                  <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+                  <button
+                    onClick={() => {
+                      setStatusFilter(['all']);
+                      setDueDateFilter('');
+                      setAssignedToFilter(['all']);
+                      setHealthCenterFilter(['All Health Centers']);
+                      setNeedsAttentionFilter(['all']);
+                      setSearchQuery('');
+                    }}
+                    className="px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#3b82f6] hover:bg-[#f5f5f5] transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                    Clear All
+                  </button>
+                </>
+              )}
+
+              {/* Columns */}
+              <Popover open={columnsOpen} onOpenChange={setColumnsOpen}>
+                <PopoverTrigger asChild>
+                  <button className="px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5] text-[12px] ml-auto">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
+                      <path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                    Columns
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="end">
+                  <Command>
+                    <CommandList>
+                      <CommandGroup>
+                        {allColumns.map(col => (
+                          <CommandItem
+                            key={col.id}
+                            value={col.id}
+                            onSelect={() => { if (col.id !== 'title') toggleColumnVisibility(col.id); }}
+                            disabled={col.id === 'title'}
+                            className={col.id === 'title' ? 'opacity-50 cursor-not-allowed' : ''}
+                          >
+                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${visibleColumns.includes(col.id) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                              {visibleColumns.includes(col.id) && <Check className="h-3 w-3" />}
+                            </div>
+                            {col.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+            </div>
+          )}
+        </div>
+
+        {/* ── Scrollable content ── */}
+        <div className={`flex-1 overflow-y-auto overflow-x-auto ${activeTab === 'tasks' ? 'px-[24px] pb-6' : 'px-[24px] py-6'}`}>
+
+          {/* Health Centers tab */}
+          {activeTab === 'health-centers' && (
+            <div className="space-y-8">
+              <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Health Center</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Open Tasks</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Overdue</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FQHC</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FTCA</th>
+                      <th className="px-4 py-2.5" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hcRows.map(({ hc, openCount, overdueCount }) => (
+                      <tr key={hc.name} className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors">
+                        <td className="px-4 py-3 font-medium text-[#18181b]">{hc.name}</td>
+                        <td className="px-4 py-3 text-[#18181b]">{openCount}</td>
+                        <td className="px-4 py-3">
+                          {overdueCount > 0
+                            ? <span className="inline-flex items-center gap-1 text-xs font-medium text-[#dc2626]">
+                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}
+                              </span>
+                            : <span className="text-[#71717a]">—</span>}
+                        </td>
+                        <td className="px-4 py-3"><ComplianceDot value={hc.compliance.fqhc} /></td>
+                        <td className="px-4 py-3"><ComplianceDot value={hc.compliance.ftca} /></td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`)}
+                            className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
+                          >
+                            View →
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {hcRows.length === 0 && (
+                      <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-[#71717a]">No health centers yet</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Tasks tab — same TaskTableDynamic as TasksPage */}
+          {activeTab === 'tasks' && (
+            <TaskTableDynamic
+              tasks={filteredTasks}
+              onTaskClick={onTaskClick}
+              handleToggleTaskComplete={handleToggleTaskComplete ?? (() => {})}
+              handleUpdateTaskStatus={handleUpdateTaskStatus ?? (() => {})}
+              selectedTaskId={selectedTaskId ?? null}
+              onUpdateTask={onUpdateTask}
+              onDeleteTask={() => {}}
+              visibleColumns={visibleColumns}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
@@ -821,257 +830,268 @@ function MemberDashboard({
   }), [myTasks, statusFilter, dueDateFilter, needsAttentionFilter, searchQuery]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex">
 
-      {/* ── Sticky header ── */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
-
-        {/* Title */}
-        <div className="flex items-end justify-between gap-4 mb-1">
-          <div>
-            <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
-              {greeting()}, Tim
-            </h1>
-            <p className="text-sm font-medium text-[#71717a] leading-[14px]">
-              {format(new Date(), 'EEEE, MMMM d')}
-            </p>
-          </div>
-        </div>
-
-        {/* Stat chips */}
-        <div className="flex items-center gap-3 mt-4 mb-4">
-          {([
-            { label: 'My Open Tasks',  value: myOpen.length },
-            { label: 'Overdue',        value: myOverdue.length,           danger: true },
-            { label: 'Due This Week',  value: myDueThisWeek.length },
-            { label: 'Completed',      value: myCompletedThisMonth.length },
-          ] as { label: string; value: number; danger?: boolean }[]).map(({ label, value, danger }) => (
-            <div key={label} className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full">
-              <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>{value}</span>
-              <span className="text-xs text-[#71717a]">{label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Underline tabs */}
-        <div className={`flex gap-0 mt-[16px] ${activeTab === 'tasks' ? 'mb-[16px]' : '-mb-px'}`}>
-          {(['health-centers', 'tasks'] as const).map(tab => (
-            <button key={tab} onClick={() => handleTabChange(tab)}
-              className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
-                activeTab === tab
-                  ? 'border-[#fc6] text-[#18181b]'
-                  : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
-              }`}>
-              {tab === 'health-centers' ? 'Health Center' : 'Tasks'}
-            </button>
-          ))}
-        </div>
-
-        {/* Filter bar — tasks tab only */}
-        {activeTab === 'tasks' && (
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none mb-[22px]">
-
-            <SearchInput placeholder="Search tasks…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onClear={() => setSearchQuery('')} className="w-[200px]" />
-            <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
-
-            {(['all', 'incomplete', 'complete'] as const).map(v => (
-              <button key={v} onClick={() => toggleStatusFilter(v)}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${statusFilter.includes(v) ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'}`}>
-                {v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1)}
-              </button>
-            ))}
-            <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
-
-            {/* Due Date */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${dueDateFilter ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'}`}>
-                  <CalendarIcon className="h-3.5 w-3.5" />
-                  {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <div className="flex">
-                  <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
-                    <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
-                    <div className="flex flex-col gap-1">
-                      {DATE_FILTER_PRESETS.map(p => (
-                        <button key={p.value} onClick={() => setDueDateFilter(p.value)} className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors">{p.label}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="p-3 border-b border-[#e4e4e7]">
-                      <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
-                      <input type="text" value={customDateInput} onChange={e => setCustomDateInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') { const ok = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(customDateInput); if (ok) { const d = parse(customDateInput, 'MM/dd/yyyy', new Date()); if (isValid(d)) { setDueDateFilter(customDateInput); setCustomDateInput(''); } } } }}
-                        placeholder="mm/dd/yyyy" maxLength={10}
-                        className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]" />
-                    </div>
-                    <Calendar mode="single"
-                      selected={dueDateFilter && /^\d{2}\/\d{2}\/\d{4}$/.test(dueDateFilter) ? parse(dueDateFilter, 'MM/dd/yyyy', new Date()) : undefined}
-                      onSelect={date => { if (date) { setDueDateFilter(format(date, 'MM/dd/yyyy')); setCustomDateInput(''); } }} initialFocus />
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            {/* Needs Attention */}
-            <Popover open={needsAttentionOpen} onOpenChange={setNeedsAttentionOpen}>
-              <PopoverTrigger asChild>
-                <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${!needsAttentionFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'}`}>
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  Needs Attention {!needsAttentionFilter.includes('all') && `(${needsAttentionFilter.length})`}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[280px] p-0" align="start">
-                <Command>
-                  <CommandList>
-                    <CommandGroup>
-                      {[{ value: 'all', label: 'All' }, { value: 'needs', label: 'Files need attention' }, { value: 'missing', label: 'Missing Files' }].map(({ value, label }) => (
-                        <CommandItem key={value} value={value} onSelect={() => { toggleNeedsAttentionFilter(value); if (value === 'all') setNeedsAttentionOpen(false); }}>
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${needsAttentionFilter.includes(value) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>{needsAttentionFilter.includes(value) && <Check className="h-3 w-3" />}</div>
-                          {label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
-            {/* Clear All */}
-            {activeFilterCount > 0 && (
-              <>
-                <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
-                <button onClick={() => { setStatusFilter(['all']); setDueDateFilter(''); setNeedsAttentionFilter(['all']); setSearchQuery(''); }}
-                  className="px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#3b82f6] hover:bg-[#f5f5f5] transition-colors flex items-center gap-1 shrink-0">
-                  <X className="h-3.5 w-3.5" /> Clear All
-                </button>
-              </>
+      {/* ── Left sidebar: Assigned Projects ── */}
+      <div className="w-[280px] border-r border-[#e4e4e7] bg-[#f9fafb] overflow-y-auto">
+        <div className="px-[16px] py-6">
+          <h3 className="text-sm font-semibold text-[#18181b] mb-3">My Projects</h3>
+          <div className="space-y-2">
+            {assignedProjects.length > 0 ? (
+              assignedProjects.map(p => {
+                const total = p.tasks.length;
+                const done  = p.tasks.filter(t => t.completed).length;
+                const assignment = p.assignedHealthCenters?.find(a => a.name === memberHealthCenter);
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => navigate(`/admin/project-builder/${p.id}`)}
+                    className="w-full bg-white border border-[#e4e4e7] rounded-[6px] p-3 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
+                  >
+                    <p className="text-xs font-semibold text-[#18181b] mb-1 truncate">{p.name}</p>
+                    {assignment && <p className="text-xs text-[#71717a] mb-2">Assigned {assignment.assignedAt}</p>}
+                    <ProgressBar done={done} total={total} />
+                  </button>
+                );
+              })
+            ) : (
+              <p className="text-xs text-[#71717a] italic">No assigned projects</p>
             )}
-
-            {/* Columns */}
-            <Popover open={columnsOpen} onOpenChange={setColumnsOpen}>
-              <PopoverTrigger asChild>
-                <button className="px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5] text-[12px] ml-auto">
-                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5"><path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-                  Columns
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[280px] p-0" align="end">
-                <Command>
-                  <CommandList>
-                    <CommandGroup>
-                      {allColumns.map(col => (
-                        <CommandItem key={col.id} value={col.id} onSelect={() => { if (col.id !== 'title') toggleColumnVisibility(col.id); }} disabled={col.id === 'title'} className={col.id === 'title' ? 'opacity-50 cursor-not-allowed' : ''}>
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${visibleColumns.includes(col.id) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>{visibleColumns.includes(col.id) && <Check className="h-3 w-3" />}</div>
-                          {col.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-
           </div>
-        )}
+
+          {/* Upcoming Deadlines */}
+          {upcomingDeadlines.length > 0 && (
+            <div className="mt-8">
+              <h3 className="text-xs font-semibold text-[#18181b] mb-3">Upcoming Deadlines</h3>
+              <div className="space-y-2">
+                {upcomingDeadlines.map(({ label, date }) => (
+                  <div key={label} className="p-2 bg-white border border-[#e4e4e7] rounded-[6px]">
+                    <p className="text-xs text-[#18181b] truncate">{label}</p>
+                    <p className="text-xs font-medium text-[#71717a] mt-1">{format(date, 'MMM d')}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ── Scrollable content ── */}
-      <div className={`flex-1 overflow-y-auto overflow-x-auto ${activeTab === 'tasks' ? 'px-[24px] pb-6' : 'px-[24px] py-6'}`}>
+      {/* ── Right side: Header + Content ── */}
+      <div className="flex-1 flex flex-col">
 
-        {/* Health Center tab */}
-        {activeTab === 'health-centers' && (
-          <div className="space-y-8">
-            <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Health Center</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Open Tasks</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Overdue</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FQHC</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FTCA</th>
-                    <th className="px-4 py-2.5" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {hcRows.map(({ hc: center, openCount, overdueCount }) => (
-                    <tr key={center.name} className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors">
-                      <td className="px-4 py-3 font-medium text-[#18181b]">{center.name}</td>
-                      <td className="px-4 py-3 text-[#18181b]">{openCount}</td>
-                      <td className="px-4 py-3">
-                        {overdueCount > 0
-                          ? <span className="inline-flex items-center gap-1 text-xs font-medium text-[#dc2626]"><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}</span>
-                          : <span className="text-[#71717a]">—</span>}
-                      </td>
-                      <td className="px-4 py-3"><ComplianceDot value={center.compliance.fqhc} /></td>
-                      <td className="px-4 py-3"><ComplianceDot value={center.compliance.ftca} /></td>
-                      <td className="px-4 py-3 text-right">
-                        <button onClick={() => navigate(`/admin/health-centers/${encodeURIComponent(center.name)}`)}
-                          className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors">View →</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* ── Sticky header ── */}
+        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+
+          {/* Title */}
+          <div className="flex items-end justify-between gap-4 mb-1">
+            <div>
+              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
+                {greeting()}, Tim
+              </h1>
+              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+                {format(new Date(), 'EEEE, MMMM d')}
+              </p>
             </div>
-
-            {/* Assigned Projects */}
-            {assignedProjects.length > 0 && (
-              <div>
-                <SectionTitle>Assigned Projects</SectionTitle>
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                  {assignedProjects.map(p => {
-                    const total = p.tasks.length;
-                    const done  = p.tasks.filter(t => t.completed).length;
-                    const assignment = p.assignedHealthCenters?.find(a => a.name === memberHealthCenter);
-                    return (
-                      <button key={p.id} onClick={() => navigate(`/admin/project-builder/${p.id}`)}
-                        className="shrink-0 w-[240px] bg-white border border-[#e4e4e7] rounded-[8px] p-4 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all">
-                        <p className="text-sm font-semibold text-[#18181b] mb-1 truncate">{p.name}</p>
-                        {assignment && <p className="text-xs text-[#71717a] mb-3">Assigned {assignment.assignedAt}</p>}
-                        <ProgressBar done={done} total={total} />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Upcoming Deadlines */}
-            {upcomingDeadlines.length > 0 && (
-              <div>
-                <SectionTitle>Upcoming Deadlines</SectionTitle>
-                <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
-                  {upcomingDeadlines.map(({ label, date }) => (
-                    <div key={label} className="flex items-center justify-between px-4 py-3 border-b border-[#e4e4e7] last:border-0">
-                      <span className="text-sm text-[#18181b]">{label}</span>
-                      <span className="text-sm font-medium text-[#71717a]">{format(date, 'MMM d, yyyy')}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
-        )}
 
-        {/* Tasks tab — only tasks assigned to the current user */}
-        {activeTab === 'tasks' && (
-          <TaskTableDynamic
-            tasks={filteredTasks}
-            onTaskClick={onTaskClick}
-            handleToggleTaskComplete={handleToggleTaskComplete ?? (() => {})}
-            handleUpdateTaskStatus={handleUpdateTaskStatus ?? (() => {})}
-            selectedTaskId={selectedTaskId ?? null}
-            onUpdateTask={onUpdateTask}
-            onDeleteTask={() => {}}
-            visibleColumns={visibleColumns}
-          />
-        )}
+          {/* Stat chips */}
+          <div className="flex items-center gap-3 mt-4 mb-4">
+            {([
+              { label: 'My Open Tasks',  value: myOpen.length },
+              { label: 'Overdue',        value: myOverdue.length,           danger: true },
+              { label: 'Due This Week',  value: myDueThisWeek.length },
+              { label: 'Completed',      value: myCompletedThisMonth.length },
+            ] as { label: string; value: number; danger?: boolean }[]).map(({ label, value, danger }) => (
+              <div key={label} className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full">
+                <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>{value}</span>
+                <span className="text-xs text-[#71717a]">{label}</span>
+              </div>
+            ))}
+          </div>
 
+          {/* Underline tabs */}
+          <div className={`flex gap-0 mt-[16px] ${activeTab === 'tasks' ? 'mb-[16px]' : '-mb-px'}`}>
+            {(['health-centers', 'tasks'] as const).map(tab => (
+              <button key={tab} onClick={() => handleTabChange(tab)}
+                className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeTab === tab
+                    ? 'border-[#fc6] text-[#18181b]'
+                    : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
+                }`}>
+                {tab === 'health-centers' ? 'Health Center' : 'Tasks'}
+              </button>
+            ))}
+          </div>
+
+          {/* Filter bar — tasks tab only */}
+          {activeTab === 'tasks' && (
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-none mb-[22px]">
+
+              <SearchInput placeholder="Search tasks…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onClear={() => setSearchQuery('')} className="w-[200px]" />
+              <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+              {(['all', 'incomplete', 'complete'] as const).map(v => (
+                <button key={v} onClick={() => toggleStatusFilter(v)}
+                  className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${statusFilter.includes(v) ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'}`}>
+                  {v === 'all' ? 'All Tasks' : v.charAt(0).toUpperCase() + v.slice(1)}
+                </button>
+              ))}
+              <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+              {/* Due Date */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${dueDateFilter ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'}`}>
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <div className="flex">
+                    <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
+                      <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
+                      <div className="flex flex-col gap-1">
+                        {DATE_FILTER_PRESETS.map(p => (
+                          <button key={p.value} onClick={() => setDueDateFilter(p.value)} className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors">{p.label}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="p-3 border-b border-[#e4e4e7]">
+                        <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
+                        <input type="text" value={customDateInput} onChange={e => setCustomDateInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { const ok = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/.test(customDateInput); if (ok) { const d = parse(customDateInput, 'MM/dd/yyyy', new Date()); if (isValid(d)) { setDueDateFilter(customDateInput); setCustomDateInput(''); } } } }}
+                          placeholder="mm/dd/yyyy" maxLength={10}
+                          className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]" />
+                      </div>
+                      <Calendar mode="single"
+                        selected={dueDateFilter && /^\d{2}\/\d{2}\/\d{4}$/.test(dueDateFilter) ? parse(dueDateFilter, 'MM/dd/yyyy', new Date()) : undefined}
+                        onSelect={date => { if (date) { setDueDateFilter(format(date, 'MM/dd/yyyy')); setCustomDateInput(''); } }} initialFocus />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Needs Attention */}
+              <Popover open={needsAttentionOpen} onOpenChange={setNeedsAttentionOpen}>
+                <PopoverTrigger asChild>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${!needsAttentionFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'}`}>
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    Needs Attention {!needsAttentionFilter.includes('all') && `(${needsAttentionFilter.length})`}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandList>
+                      <CommandGroup>
+                        {[{ value: 'all', label: 'All' }, { value: 'needs', label: 'Files need attention' }, { value: 'missing', label: 'Missing Files' }].map(({ value, label }) => (
+                          <CommandItem key={value} value={value} onSelect={() => { toggleNeedsAttentionFilter(value); if (value === 'all') setNeedsAttentionOpen(false); }}>
+                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${needsAttentionFilter.includes(value) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>{needsAttentionFilter.includes(value) && <Check className="h-3 w-3" />}</div>
+                            {label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Clear All */}
+              {activeFilterCount > 0 && (
+                <>
+                  <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+                  <button onClick={() => { setStatusFilter(['all']); setDueDateFilter(''); setNeedsAttentionFilter(['all']); setSearchQuery(''); }}
+                    className="px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#3b82f6] hover:bg-[#f5f5f5] transition-colors flex items-center gap-1 shrink-0">
+                    <X className="h-3.5 w-3.5" /> Clear All
+                  </button>
+                </>
+              )}
+
+              {/* Columns */}
+              <Popover open={columnsOpen} onOpenChange={setColumnsOpen}>
+                <PopoverTrigger asChild>
+                  <button className="px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5] text-[12px] ml-auto">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5"><path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+                    Columns
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="end">
+                  <Command>
+                    <CommandList>
+                      <CommandGroup>
+                        {allColumns.map(col => (
+                          <CommandItem key={col.id} value={col.id} onSelect={() => { if (col.id !== 'title') toggleColumnVisibility(col.id); }} disabled={col.id === 'title'} className={col.id === 'title' ? 'opacity-50 cursor-not-allowed' : ''}>
+                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${visibleColumns.includes(col.id) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>{visibleColumns.includes(col.id) && <Check className="h-3 w-3" />}</div>
+                            {col.label}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+            </div>
+          )}
+        </div>
+
+        {/* ── Scrollable content ── */}
+        <div className={`flex-1 overflow-y-auto overflow-x-auto ${activeTab === 'tasks' ? 'px-[24px] pb-6' : 'px-[24px] py-6'}`}>
+
+          {/* Health Center tab */}
+          {activeTab === 'health-centers' && (
+            <div className="space-y-8">
+              <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Health Center</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Open Tasks</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Overdue</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FQHC</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FTCA</th>
+                      <th className="px-4 py-2.5" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {hcRows.map(({ hc: center, openCount, overdueCount }) => (
+                      <tr key={center.name} className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors">
+                        <td className="px-4 py-3 font-medium text-[#18181b]">{center.name}</td>
+                        <td className="px-4 py-3 text-[#18181b]">{openCount}</td>
+                        <td className="px-4 py-3">
+                          {overdueCount > 0
+                            ? <span className="inline-flex items-center gap-1 text-xs font-medium text-[#dc2626]"><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}</span>
+                            : <span className="text-[#71717a]">—</span>}
+                        </td>
+                        <td className="px-4 py-3"><ComplianceDot value={center.compliance.fqhc} /></td>
+                        <td className="px-4 py-3"><ComplianceDot value={center.compliance.ftca} /></td>
+                        <td className="px-4 py-3 text-right">
+                          <button onClick={() => navigate(`/admin/health-centers/${encodeURIComponent(center.name)}`)}
+                            className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors">View →</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Tasks tab — only tasks assigned to the current user */}
+          {activeTab === 'tasks' && (
+            <TaskTableDynamic
+              tasks={filteredTasks}
+              onTaskClick={onTaskClick}
+              handleToggleTaskComplete={handleToggleTaskComplete ?? (() => {})}
+              handleUpdateTaskStatus={handleUpdateTaskStatus ?? (() => {})}
+              selectedTaskId={selectedTaskId ?? null}
+              onUpdateTask={onUpdateTask}
+              onDeleteTask={() => {}}
+              visibleColumns={visibleColumns}
+            />
+          )}
+
+        </div>
       </div>
     </div>
   );
