@@ -9,13 +9,19 @@ import { Task } from '../components/TaskTableDynamic';
 export const INITIAL_TASKS: Task[] = [
   {
     id: 1,
-    title: "Upload enrollment documentation",
+    title: "Upload enrollment documentation and supporting patient records",
     completed: false,
     dueDate: "02/15/2026",
     assignedTo: { initials: "TF", name: "Tim Freeman" },
     healthCenter: "Mountain View Clinic",
+    category: "Clinical",
     taskType: 'system',
     createdBy: { initials: 'RL', name: 'Reglantern' },
+    comments: [
+      { id: 'c1-1', user: { initials: 'TF', name: 'Tim Freeman' }, text: 'Files uploaded for patients 1–3. Still waiting on records from the coordinator for the remaining two.', timestamp: new Date('2026-05-15T10:00:00') },
+      { id: 'c1-2', user: { initials: 'SM', name: 'Sarah Martinez' }, text: 'Coordinator confirmed they\'ll have the last two files over by Thursday.', timestamp: new Date('2026-05-16T14:00:00') },
+      { id: 'c1-3', user: { initials: 'TF', name: 'Tim Freeman' }, text: 'All files are in. Marking the subtasks complete.', timestamp: new Date('2026-05-18T09:30:00') },
+    ],
     subtasks: [
       {
         id: 'subtask-1-1',
@@ -69,17 +75,30 @@ export const INITIAL_TASKS: Task[] = [
     completed: false,
     attention: { type: 'needs', count: 1 },
     taskType: 'system',
-    createdBy: { initials: 'RL', name: 'Reglantern' }
+    createdBy: { initials: 'RL', name: 'Reglantern' },
+    comments: [
+      { id: 'c2-1', user: { initials: 'TF', name: 'Tim Freeman' }, text: 'Training portal is back up — everyone should be able to complete this now.', timestamp: new Date('2026-05-28T10:15:00') },
+    ]
   },
   {
     id: 3,
-    title: "Submit quarterly clinical report",
+    title: "Submit quarterly clinical report and enrollment documentation summary",
     completed: false,
     dueDate: "02/28/2026",
     assignedTo: { initials: "SM", name: "Sarah Martinez" },
     healthCenter: "Riverside Health Center",
+    category: "Compliance",
     taskType: 'system',
     createdBy: { initials: 'RL', name: 'Reglantern' },
+    comments: [
+      { id: 'c3-1', user: { initials: 'SM', name: 'Sarah Martinez' }, text: 'Started pulling together the enrollment numbers. Q1 spreadsheet is almost ready.', timestamp: new Date('2026-05-20T09:00:00') },
+      { id: 'c3-2', user: { initials: 'TF', name: 'Tim Freeman' }, text: 'Make sure the adverse event summary from March is included — the sponsor flagged that last cycle.', timestamp: new Date('2026-05-21T14:30:00') },
+      { id: 'c3-3', user: { initials: 'SM', name: 'Sarah Martinez' }, text: 'Good catch, adding it now. Should have a draft ready by end of week.', timestamp: new Date('2026-05-22T11:00:00') },
+      { id: 'c3-4', user: { initials: 'JD', name: 'John Davis' }, text: 'Can someone double-check the subtask 3 uploads? I see only one file made it through.', timestamp: new Date('2026-05-23T16:45:00') },
+      { id: 'c3-5', user: { initials: 'TF', name: 'Tim Freeman' }, text: 'On it — looks like the second PDF exceeded the size limit. Will re-compress and re-upload.', timestamp: new Date('2026-05-24T08:30:00') },
+      { id: 'c3-6', user: { initials: 'LW', name: 'Lisa Wang' }, text: 'Also flagging that the protocol deviations section needs the updated corrective action plan from April.', timestamp: new Date('2026-05-25T13:15:00') },
+      { id: 'c3-7', user: { initials: 'SM', name: 'Sarah Martinez' }, text: 'Updated CAP attached. I think we\'re good to submit pending final review from Tim.', timestamp: new Date('2026-05-26T10:00:00') },
+    ],
     subtasks: [
       {
         id: 'subtask-3-1',
@@ -127,14 +146,19 @@ export const INITIAL_TASKS: Task[] = [
   },
   {
     id: 5,
-    title: "Update protocol documentation",
+    title: "Update protocol documentation for the 2026 annual compliance review cycle",
     completed: false,
     dueDate: "02/20/2026",
     assignedTo: { initials: "LW", name: "Lisa Wang" },
     healthCenter: "Eastside Family Clinic",
+    category: "Governance",
     attention: { type: 'missing', count: 2 },
     taskType: 'system',
-    createdBy: { initials: 'RL', name: 'Reglantern' }
+    createdBy: { initials: 'RL', name: 'Reglantern' },
+    comments: [
+      { id: 'c5-1', user: { initials: 'LW', name: 'Lisa Wang' }, text: 'Section 4.2 has a version conflict — I\'m waiting on the PI to confirm which amendment takes precedence.', timestamp: new Date('2026-05-18T11:00:00') },
+      { id: 'c5-2', user: { initials: 'TF', name: 'Tim Freeman' }, text: 'PI confirmed — use Amendment 3 dated March 15. The earlier version is superseded.', timestamp: new Date('2026-05-19T09:30:00') },
+    ]
   },
   {
     id: 6,
@@ -148,13 +172,19 @@ export const INITIAL_TASKS: Task[] = [
   },
   {
     id: 7,
-    title: "Prepare site monitoring visit checklist",
+    title: "Prepare site monitoring visit checklist and pre-visit staff readiness review",
     completed: false,
     dueDate: "03/01/2026",
     assignedTo: { initials: "RP", name: "Robert Park" },
     healthCenter: "Northgate Medical",
     taskType: 'system',
-    createdBy: { initials: 'RL', name: 'Reglantern' }
+    createdBy: { initials: 'RL', name: 'Reglantern' },
+    comments: [
+      { id: 'c7-1', user: { initials: 'RP', name: 'Robert Park' }, text: 'Checklist is drafted. Sending to staff for review before we finalize.', timestamp: new Date('2026-05-22T15:00:00') },
+      { id: 'c7-2', user: { initials: 'AM', name: 'Angela Miller' }, text: 'Looks good overall. One note — the lab specimen section needs the updated SOP reference from February.', timestamp: new Date('2026-05-23T09:45:00') },
+      { id: 'c7-3', user: { initials: 'RP', name: 'Robert Park' }, text: 'Fixed. Also added the new delegation log check that compliance requested last quarter.', timestamp: new Date('2026-05-24T13:30:00') },
+      { id: 'c7-4', user: { initials: 'TF', name: 'Tim Freeman' }, text: 'Approved from my end. Let\'s lock this version and distribute to the team.', timestamp: new Date('2026-05-25T10:00:00') },
+    ]
   },
   {
     id: 8,
@@ -163,9 +193,16 @@ export const INITIAL_TASKS: Task[] = [
     dueDate: "02/25/2026",
     assignedTo: { initials: "AM", name: "Angela Miller" },
     healthCenter: "Westwood Clinic",
+    category: "Clinical",
     attention: { type: 'needs', count: 3 },
     taskType: 'system',
-    createdBy: { initials: 'RL', name: 'Reglantern' }
+    createdBy: { initials: 'RL', name: 'Reglantern' },
+    comments: [
+      { id: 'c8-1', user: { initials: 'AM', name: 'Angela Miller' }, text: 'Three patient files are flagged for follow-up. Working through them now.', timestamp: new Date('2026-05-20T14:00:00') },
+      { id: 'c8-2', user: { initials: 'TF', name: 'Tim Freeman' }, text: 'Patient #4 file looks incomplete — can you confirm whether the consent was re-executed after the protocol amendment?', timestamp: new Date('2026-05-21T11:30:00') },
+      { id: 'c8-3', user: { initials: 'AM', name: 'Angela Miller' }, text: 'Confirmed — re-execution happened on 05/10. I\'ll upload the updated consent form today.', timestamp: new Date('2026-05-21T16:00:00') },
+      { id: 'c8-4', user: { initials: 'JD', name: 'John Davis' }, text: 'Flagging patient #7 as well — their last safety visit was overdue by 3 days. Coordinator is aware.', timestamp: new Date('2026-05-23T09:00:00') },
+    ]
   },
   {
     id: 9,
@@ -179,7 +216,7 @@ export const INITIAL_TASKS: Task[] = [
   },
   {
     id: 10,
-    title: "Review informed consent forms",
+    title: "Review and re-execute informed consent forms for all active participants",
     completed: false,
     dueDate: "03/10/2026",
     healthCenter: "Harbor View Health",

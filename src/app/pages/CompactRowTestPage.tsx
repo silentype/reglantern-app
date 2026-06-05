@@ -12,21 +12,12 @@ import { useNavigate, useLocation } from 'react-router';
 import { CompactTaskRow } from '../components/task-table/CompactTaskRow';
 import type { Task } from '../components/TaskTableDynamic';
 
-// Mock comment counts — replace with real data once comments live on Task.
-const MOCK_COMMENT_COUNTS: Record<number, number> = {
-  1: 3,
-  2: 1,
-  3: 7,
-  5: 2,
-  8: 4,
-};
 
 interface CompactRowTestPageProps {
   tasks: Task[];
   selectedTaskId: number | null;
   onTaskClick: (taskId: number, taskTitle: string) => void;
   onUpdateTask: (taskId: number, updates: Partial<Task>) => void;
-  onToggleComplete: (taskId: number) => void;
 }
 
 export function CompactRowTestPage({
@@ -34,7 +25,6 @@ export function CompactRowTestPage({
   selectedTaskId,
   onTaskClick,
   onUpdateTask,
-  onToggleComplete,
 }: CompactRowTestPageProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -42,11 +32,18 @@ export function CompactRowTestPage({
   // Navigate back to compact-rows base when panel closes (backdrop click etc.)
   const handleTaskClick = useCallback(
     (taskId: number, taskTitle: string) => {
-      // Re-use the tasks page side panel by navigating there, keeping search params.
       onTaskClick(taskId, taskTitle);
-      navigate(`/test/compact-rows/${taskId}${location.search}`);
+      navigate(`/test/compact-rows/${taskId}`);
     },
-    [onTaskClick, navigate, location.search],
+    [onTaskClick, navigate],
+  );
+
+  const handleTaskClickWithTab = useCallback(
+    (taskId: number, taskTitle: string, tab: 'comments' | 'details') => {
+      onTaskClick(taskId, taskTitle);
+      navigate(`/test/compact-rows/${taskId}?tab=${tab}`);
+    },
+    [onTaskClick, navigate],
   );
 
   return (
@@ -85,11 +82,10 @@ export function CompactRowTestPage({
                 key={task.id}
                 task={task}
                 onClick={() => handleTaskClick(task.id, task.title)}
-                onToggleComplete={onToggleComplete}
+                onClickWithTab={(tab) => handleTaskClickWithTab(task.id, task.title, tab)}
                 onUpdateTask={onUpdateTask}
                 isSelected={selectedTaskId === task.id}
-                commentCount={MOCK_COMMENT_COUNTS[task.id] ?? 0}
-                disableCompletion
+                commentCount={task.comments?.length ?? 0}
               />
             ))}
           </div>

@@ -11,6 +11,7 @@ export type SortColumn =
   | 'dueDate'
   | 'assignedTo'
   | 'healthCenter'
+  | 'category'
   | 'attention'
   | 'taskType'
   | 'subtasks';
@@ -103,6 +104,13 @@ export interface Task {
   collaborators?: Array<{ initials: string; name: string }>;
   createdBy?: { initials: string; name: string };
   taskType?: 'system' | 'custom'; // system = has uploads, read-only title/desc; custom = no uploads, editable title/desc
+  category?: string;
+  comments?: Array<{
+    id: string;
+    user: { initials: string; name: string };
+    text: string;
+    timestamp: Date;
+  }>;
   subtasks?: Array<{
     id: string;
     title: string;

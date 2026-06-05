@@ -48,6 +48,7 @@ import { resolveTaskDueDates, findTasksAnchoredTo } from '../utils/helpers';
 import searchFilterSvgPaths from '../../imports/svg-oo9u3g75ma';
 
 import { ComplianceReviewPage } from './ComplianceReviewPage';
+import { ComplianceReviewTasksPage } from './ComplianceReviewTasksPage';
 import type { HealthCenter, HealthCenterDateFieldDef } from '../data/healthCenters';
 
 export interface Project {
@@ -416,6 +417,10 @@ export function AdminPage({
   // All hooks above this line; conditional rendering below.
   if (selectedNavItem === 'Compliance Review') {
     return <ComplianceReviewPage />;
+  }
+
+  if (selectedNavItem === 'Compliance Tasks') {
+    return <ComplianceReviewTasksPage />;
   }
 
   if (selectedProject) {

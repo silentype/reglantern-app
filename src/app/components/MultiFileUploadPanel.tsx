@@ -59,6 +59,7 @@ export default function MultiFileUploadPanel({
   initialCreatedBy,
   initialTaskType = 'custom',
   initialSubtasks = [],
+  initialComments = [],
   initialView = 'task',
   simplifiedFields = false,
   initialDueDateRule,
@@ -121,6 +122,7 @@ export default function MultiFileUploadPanel({
   initialCreatedBy?: { initials: string; name: string };
   initialTaskType?: 'system' | 'custom';
   initialSubtasks?: Subtask[];
+  initialComments?: Comment[];
   initialView?: 'task' | 'subtask';
   /**
    * When true, hide the Assigned To + Collaborators sections in the Details
@@ -200,7 +202,7 @@ export default function MultiFileUploadPanel({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   
   // Comments state
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<Comment[]>(initialComments);
   const [commentText, setCommentText] = useState('');
 
   // Autosave state

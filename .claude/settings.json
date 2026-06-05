@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "lsof -ti:5173 >/dev/null 2>&1 || (cd \"/Users/tf46551/Documents/My Projects/Reglantern\" && nohup npm run dev > /tmp/reglantern-dev.log 2>&1 &)",
+            "async": true,
+            "statusMessage": "Starting Reglantern dev server..."
+          }
+        ]
+      }
+    ]
+  },
+  "worktree": {
+    "symlinkDirectories": ["node_modules"]
+  },
+  "permissions": {
+    "additionalDirectories": ["/Users/tf46551/Documents/My Projects/Reglantern"],
+    "deny": [
+      "Edit(/Users/tf46551/projects/college-planner/**)",
+      "Write(/Users/tf46551/projects/college-planner/**)",
+      "NotebookEdit(/Users/tf46551/projects/college-planner/**)",
+      "Bash(git -C /Users/tf46551/projects/college-planner*)",
+      "Bash(cd /Users/tf46551/projects/college-planner*)",
+      "Bash(npm --prefix /Users/tf46551/projects/college-planner*)",
+      "Bash(npx --prefix /Users/tf46551/projects/college-planner*)"
+    ]
+  }
+}

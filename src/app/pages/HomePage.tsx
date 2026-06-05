@@ -760,12 +760,13 @@ function MemberDashboard({
   const [needsAttentionOpen,   setNeedsAttentionOpen]   = useState(false);
   const [columnsOpen,          setColumnsOpen]          = useState(false);
   const [visibleColumns,       setVisibleColumns]       = useState<string[]>([
-    'title', 'dueDate', 'healthCenter', 'subtasks', 'taskType', 'attention',
+    'title', 'dueDate', 'category', 'healthCenter', 'subtasks', 'taskType', 'attention',
   ]);
 
   const allColumns = [
     { id: 'title',        label: 'Task Name' },
     { id: 'dueDate',      label: 'Due Date' },
+    { id: 'category',     label: 'Category' },
     { id: 'healthCenter', label: 'Health Center' },
     { id: 'subtasks',     label: 'Subtasks' },
     { id: 'taskType',     label: 'Task Type' },

@@ -72,6 +72,7 @@ const NAV_ITEM_TO_URL: Record<string, string> = {
   'FTCA Site Visit Protocol': '/checklists/ftca-site-visit-protocol',
   'Project Builder': '/admin/project-builder',
   'Compliance Review': '/admin/compliance-review',
+  'Compliance Tasks': '/admin/compliance-tasks',
   'Health Centers': '/admin/health-centers',
 };
 
@@ -82,6 +83,7 @@ const URL_TO_NAV_ITEM: Record<string, string> = {
   'ftca-site-visit-protocol': 'FTCA Site Visit Protocol',
   'project-builder': 'Project Builder',
   'compliance-review': 'Compliance Review',
+  'compliance-tasks': 'Compliance Tasks',
   'health-centers': 'Health Centers',
 };
 
@@ -616,7 +618,6 @@ export default function App() {
               selectedTaskId={selectedTaskId}
               onTaskClick={handleTaskClick}
               onUpdateTask={handleUpdateTaskDetails}
-              onToggleComplete={handleToggleTaskComplete}
             />
           ) : currentPage === 'home' ? (
             <HomePage
@@ -761,6 +762,7 @@ export default function App() {
               initialCreatedBy={currentTask.createdBy}
               initialTaskType={currentTask.taskType || 'system'}
               initialSubtasks={currentTask.subtasks || []}
+              initialComments={currentTask.comments || []}
               simplifiedFields={selectedProjectId !== null}
               initialDueDateRule={currentTask.dueDateRule}
               projectStartDate={currentProject?.startDate}
