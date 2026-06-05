@@ -93,6 +93,12 @@ function TaskTableDynamicInner({
         const typeA = a.taskType || '';
         const typeB = b.taskType || '';
         return sortDirection === 'asc' ? typeA.localeCompare(typeB) : typeB.localeCompare(typeA);
+      } else if (sortColumn === 'category') {
+        const categoryA = a.category || '';
+        const categoryB = b.category || '';
+        return sortDirection === 'asc'
+          ? categoryA.localeCompare(categoryB)
+          : categoryB.localeCompare(categoryA);
       } else if (sortColumn === 'subtasks') {
         const subtasksA = a.subtasks?.length || 0;
         const subtasksB = b.subtasks?.length || 0;
@@ -104,6 +110,7 @@ function TaskTableDynamicInner({
 
   const [columns, setColumns] = useState<ColumnConfig[]>([
     { id: 'title', label: 'Task Name', icon: null, width: 350, minWidth: 200 },
+    { id: 'category', label: 'Category', icon: null, width: 220, minWidth: 180 },
     { id: 'dueDate', label: 'Due Date', icon: CalendarIcon, width: 260, minWidth: 200 },
     { id: 'assignedTo', label: 'Assigned To', icon: User, width: 180, minWidth: 180 },
     { id: 'healthCenter', label: 'Health Center', icon: Building2, width: 220, minWidth: 220 },

@@ -64,12 +64,13 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
 
   // Column visibility state - all columns visible by default
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
-    'title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'
+    'title', 'category', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'
   ]);
   const [columnVisibilityOpenFilterBar, setColumnVisibilityOpenFilterBar] = useState(false);
 
   const allColumns = [
     { id: 'title', label: 'Task Name' },
+    { id: 'category', label: 'Category' },
     { id: 'dueDate', label: 'Due Date' },
     { id: 'assignedTo', label: 'Assigned To' },
     { id: 'healthCenter', label: 'Health Center' },

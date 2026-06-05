@@ -1,299 +1,247 @@
 /**
  * Seed projects + localStorage round-trip for the projects array.
  *
- * Projects (and the tasks inside them) are mirrored to localStorage so
- * a user demoing the app with html.to.design can refresh and pick up
- * where they left off. The data is in-memory otherwise; there is no
- * backend yet.
+ * DATA MODEL
+ * ----------
+ * Tasks are created *inside projects*. A project is then assigned to one or
+ * more health centers (`assignedHealthCenters`). Only the tasks of a project
+ * that has at least one assigned health center bubble up into the main
+ * "My Tasks" table (see App.tsx's `allTasksIncludingProjects`). The Tasks
+ * page therefore shows the union of every assigned project's tasks, and the
+ * "Category" column on that table renders the *name of the project* the task
+ * came from.
+ *
+ * To keep the seed DRY, projects are generated from a small set of compliance
+ * project *templates* and an assignment map that pre-assigns a few projects to
+ * each health center. Each (template × center) pair becomes its own Project
+ * record with a unique id and that center stamped onto every task.
+ *
+ * Projects (and the tasks inside them) are mirrored to localStorage so a user
+ * demoing the app with html.to.design can refresh and pick up where they left
+ * off. The data is in-memory otherwise; there is no backend yet.
  */
 
 import type { Project } from '../pages/AdminPage';
+import type { Task } from '../components/task-table/types';
 
-// Bumped v1 -> v2 when the seed grew sample projects with rule-driven
-// tasks so the new shortcode tags ("2w after start", "30d before
-// Accreditation expires", etc.) show up in the table immediately,
-// without each user having to clear localStorage by hand.
-export const PROJECTS_STORAGE_KEY = 'reglantern.projects.v2';
+// Bumped to v3 when the seed was reworked so every task originates from a
+// project assigned to a health center (the Tasks table now reads exclusively
+// from assigned-project tasks). Older v1/v2 payloads don't carry assignments
+// on most projects, so the key bump forces a clean reseed.
+export const PROJECTS_STORAGE_KEY = 'reglantern.projects.v3';
 
-export const INITIAL_PROJECTS: Project[] = [
-  {
-    id: 1,
-    name: 'Site Compliance Review',
-    description: 'Comprehensive review of all site compliance requirements and documentation',
-    createdAt: '2026-04-01',
+// ── Date helpers ─────────────────────────────────────────────────────────────
+
+const SEED_TODAY = new Date(2026, 5, 5); // 2026-06-05 (month is 0-indexed)
+
+function fmt(d: Date): string {
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${mm}/${dd}/${d.getFullYear()}`;
+}
+
+/** A date `days` away from the seed "today" (negative = in the past). */
+function offsetFromToday(days: number): string {
+  const d = new Date(SEED_TODAY);
+  d.setDate(d.getDate() + days);
+  return fmt(d);
+}
+
+/** A date `days` after a given MM/dd/yyyy anchor. */
+function addDays(anchor: string, days: number): string {
+  const [mm, dd, yyyy] = anchor.split('/').map(Number);
+  const d = new Date(yyyy, mm - 1, dd);
+  d.setDate(d.getDate() + days);
+  return fmt(d);
+}
+
+// ── Assignees (cycled through deterministically per project) ─────────────────
+
+const PEOPLE = [
+  { initials: 'SM', name: 'Sarah Miller' },
+  { initials: 'MJ', name: 'Michael Johnson' },
+  { initials: 'EW', name: 'Emily Williams' },
+  { initials: 'DB', name: 'David Brown' },
+  { initials: 'LW', name: 'Lisa Wang' },
+  { initials: 'RP', name: 'Robert Park' },
+  { initials: 'EC', name: 'Emma Chen' },
+  { initials: 'MG', name: 'Michael Garcia' },
+] as const;
+
+const CREATED_BY = { initials: 'TF', name: 'Tim Freeman' };
+
+// ── Project templates ────────────────────────────────────────────────────────
+
+interface TaskTemplate {
+  title: string;
+  /** Days from the project's startDate that this task is due. */
+  dueOffset: number;
+  /** Completed tasks get a completedAt a few days before due. */
+  completed?: boolean;
+  attention?: { type: 'needs' | 'missing'; count: number };
+}
+
+interface ProjectTemplate {
+  key: string;
+  name: string;
+  description: string;
+  /** Days from seed-today the project started (negative = already running). */
+  startOffset: number;
+  /** Project duration in days (startDate + duration = endDate). */
+  durationDays: number;
+  tasks: TaskTemplate[];
+}
+
+const TEMPLATES: Record<string, ProjectTemplate> = {
+  ftca: {
+    key: 'ftca',
+    name: 'FTCA Site Visit Preparation',
+    description: 'Assemble and review all documentation required for the upcoming FTCA site visit.',
+    startOffset: -30,
+    durationDays: 90,
     tasks: [
-      {
-        id: 9001,
-        title: 'Complete Site Safety Assessment',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '05/01/2026',
-        assignedTo: { initials: 'SK', name: 'Sarah Kim' },
-        healthCenter: 'Main Campus',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9002,
-        title: 'Review Emergency Protocols',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '05/05/2026',
-        assignedTo: { initials: 'MJ', name: 'Michael Johnson' },
-        healthCenter: 'East Side Clinic',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9011,
-        title: 'Verify Patient Demographics Data',
-        completed: true,
-        completedAt: '04/22/2026',
-        status: 'Completed',
-        dueDate: '04/22/2026',
-        assignedTo: { initials: 'AR', name: 'Amelia Rodriguez' },
-        healthCenter: 'Main Campus',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9012,
-        title: 'Audit Quality Assurance Manual',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '05/12/2026',
-        assignedTo: { initials: 'JL', name: 'Jasmine Lee' },
-        healthCenter: 'West Valley Center',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9013,
-        title: 'Update Service Area Documentation',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '05/18/2026',
-        assignedTo: { initials: 'DP', name: 'Daniel Park' },
-        healthCenter: 'East Side Clinic',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9014,
-        title: 'Submit Sliding Fee Discount Schedule',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '05/22/2026',
-        assignedTo: { initials: 'RB', name: 'Riya Banerjee' },
-        healthCenter: 'Main Campus',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9015,
-        title: 'Refresh HR Credentialing Files',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '05/29/2026',
-        assignedTo: { initials: 'CN', name: 'Carlos Nguyen' },
-        healthCenter: 'West Valley Center',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9016,
-        title: 'Conduct Quarterly Privacy Walkthrough',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '06/04/2026',
-        assignedTo: { initials: 'OK', name: 'Olivia Kim' },
-        healthCenter: 'Main Campus',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
+      { title: 'Compile risk management plan', dueOffset: 14, completed: true },
+      { title: 'Review credentialing & privileging files', dueOffset: 28, attention: { type: 'missing', count: 3 } },
+      { title: 'Update quality improvement / quality assurance plan', dueOffset: 42 },
+      { title: 'Conduct mock site visit walkthrough', dueOffset: 60, attention: { type: 'needs', count: 2 } },
+      { title: 'Submit FTCA deeming application packet', dueOffset: 85 },
     ],
   },
-  {
-    id: 2,
-    name: 'FTCA Documentation Update',
-    description: 'Update all FTCA-related documentation and procedures',
-    createdAt: '2026-03-15',
+  uds: {
+    key: 'uds',
+    name: 'Annual UDS Report Submission',
+    description: 'Compile, validate, and submit the annual Uniform Data System report to HRSA.',
+    startOffset: -20,
+    durationDays: 75,
     tasks: [
-      {
-        id: 9003,
-        title: 'Update FTCA Policy Manual',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '04/30/2026',
-        assignedTo: { initials: 'EM', name: 'Emily Martinez' },
-        healthCenter: 'West Valley Center',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
+      { title: 'Gather patient demographic data', dueOffset: 10, completed: true },
+      { title: 'Validate clinical quality measures', dueOffset: 25, attention: { type: 'missing', count: 2 } },
+      { title: 'Reconcile financial cost report tables', dueOffset: 45 },
+      { title: 'Internal review of UDS draft', dueOffset: 60 },
+      { title: 'Submit UDS report to HRSA', dueOffset: 72 },
     ],
   },
-  // Sample project #3 -- exercises projectStart / taskDue (sibling) /
-  // projectEnd / projectKickoff (implicit center) / fixedAnniversary
-  // anchors so each shortcode style ("1w after start", "3d after <task
-  // title>", "7d before end", "2mo after instantiation", "1d after Mar
-  // 31") shows up in the table immediately.
-  {
-    id: 3,
-    name: 'Annual UDS Submission',
-    description: 'Compile and submit the annual UDS dataset to HRSA',
-    createdAt: '2026-01-05',
-    startDate: '01/10/2026',
-    endDate: '04/30/2026',
-    assignedHealthCenters: [
-      { name: 'Mountain View Clinic', assignedAt: '01/15/2026' },
-    ],
+  slidingFee: {
+    key: 'slidingFee',
+    name: 'Sliding Fee Discount Program Review',
+    description: 'Annual review of the sliding fee discount schedule and supporting policies.',
+    startOffset: -10,
+    durationDays: 60,
     tasks: [
-      {
-        id: 9020,
-        title: 'Gather patient demographics',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '01/17/2026',
-        dueDateRule: { anchor: { kind: 'projectStart' }, amount: 1, unit: 'weeks', direction: 'after' },
-        assignedTo: { initials: 'SK', name: 'Sarah Kim' },
-        healthCenter: 'Mountain View Clinic',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9021,
-        title: 'Verify enrollment counts',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '01/20/2026',
-        dueDateRule: { anchor: { kind: 'taskDue', taskId: 9020 }, amount: 3, unit: 'days', direction: 'after' },
-        assignedTo: { initials: 'AR', name: 'Amelia Rodriguez' },
-        healthCenter: 'Mountain View Clinic',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9022,
-        title: 'File compliance attestation',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '03/15/2026',
-        dueDateRule: { anchor: { kind: 'projectKickoff' }, amount: 2, unit: 'months', direction: 'after' },
-        assignedTo: { initials: 'MJ', name: 'Michael Johnson' },
-        healthCenter: 'Mountain View Clinic',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9023,
-        title: 'Annual board review',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '04/01/2026',
-        dueDateRule: { anchor: { kind: 'fixedAnniversary', month: 3, day: 31 }, amount: 1, unit: 'days', direction: 'after' },
-        assignedTo: { initials: 'CN', name: 'Carlos Nguyen' },
-        healthCenter: 'Mountain View Clinic',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9024,
-        title: 'Submit to HRSA',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '04/23/2026',
-        dueDateRule: { anchor: { kind: 'projectEnd' }, amount: 7, unit: 'days', direction: 'before' },
-        assignedTo: { initials: 'JL', name: 'Jasmine Lee' },
-        healthCenter: 'Mountain View Clinic',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
+      { title: 'Review current sliding fee discount schedule', dueOffset: 12, completed: true },
+      { title: 'Verify Federal Poverty Guideline alignment', dueOffset: 24 },
+      { title: 'Audit patient eligibility documentation', dueOffset: 40, attention: { type: 'missing', count: 4 } },
+      { title: 'Update sliding fee policy & board approval', dueOffset: 55 },
     ],
   },
-  // Sample project #4 -- exercises healthCenterField (catalog field)
-  // alongside projectStart / projectEnd. Pair with the
-  // "accreditation-expires" entry seeded in INITIAL_HEALTH_CENTER_FIELD_DEFS
-  // and a value on Mountain View Clinic so "30d before Accreditation
-  // expires" resolves to a concrete date.
-  {
-    id: 4,
-    name: 'Q2 Quality Improvement Initiative',
-    description: 'Cross-site quality push with mid-quarter checkpoint and outcome report',
-    createdAt: '2026-03-28',
-    startDate: '04/01/2026',
-    endDate: '06/30/2026',
-    assignedHealthCenters: [
-      { name: 'Downtown Medical Center', assignedAt: '04/05/2026' },
-    ],
+  qi: {
+    key: 'qi',
+    name: 'Quality Improvement Initiative',
+    description: 'Cross-site quality push with baseline survey, mid-point checkpoint, and outcome report.',
+    startOffset: -5,
+    durationDays: 90,
     tasks: [
-      {
-        id: 9030,
-        title: 'Baseline patient survey',
-        completed: false,
-        status: 'In Progress',
-        dueDate: '04/06/2026',
-        dueDateRule: { anchor: { kind: 'projectStart' }, amount: 5, unit: 'days', direction: 'after' },
-        assignedTo: { initials: 'OK', name: 'Olivia Kim' },
-        healthCenter: 'Downtown Medical Center',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9031,
-        title: 'Mid-quarter checkpoint',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '05/13/2026',
-        dueDateRule: { anchor: { kind: 'projectStart' }, amount: 6, unit: 'weeks', direction: 'after' },
-        assignedTo: { initials: 'RB', name: 'Riya Banerjee' },
-        healthCenter: 'Downtown Medical Center',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9032,
-        title: 'Refresh accreditation packet',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '08/31/2026',
-        dueDateRule: {
-          anchor: { kind: 'healthCenterField', fieldId: 'accreditation-expires' },
-          amount: 30,
-          unit: 'days',
-          direction: 'before',
-        },
-        assignedTo: { initials: 'DP', name: 'Daniel Park' },
-        healthCenter: 'Downtown Medical Center',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9033,
-        title: 'Q2 outcome report',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '06/16/2026',
-        dueDateRule: { anchor: { kind: 'projectEnd' }, amount: 2, unit: 'weeks', direction: 'before' },
-        assignedTo: { initials: 'EC', name: 'Emma Chen' },
-        healthCenter: 'Downtown Medical Center',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
-      {
-        id: 9034,
-        title: 'Plan next quarter',
-        completed: false,
-        status: 'Not Started',
-        dueDate: '06/23/2026',
-        dueDateRule: { anchor: { kind: 'taskDue', taskId: 9033 }, amount: 1, unit: 'weeks', direction: 'after' },
-        assignedTo: { initials: 'EM', name: 'Emily Martinez' },
-        healthCenter: 'Downtown Medical Center',
-        taskType: 'custom',
-        createdBy: { initials: 'TF', name: 'Tim Freeman' },
-      },
+      { title: 'Establish baseline patient outcome metrics', dueOffset: 14 },
+      { title: 'Launch patient experience survey', dueOffset: 30, attention: { type: 'needs', count: 1 } },
+      { title: 'Mid-initiative performance checkpoint', dueOffset: 55 },
+      { title: 'Compile quality outcome report', dueOffset: 80 },
     ],
   },
+  governance: {
+    key: 'governance',
+    name: 'Board Governance & Bylaws Review',
+    description: 'Annual review of board composition, bylaws, and governance compliance requirements.',
+    startOffset: -45,
+    durationDays: 80,
+    tasks: [
+      { title: 'Verify board composition meets 51% patient majority', dueOffset: 15, completed: true },
+      { title: 'Review and update organizational bylaws', dueOffset: 35 },
+      { title: 'Document board meeting minutes for the year', dueOffset: 55, attention: { type: 'missing', count: 1 } },
+      { title: 'Confirm conflict of interest disclosures', dueOffset: 70 },
+    ],
+  },
+  credentialing: {
+    key: 'credentialing',
+    name: 'HR Credentialing & Privileging Audit',
+    description: 'Audit provider credentialing files and privileging records for completeness and currency.',
+    startOffset: -15,
+    durationDays: 70,
+    tasks: [
+      { title: 'Pull active provider roster', dueOffset: 8, completed: true },
+      { title: 'Verify primary source license verification', dueOffset: 22, attention: { type: 'missing', count: 5 } },
+      { title: 'Confirm DEA & malpractice coverage on file', dueOffset: 40 },
+      { title: 'Review privileging delineations', dueOffset: 58 },
+      { title: 'Finalize credentialing audit summary', dueOffset: 68 },
+    ],
+  },
+};
+
+// ── Assignment map: pre-assign a few projects to each health center ──────────
+
+const ASSIGNMENTS: Array<{ center: string; templates: string[] }> = [
+  { center: 'Downtown Medical Center',    templates: ['ftca', 'uds', 'qi'] },
+  { center: 'Westside Health Clinic',     templates: ['ftca', 'slidingFee'] },
+  { center: 'Central Medical Plaza',      templates: ['uds', 'governance', 'credentialing'] },
+  { center: 'Northside Community Health', templates: ['qi', 'ftca'] },
+  { center: 'Eastside Medical Group',     templates: ['slidingFee', 'uds'] },
+  { center: 'Southside Wellness Center',  templates: ['governance', 'credentialing'] },
+  { center: 'Mountain View Clinic',       templates: ['ftca', 'governance'] },
+  { center: 'Riverside Health Center',    templates: ['credentialing', 'qi'] },
+  { center: 'Eastside Family Clinic',     templates: ['uds', 'slidingFee'] },
+  { center: 'Harbor View Health',         templates: ['ftca', 'qi', 'governance'] },
 ];
+
+// ── Generator ────────────────────────────────────────────────────────────────
+
+function buildProjects(): Project[] {
+  const projects: Project[] = [];
+  let projectId = 100;
+  let taskId = 10000;
+
+  for (const { center, templates } of ASSIGNMENTS) {
+    templates.forEach((tplKey, idxInCenter) => {
+      const tpl = TEMPLATES[tplKey];
+      if (!tpl) return;
+
+      const startDate = offsetFromToday(tpl.startOffset);
+      const endDate = addDays(startDate, tpl.durationDays);
+      const assignedAt = startDate;
+
+      const tasks: Task[] = tpl.tasks.map((tt, i) => {
+        const person = PEOPLE[(idxInCenter + i) % PEOPLE.length];
+        const dueDate = addDays(startDate, tt.dueOffset);
+        return {
+          id: taskId++,
+          title: tt.title,
+          completed: !!tt.completed,
+          status: tt.completed ? 'Complete' : i === 0 ? 'In Progress' : 'Not Started',
+          ...(tt.completed ? { completedAt: addDays(dueDate, -3) } : {}),
+          dueDate,
+          assignedTo: { initials: person.initials, name: person.name },
+          healthCenter: center,
+          taskType: 'custom',
+          createdBy: CREATED_BY,
+          ...(tt.attention ? { attention: tt.attention } : {}),
+        };
+      });
+
+      projects.push({
+        id: projectId++,
+        name: tpl.name,
+        description: tpl.description,
+        createdAt: addDays(startDate, -7),
+        startDate,
+        endDate,
+        assignedHealthCenters: [{ name: center, assignedAt }],
+        tasks,
+      });
+    });
+  }
+
+  return projects;
+}
+
+export const INITIAL_PROJECTS: Project[] = buildProjects();
 
 /**
  * Reads projects from localStorage and falls back to the seed array

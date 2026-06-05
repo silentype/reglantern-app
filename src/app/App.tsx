@@ -409,6 +409,22 @@ export default function App() {
   }, [navigate, currentPage, itemSeg, selectedProjectId]);
 
   const handleToggleTaskComplete = useCallback((taskId: number) => {
+    // Tasks shown on the Tasks page live inside projects, so always route
+    // completion toggles into project state by task id.
+    setProjects(prevProjects =>
+      prevProjects.map(project => ({
+        ...project,
+        tasks: project.tasks.map(task =>
+          task.id === taskId
+            ? {
+                ...task,
+                completed: !task.completed,
+                status: !task.completed ? 'Complete' : 'Not Started',
+              }
+            : task
+        ),
+      }))
+    );
     setTasks(prevTasks =>
       prevTasks.map(task =>
         task.id === taskId ? { ...task, completed: !task.completed } : task
@@ -417,6 +433,16 @@ export default function App() {
   }, []);
 
   const handleUpdateTaskStatus = useCallback((taskId: number, status: string) => {
+    setProjects(prevProjects =>
+      prevProjects.map(project => ({
+        ...project,
+        tasks: project.tasks.map(task =>
+          task.id === taskId
+            ? { ...task, status, completed: status === 'Complete' }
+            : task
+        ),
+      }))
+    );
     setTasks(prevTasks =>
       prevTasks.map(task =>
         task.id === taskId ? { ...task, completed: status === 'Complete' } : task
@@ -461,20 +487,29 @@ export default function App() {
       return;
     }
 
-    // Otherwise update main tasks
+    // Otherwise the task is being edited from the Tasks page, where every task
+    // belongs to a project. Locate it across all projects by id.
+    const computeFilesUpdate = (task: Task): Task => {
+      const totalFilesUploaded = files.filter(p => p.uploadedFiles.length > 0).length;
+      const totalPatients = files.length;
+      const missingCount = totalPatients - totalFilesUploaded;
+      const newAttention = missingCount > 0
+        ? { type: 'missing' as const, count: missingCount }
+        : undefined;
+      return { ...task, files, attention: newAttention };
+    };
+    setProjects(prevProjects =>
+      prevProjects.map(project => ({
+        ...project,
+        tasks: project.tasks.map(task =>
+          task.id === taskId ? computeFilesUpdate(task) : task
+        ),
+      }))
+    );
     setTasks(prevTasks =>
-      prevTasks.map(task => {
-        if (task.id === taskId) {
-          const totalFilesUploaded = files.filter(p => p.uploadedFiles.length > 0).length;
-          const totalPatients = files.length;
-          const missingCount = totalPatients - totalFilesUploaded;
-          const newAttention = missingCount > 0
-            ? { type: 'missing' as const, count: missingCount }
-            : undefined;
-          return { ...task, files, attention: newAttention };
-        }
-        return task;
-      })
+      prevTasks.map(task =>
+        task.id === taskId ? computeFilesUpdate(task) : task
+      )
     );
   }, [selectedProjectId]);
 
@@ -507,7 +542,22 @@ export default function App() {
       return;
     }
 
-    // Otherwise update main tasks
+    // Otherwise the task is being edited from the Tasks page, where every task
+    // belongs to a project. Locate it across all projects by id.
+    setProjects(prevProjects =>
+      prevProjects.map(project => ({
+        ...project,
+        tasks: project.tasks.map(task =>
+          task.id === taskId
+            ? {
+                ...task,
+                ...updates,
+                completed: updates.status === 'Complete' ? true : task.completed,
+              }
+            : task
+        ),
+      }))
+    );
     setTasks(prevTasks =>
       prevTasks.map(task => {
         if (task.id === taskId) {
@@ -555,22 +605,23 @@ export default function App() {
     [projects, selectedProjectId]
   );
 
-  // Compute all tasks including those from assigned projects for the Tasks page
+  // Tasks shown on the Tasks page come *exclusively* from projects that have
+  // at least one assigned health center. Each task is stamped with its source
+  // project's name as `category` so the Category column renders the project it
+  // originated from. Standalone (non-project) tasks are intentionally excluded.
   const allTasksIncludingProjects = useMemo(() => {
     const projectTasks: Task[] = [];
 
-    // Collect tasks from all projects assigned to a health center
     projects.forEach(project => {
       if (project.assignedHealthCenters && project.assignedHealthCenters.length > 0 && project.tasks.length > 0) {
         project.tasks.forEach(task => {
-          projectTasks.push(task);
+          projectTasks.push({ ...task, category: project.name });
         });
       }
     });
 
-    // Merge regular tasks with project tasks
-    return [...tasks, ...projectTasks];
-  }, [tasks, projects]);
+    return projectTasks;
+  }, [projects]);
 
   return (
     <div className="h-screen bg-[#f9fafb] flex flex-col">
