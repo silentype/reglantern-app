@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useSearchParams } from 'react-router';
 import { format, parse, isValid } from 'date-fns';
 import {
   X,
@@ -19,6 +20,7 @@ import {
   User,
   Building2,
   AlertCircle,
+  Tag,
 } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -44,21 +46,55 @@ import {
 import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
 
 export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, sideNavOpen: _sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask, defaultHCFilter }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; defaultHCFilter?: string; }) {
-  const [statusFilter, setStatusFilter] = useState<string[]>(['all']);
-  const [dueDateFilter, setDueDateFilter] = useState<string>('');
-  const [assignedToFilter, setAssignedToFilter] = useState<string[]>(['all']);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Deep-link filter params. The homepage stat chips, project cards, and
+  // health-center rows link here with these params so the table lands
+  // pre-filtered; users can then refine via the chips.
+  //   ?category=<project name>     -> Category (project) filter
+  //   ?assigned=unassigned         -> Assigned-To filter (no assignee)
+  //   ?due=overdue|thisweek|week…  -> Due-Date filter
+  //   ?status=incomplete|complete  -> Status filter
+  //   ?healthCenter=<name>         -> Health Center filter
+  const urlCategory = searchParams.get('category') ?? '';
+  const urlAssigned = searchParams.get('assigned') ?? '';
+  const urlDue = searchParams.get('due') ?? '';
+  const urlStatus = searchParams.get('status') ?? '';
+  const urlHealthCenter = searchParams.get('healthCenter') ?? '';
+
+  const [categoryFilter, setCategoryFilter] = useState<string[]>(() =>
+    urlCategory ? [urlCategory] : ['all']
+  );
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  // Keep the selection in sync when the deep-link param changes (e.g. clicking
+  // a different project card while the page stays mounted).
+  useEffect(() => {
+    setCategoryFilter(urlCategory ? [urlCategory] : ['all']);
+  }, [urlCategory]);
+
+  const [statusFilter, setStatusFilter] = useState<string[]>(() => urlStatus ? [urlStatus] : ['all']);
+  const [dueDateFilter, setDueDateFilter] = useState<string>(() => urlDue);
+  const [assignedToFilter, setAssignedToFilter] = useState<string[]>(() => urlAssigned ? [urlAssigned] : ['all']);
   const [healthCenterFilter, setHealthCenterFilter] = useState<string[]>(() =>
-    defaultHCFilter ? [defaultHCFilter] : ['All Health Centers']
+    urlHealthCenter ? [urlHealthCenter] : defaultHCFilter ? [defaultHCFilter] : ['All Health Centers']
   );
   const [needsAttentionFilter, setNeedsAttentionFilter] = useState<string[]>(['all']);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [customDateInput, setCustomDateInput] = useState<string>('');
   const [assignedToOpen, setAssignedToOpen] = useState(false);
 
-  // Sync HC filter when the top-nav HC selector changes
+  // Re-seed the deep-link filters when a param changes while the page stays
+  // mounted (e.g. clicking a different chip on the homepage).
+  useEffect(() => { setStatusFilter(urlStatus ? [urlStatus] : ['all']); }, [urlStatus]);
+  useEffect(() => { setDueDateFilter(urlDue); }, [urlDue]);
+  useEffect(() => { setAssignedToFilter(urlAssigned ? [urlAssigned] : ['all']); }, [urlAssigned]);
+
+  // Sync HC filter: an explicit ?healthCenter= deep link wins; otherwise follow
+  // the top-nav HC selector.
   useEffect(() => {
-    setHealthCenterFilter(defaultHCFilter ? [defaultHCFilter] : ['All Health Centers']);
-  }, [defaultHCFilter]);
+    setHealthCenterFilter(
+      urlHealthCenter ? [urlHealthCenter] : defaultHCFilter ? [defaultHCFilter] : ['All Health Centers']
+    );
+  }, [defaultHCFilter, urlHealthCenter]);
   const [healthCenterOpen, setHealthCenterOpen] = useState(false);
   const [needsAttentionOpenChip, setNeedsAttentionOpenChip] = useState(false);
 
@@ -170,6 +206,28 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
     }
   }, []);
 
+  const toggleCategoryFilter = useCallback((value: string) => {
+    // Selecting a concrete category should also drop the deep-link param so the
+    // URL doesn't keep re-seeding the selection on the next render.
+    if (urlCategory) {
+      const params = new URLSearchParams(searchParams);
+      params.delete('category');
+      setSearchParams(params, { replace: true });
+    }
+    if (value === 'all') {
+      setCategoryFilter(['all']);
+    } else {
+      setCategoryFilter(prev => {
+        const newFilters = prev.includes('all')
+          ? [value]
+          : prev.includes(value)
+            ? prev.filter(v => v !== value)
+            : [...prev, value];
+        return newFilters.length === 0 ? ['all'] : newFilters;
+      });
+    }
+  }, [urlCategory, searchParams, setSearchParams]);
+
   const toggleHealthCenterFilter = useCallback((value: string) => {
     if (value === 'All Health Centers') {
       setHealthCenterFilter(['All Health Centers']);
@@ -200,6 +258,14 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
     }
   }, []);
 
+  // Distinct categories (project names) present across the current task set,
+  // sorted alphabetically — the options for the Category filter chip.
+  const categoryOptions = useMemo(() => {
+    const set = new Set<string>();
+    tasks.forEach(t => { if (t.category) set.add(t.category); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
+
   // Filter tasks based on current filter values (memoized for performance)
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -219,11 +285,18 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
         if (dueDateFilter === 'none') {
           if (task.dueDate) return false;
         } else if (task.dueDate) {
-          const targetDate = parseDueDateFilter(dueDateFilter);
-          if (targetDate) {
-            const taskDate = parse(task.dueDate, 'MM/dd/yyyy', new Date());
-            taskDate.setHours(0, 0, 0, 0);
-            if (taskDate > targetDate) return false;
+          const taskDate = parse(task.dueDate, 'MM/dd/yyyy', new Date());
+          taskDate.setHours(0, 0, 0, 0);
+          if (dueDateFilter === 'thisweek') {
+            // Strict range: today through end of the current week (Sunday).
+            const start = new Date();
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(start);
+            end.setDate(start.getDate() + (7 - start.getDay()));
+            if (taskDate < start || taskDate > end) return false;
+          } else {
+            const targetDate = parseDueDateFilter(dueDateFilter);
+            if (targetDate && taskDate > targetDate) return false;
           }
         } else {
           // Filter is not "none" and task has no due date, exclude it
@@ -231,14 +304,21 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
         }
       }
 
-      // Assigned To filter
+      // Assigned To filter ('unassigned' matches tasks with no assignee)
       if (!assignedToFilter.includes('all')) {
-        if (!task.assignedTo || !assignedToFilter.includes(task.assignedTo.name)) return false;
+        const matchesUnassigned = assignedToFilter.includes('unassigned') && !task.assignedTo;
+        const matchesUser = !!task.assignedTo && assignedToFilter.includes(task.assignedTo.name);
+        if (!matchesUnassigned && !matchesUser) return false;
       }
 
       // Health Center filter
       if (!healthCenterFilter.includes('All Health Centers')) {
         if (!task.healthCenter || !healthCenterFilter.includes(task.healthCenter)) return false;
+      }
+
+      // Category (project) multiselect filter
+      if (!categoryFilter.includes('all')) {
+        if (!task.category || !categoryFilter.includes(task.category)) return false;
       }
 
       // Needs Attention filter
@@ -260,7 +340,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
 
       return true;
     });
-  }, [tasks, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery]);
+  }, [tasks, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery, categoryFilter]);
 
   // Count active filters (memoized)
   const activeFilterCount = useMemo(() => {
@@ -270,9 +350,10 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
     if (!assignedToFilter.includes('all')) count++;
     if (!healthCenterFilter.includes('All Health Centers')) count++;
     if (!needsAttentionFilter.includes('all')) count++;
+    if (!categoryFilter.includes('all')) count++;
     // Don't count search query
     return count;
-  }, [statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter]);
+  }, [statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, categoryFilter]);
 
   return (
     <div className="h-full flex flex-col">
@@ -418,6 +499,19 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
                           </div>
                           All Users
                         </CommandItem>
+                        <CommandItem
+                          value="unassigned"
+                          onSelect={() => toggleAssignedToFilter('unassigned')}
+                        >
+                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
+                            assignedToFilter.includes('unassigned') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
+                          }`}>
+                            {assignedToFilter.includes('unassigned') && (
+                              <Check className="h-3 w-3" />
+                            )}
+                          </div>
+                          Unassigned
+                        </CommandItem>
                         {AVAILABLE_USERS.map((user) => (
                           <CommandItem
                             key={user.name}
@@ -432,6 +526,58 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
                               )}
                             </div>
                             {user.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Category (Project) Chip */}
+              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
+                <PopoverTrigger asChild>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !categoryFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]' } text-[12px]`}>
+                    <Tag className="h-3.5 w-3.5" />
+                    Category {!categoryFilter.includes('all') && `(${categoryFilter.length})`}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search categories..." />
+                    <CommandList>
+                      <CommandEmpty>No categories found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            toggleCategoryFilter('all');
+                            setCategoryOpen(false);
+                          }}
+                        >
+                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
+                            categoryFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
+                          }`}>
+                            {categoryFilter.includes('all') && (
+                              <Check className="h-3 w-3" />
+                            )}
+                          </div>
+                          All Categories
+                        </CommandItem>
+                        {categoryOptions.map((category) => (
+                          <CommandItem
+                            key={category}
+                            value={category}
+                            onSelect={() => toggleCategoryFilter(category)}
+                          >
+                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
+                              categoryFilter.includes(category) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
+                            }`}>
+                              {categoryFilter.includes(category) && (
+                                <Check className="h-3 w-3" />
+                              )}
+                            </div>
+                            {category}
                           </CommandItem>
                         ))}
                       </CommandGroup>

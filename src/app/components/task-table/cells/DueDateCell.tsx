@@ -164,12 +164,18 @@ export const DueDateCell = memo(function DueDateCell({
         className="absolute inset-0 bg-transparent group-hover/date:bg-[#f5f5f5] transition-colors"
       />
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-        {/* When a rule is in effect (shortcode) or broken, the whole cell
-            is the popover trigger and shows the existing badge. With no
-            rule, the cell is an editable input + chevron in the Assign-
-            User style: click the input to type a date, click anywhere
-            else in the cell to open the calendar/picker. */}
-        {task.dueDateRule || task.dueDateBroken ? (
+        {/* Relative-date rules ("reference date types") are a Project Builder
+            concept: the same project can be assigned to multiple health
+            centers, so the due date is resolved relative to each center's
+            assigned start date. Outside the builder (Tasks page table), we
+            always render the resolved concrete MM/dd/yyyy date as an editable
+            input -- the rule shortcode / broken-reference badge only shows
+            when `enableRelativeDates` is on.
+            With a rule in effect (shortcode) or broken, the whole cell is the
+            popover trigger and shows the badge. With no rule, the cell is an
+            editable input + chevron: click the input to type a date, click
+            anywhere else in the cell to open the calendar/picker. */}
+        {enableRelativeDates && (task.dueDateRule || task.dueDateBroken) ? (
           <PopoverTrigger asChild>
             <div className="w-full h-full">
               <DueDateBadge

@@ -108,8 +108,12 @@ export default function App() {
   const restSegs = segments.slice(2);
 
   // On /home, second segment selects the tab
-  const homeTab: 'health-centers' | 'tasks' =
-    sectionSeg === 'home' && itemSeg === 'tasks' ? 'tasks' : 'health-centers';
+  const homeTab: 'health-centers' | 'tasks' | 'projects' =
+    sectionSeg === 'home' && itemSeg === 'tasks'
+      ? 'tasks'
+      : sectionSeg === 'home' && itemSeg === 'projects'
+        ? 'projects'
+        : 'health-centers';
 
   const currentPage: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings' | 'test' =
     sectionSeg === 'home' ? 'home' :
@@ -589,22 +593,6 @@ export default function App() {
     if (url) appNavigate(url);
   }, [appNavigate]);
 
-  // Memoize current task to avoid recalculation on every render
-  const currentTask = useMemo(() => {
-    if (selectedProjectId !== null) {
-      const project = projects.find(p => p.id === selectedProjectId);
-      return project?.tasks.find(t => t.id === selectedTaskId);
-    }
-    return tasks.find(t => t.id === selectedTaskId);
-  }, [tasks, projects, selectedTaskId, selectedProjectId]);
-
-  // The project the side panel is currently scoped to (if any). Used to pass
-  // project-relative date context (start date + sibling tasks) into the panel.
-  const currentProject = useMemo(
-    () => (selectedProjectId !== null ? projects.find(p => p.id === selectedProjectId) : undefined),
-    [projects, selectedProjectId]
-  );
-
   // Tasks shown on the Tasks page come *exclusively* from projects that have
   // at least one assigned health center. Each task is stamped with its source
   // project's name as `category` so the Category column renders the project it
@@ -622,6 +610,29 @@ export default function App() {
 
     return projectTasks;
   }, [projects]);
+
+  // Memoize current task to avoid recalculation on every render
+  const currentTask = useMemo(() => {
+    if (selectedProjectId !== null) {
+      const project = projects.find(p => p.id === selectedProjectId);
+      return project?.tasks.find(t => t.id === selectedTaskId);
+    }
+    // The Tasks page is driven by `allTasksIncludingProjects` (tasks sourced
+    // from assigned projects), so the side-panel lookup must search that set
+    // first. Fall back to the standalone `tasks` state for any non-project
+    // tasks that may still exist.
+    return (
+      allTasksIncludingProjects.find(t => t.id === selectedTaskId) ??
+      tasks.find(t => t.id === selectedTaskId)
+    );
+  }, [tasks, projects, selectedTaskId, selectedProjectId, allTasksIncludingProjects]);
+
+  // The project the side panel is currently scoped to (if any). Used to pass
+  // project-relative date context (start date + sibling tasks) into the panel.
+  const currentProject = useMemo(
+    () => (selectedProjectId !== null ? projects.find(p => p.id === selectedProjectId) : undefined),
+    [projects, selectedProjectId]
+  );
 
   return (
     <div className="h-screen bg-[#f9fafb] flex flex-col">
@@ -697,7 +708,6 @@ export default function App() {
               selectedTaskId={selectedTaskId}
               onAddTask={handleAddNewTask}
               onDeleteTask={handleDeleteTask}
-              defaultHCFilter={effectiveHC ?? undefined}
             />
           ) : currentPage === 'checklists' ? (
             <ChecklistsPage onToggleSideNav={toggleSideNav} sideNavOpen={sideNavOpen} />

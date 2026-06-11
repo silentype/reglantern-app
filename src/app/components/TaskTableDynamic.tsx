@@ -10,7 +10,7 @@
  * across the codebase keep resolving without churn.
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { parse } from 'date-fns';
 import { Calendar as CalendarIcon, User, Building2, AlertCircle } from 'lucide-react';
 import { DndProvider } from 'react-dnd';
@@ -54,6 +54,15 @@ function TaskTableDynamicInner({
 }: TaskTableDynamicProps) {
   const [sortColumn, setSortColumn] = useState<SortColumn>('title');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  // Incremental rendering ("windowing"). With large task sets (1,000+ rows)
+  // mounting every heavy TaskRow at once janks the Tasks page. Instead we
+  // render an initial batch and append more as a sentinel near the bottom
+  // scrolls into view. Resets to the first batch whenever the task set or
+  // sort changes.
+  const BATCH_SIZE = 30;
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const handleSort = useCallback((column: SortColumn) => {
     setSortColumn(column);
@@ -107,6 +116,37 @@ function TaskTableDynamicInner({
       return 0;
     });
   }, [tasks, sortColumn, sortDirection]);
+
+  // Reset the window to the first batch whenever the underlying list or its
+  // ordering changes (e.g. a filter narrows the set, or the user re-sorts).
+  useEffect(() => {
+    setVisibleCount(BATCH_SIZE);
+  }, [sortedTasks]);
+
+  const visibleTasks = useMemo(
+    () => sortedTasks.slice(0, visibleCount),
+    [sortedTasks, visibleCount],
+  );
+  const hasMore = visibleCount < sortedTasks.length;
+
+  // Grow the window when the sentinel scrolls into view. The default root
+  // (viewport) works because the scroll container sits within it; rootMargin
+  // pre-loads the next batch before the user hits the very bottom.
+  useEffect(() => {
+    if (!hasMore) return;
+    const node = sentinelRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((c) => c + BATCH_SIZE);
+        }
+      },
+      { rootMargin: '600px 0px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasMore]);
 
   const [columns, setColumns] = useState<ColumnConfig[]>([
     { id: 'title', label: 'Task Name', icon: null, width: 350, minWidth: 200 },
@@ -186,8 +226,8 @@ function TaskTableDynamicInner({
         </div>
       </div>
 
-      {/* Rows */}
-      {sortedTasks.map((task) => (
+      {/* Rows (windowed — see visibleTasks / sentinel below) */}
+      {visibleTasks.map((task) => (
         <TaskRow
           key={task.id}
           task={task}
@@ -209,6 +249,9 @@ function TaskTableDynamicInner({
           disableCompletion={disableCompletion}
         />
       ))}
+
+      {/* Infinite-scroll sentinel — appends the next batch as it nears view. */}
+      {hasMore && <div ref={sentinelRef} className="h-px w-full shrink-0" aria-hidden />}
     </div>
   );
 }

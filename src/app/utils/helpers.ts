@@ -115,7 +115,10 @@ export function parseDueDateFilter(filterValue: string): Date | null {
  */
 export function displayDueDateFilter(filterValue: string): string {
   if (!filterValue) return 'All';
-  
+
+  // Strict "this week" range used by homepage deep links.
+  if (filterValue === 'thisweek') return 'Due This Week';
+
   // Check for preset values
   const preset = DATE_FILTER_PRESETS.find(p => p.value === filterValue);
   if (preset) {

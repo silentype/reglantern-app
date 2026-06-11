@@ -26,6 +26,10 @@ export const CategoryCell = memo(function CategoryCell({
       className="content-stretch flex h-full items-center px-[12px] relative shrink-0"
       style={{ width: col.width }}
     >
+      <div
+        aria-hidden="true"
+        className="absolute border-[#cdd7e1] border-r border-solid inset-0 pointer-events-none"
+      />
       {category ? (
         <span
           className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium whitespace-nowrap"

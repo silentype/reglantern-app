@@ -11,10 +11,16 @@
  * "Category" column on that table renders the *name of the project* the task
  * came from.
  *
- * To keep the seed DRY, projects are generated from a small set of compliance
- * project *templates* and an assignment map that pre-assigns a few projects to
- * each health center. Each (template × center) pair becomes its own Project
- * record with a unique id and that center stamped onto every task.
+ * To keep the seed DRY, projects are generated from a set of compliance
+ * project *templates* and an assignment map that gives each health center a
+ * different number of projects (rotating through the template list so the
+ * mix of projects also varies center-to-center). Each project gets:
+ *   - twice the authored task count (authored "core" tasks + generic phase
+ *     tasks) so every project is task-heavy,
+ *   - a rotating completion profile so consecutive projects show different
+ *     progress (not started → in progress → blocked → mostly done → complete),
+ *   - a realistic mix of Reglantern "system" tasks (single- and multi-upload
+ *     subtasks in varied states) and plain "custom" tasks.
  *
  * Projects (and the tasks inside them) are mirrored to localStorage so a user
  * demoing the app with html.to.design can refresh and pick up where they left
@@ -24,11 +30,10 @@
 import type { Project } from '../pages/AdminPage';
 import type { Task } from '../components/task-table/types';
 
-// Bumped to v3 when the seed was reworked so every task originates from a
-// project assigned to a health center (the Tasks table now reads exclusively
-// from assigned-project tasks). Older v1/v2 payloads don't carry assignments
-// on most projects, so the key bump forces a clean reseed.
-export const PROJECTS_STORAGE_KEY = 'reglantern.projects.v3';
+// Bumped to v8 when the seed was doubled (more projects per center, more tasks
+// per project, rotating completion profiles). Older payloads predate the new
+// shape, so the key bump forces a clean reseed.
+export const PROJECTS_STORAGE_KEY = 'reglantern.projects.v8';
 
 // ── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -74,11 +79,19 @@ const CREATED_BY = { initials: 'TF', name: 'Tim Freeman' };
 
 interface TaskTemplate {
   title: string;
-  /** Days from the project's startDate that this task is due. */
-  dueOffset: number;
-  /** Completed tasks get a completedAt a few days before due. */
-  completed?: boolean;
   attention?: { type: 'needs' | 'missing'; count: number };
+  /** When true, the task ships with no assignee (only honoured while incomplete). */
+  unassigned?: boolean;
+  /**
+   * Forces the task's kind/upload shape. Omit to let the generator alternate
+   * automatically: even-indexed tasks become Reglantern "system" tasks with
+   * file-upload subtasks ('multi' every 4th, otherwise 'single'); odd-indexed
+   * tasks stay plain "custom" tasks with no uploads.
+   *   - 'single' → system task with one upload subtask
+   *   - 'multi'  → system task with several upload subtasks
+   *   - 'custom' → plain editable task, no uploads
+   */
+  kind?: 'single' | 'multi' | 'custom';
 }
 
 interface ProjectTemplate {
@@ -89,6 +102,8 @@ interface ProjectTemplate {
   startOffset: number;
   /** Project duration in days (startDate + duration = endDate). */
   durationDays: number;
+  /** Authored "core" tasks. The generator pads each project out with generic
+   *  phase tasks until it has at least twice this many. */
   tasks: TaskTemplate[];
 }
 
@@ -100,11 +115,13 @@ const TEMPLATES: Record<string, ProjectTemplate> = {
     startOffset: -30,
     durationDays: 90,
     tasks: [
-      { title: 'Compile risk management plan', dueOffset: 14, completed: true },
-      { title: 'Review credentialing & privileging files', dueOffset: 28, attention: { type: 'missing', count: 3 } },
-      { title: 'Update quality improvement / quality assurance plan', dueOffset: 42 },
-      { title: 'Conduct mock site visit walkthrough', dueOffset: 60, attention: { type: 'needs', count: 2 } },
-      { title: 'Submit FTCA deeming application packet', dueOffset: 85 },
+      { title: 'Compile risk management plan' },
+      { title: 'Review credentialing & privileging files', attention: { type: 'missing', count: 3 } },
+      { title: 'Update quality improvement / quality assurance plan', unassigned: true },
+      { title: 'Assemble patient incident & adverse event logs' },
+      { title: 'Conduct mock site visit walkthrough', attention: { type: 'needs', count: 2 } },
+      { title: 'Review after-hours coverage & referral tracking' },
+      { title: 'Submit FTCA deeming application packet' },
     ],
   },
   uds: {
@@ -114,11 +131,13 @@ const TEMPLATES: Record<string, ProjectTemplate> = {
     startOffset: -20,
     durationDays: 75,
     tasks: [
-      { title: 'Gather patient demographic data', dueOffset: 10, completed: true },
-      { title: 'Validate clinical quality measures', dueOffset: 25, attention: { type: 'missing', count: 2 } },
-      { title: 'Reconcile financial cost report tables', dueOffset: 45 },
-      { title: 'Internal review of UDS draft', dueOffset: 60 },
-      { title: 'Submit UDS report to HRSA', dueOffset: 72 },
+      { title: 'Gather patient demographic data' },
+      { title: 'Validate clinical quality measures', attention: { type: 'missing', count: 2 } },
+      { title: 'Reconcile financial cost report tables', unassigned: true },
+      { title: 'Compile staffing & utilization tables' },
+      { title: 'Internal review of UDS draft' },
+      { title: 'Resolve HRSA edit checks & warnings', attention: { type: 'needs', count: 3 } },
+      { title: 'Submit UDS report to HRSA' },
     ],
   },
   slidingFee: {
@@ -128,10 +147,11 @@ const TEMPLATES: Record<string, ProjectTemplate> = {
     startOffset: -10,
     durationDays: 60,
     tasks: [
-      { title: 'Review current sliding fee discount schedule', dueOffset: 12, completed: true },
-      { title: 'Verify Federal Poverty Guideline alignment', dueOffset: 24 },
-      { title: 'Audit patient eligibility documentation', dueOffset: 40, attention: { type: 'missing', count: 4 } },
-      { title: 'Update sliding fee policy & board approval', dueOffset: 55 },
+      { title: 'Review current sliding fee discount schedule' },
+      { title: 'Verify Federal Poverty Guideline alignment', unassigned: true },
+      { title: 'Audit patient eligibility documentation', attention: { type: 'missing', count: 4 } },
+      { title: 'Survey front-desk staff on SFDS application process' },
+      { title: 'Update sliding fee policy & board approval' },
     ],
   },
   qi: {
@@ -141,10 +161,12 @@ const TEMPLATES: Record<string, ProjectTemplate> = {
     startOffset: -5,
     durationDays: 90,
     tasks: [
-      { title: 'Establish baseline patient outcome metrics', dueOffset: 14 },
-      { title: 'Launch patient experience survey', dueOffset: 30, attention: { type: 'needs', count: 1 } },
-      { title: 'Mid-initiative performance checkpoint', dueOffset: 55 },
-      { title: 'Compile quality outcome report', dueOffset: 80 },
+      { title: 'Establish baseline patient outcome metrics' },
+      { title: 'Launch patient experience survey', attention: { type: 'needs', count: 1 } },
+      { title: 'Form PDSA improvement workgroups' },
+      { title: 'Mid-initiative performance checkpoint' },
+      { title: 'Analyze care-gap closure rates', attention: { type: 'missing', count: 2 } },
+      { title: 'Compile quality outcome report' },
     ],
   },
   governance: {
@@ -154,10 +176,11 @@ const TEMPLATES: Record<string, ProjectTemplate> = {
     startOffset: -45,
     durationDays: 80,
     tasks: [
-      { title: 'Verify board composition meets 51% patient majority', dueOffset: 15, completed: true },
-      { title: 'Review and update organizational bylaws', dueOffset: 35 },
-      { title: 'Document board meeting minutes for the year', dueOffset: 55, attention: { type: 'missing', count: 1 } },
-      { title: 'Confirm conflict of interest disclosures', dueOffset: 70 },
+      { title: 'Verify board composition meets 51% patient majority' },
+      { title: 'Review and update organizational bylaws' },
+      { title: 'Document board meeting minutes for the year', attention: { type: 'missing', count: 1 } },
+      { title: 'Refresh board training & orientation materials', unassigned: true },
+      { title: 'Confirm conflict of interest disclosures' },
     ],
   },
   credentialing: {
@@ -167,29 +190,291 @@ const TEMPLATES: Record<string, ProjectTemplate> = {
     startOffset: -15,
     durationDays: 70,
     tasks: [
-      { title: 'Pull active provider roster', dueOffset: 8, completed: true },
-      { title: 'Verify primary source license verification', dueOffset: 22, attention: { type: 'missing', count: 5 } },
-      { title: 'Confirm DEA & malpractice coverage on file', dueOffset: 40 },
-      { title: 'Review privileging delineations', dueOffset: 58 },
-      { title: 'Finalize credentialing audit summary', dueOffset: 68 },
+      { title: 'Pull active provider roster' },
+      { title: 'Verify primary source license verification', attention: { type: 'missing', count: 5 } },
+      { title: 'Confirm DEA & malpractice coverage on file' },
+      { title: 'Review privileging delineations' },
+      { title: 'Reconcile NPDB continuous query enrollment', attention: { type: 'needs', count: 1 } },
+      { title: 'Finalize credentialing audit summary' },
+    ],
+  },
+  emergencyPrep: {
+    key: 'emergencyPrep',
+    name: 'Emergency Preparedness Plan Update',
+    description: 'Review and exercise the emergency operations plan to meet CMS preparedness requirements.',
+    startOffset: -25,
+    durationDays: 85,
+    tasks: [
+      { title: 'Update hazard vulnerability analysis' },
+      { title: 'Revise emergency operations plan', attention: { type: 'missing', count: 2 } },
+      { title: 'Verify emergency contact & call tree', unassigned: true },
+      { title: 'Conduct tabletop exercise', attention: { type: 'needs', count: 1 } },
+      { title: 'Complete full-scale evacuation drill' },
+      { title: 'Document after-action improvement report' },
+    ],
+  },
+  hipaa: {
+    key: 'hipaa',
+    name: 'HIPAA Security Risk Assessment',
+    description: 'Annual HIPAA security risk analysis covering safeguards, access, and breach readiness.',
+    startOffset: -18,
+    durationDays: 70,
+    tasks: [
+      { title: 'Inventory systems handling ePHI' },
+      { title: 'Assess administrative & physical safeguards', attention: { type: 'missing', count: 3 } },
+      { title: 'Review user access & role permissions' },
+      { title: 'Test breach notification procedure', unassigned: true },
+      { title: 'Remediate identified security gaps', attention: { type: 'needs', count: 4 } },
+      { title: 'Finalize risk analysis report' },
+    ],
+  },
+  infectionControl: {
+    key: 'infectionControl',
+    name: 'Infection Control Program Review',
+    description: 'Evaluate infection prevention policies, training, and surveillance across the clinic.',
+    startOffset: -12,
+    durationDays: 65,
+    tasks: [
+      { title: 'Review infection prevention policy manual' },
+      { title: 'Audit hand hygiene compliance', attention: { type: 'needs', count: 2 } },
+      { title: 'Verify sterilization & autoclave logs', attention: { type: 'missing', count: 1 } },
+      { title: 'Confirm staff immunization records', unassigned: true },
+      { title: 'Update bloodborne pathogen exposure plan' },
+    ],
+  },
+  patientSafety: {
+    key: 'patientSafety',
+    name: 'Patient Safety & Incident Review',
+    description: 'Quarterly review of safety events, root-cause analyses, and corrective actions.',
+    startOffset: -8,
+    durationDays: 60,
+    tasks: [
+      { title: 'Aggregate incident & near-miss reports' },
+      { title: 'Conduct root-cause analysis on top events', attention: { type: 'needs', count: 2 } },
+      { title: 'Review medication error trends' },
+      { title: 'Assign corrective action owners', unassigned: true },
+      { title: 'Present findings to safety committee' },
+    ],
+  },
+  financialAudit: {
+    key: 'financialAudit',
+    name: 'Annual Financial Audit Preparation',
+    description: 'Prepare schedules and supporting documentation for the independent financial audit.',
+    startOffset: -35,
+    durationDays: 95,
+    tasks: [
+      { title: 'Close fiscal year general ledger' },
+      { title: 'Prepare audit schedules & reconciliations', attention: { type: 'missing', count: 2 } },
+      { title: 'Compile federal award (SF-425) documentation' },
+      { title: 'Coordinate auditor PBC request list', attention: { type: 'needs', count: 3 } },
+      { title: 'Review draft financial statements' },
+      { title: 'Present audit results to finance committee' },
+    ],
+  },
+  outreach: {
+    key: 'outreach',
+    name: 'Community Outreach & Enrollment Drive',
+    description: 'Plan and execute an outreach campaign to expand patient enrollment and access.',
+    startOffset: -6,
+    durationDays: 75,
+    tasks: [
+      { title: 'Identify target underserved populations' },
+      { title: 'Recruit & train enrollment assisters', attention: { type: 'needs', count: 1 } },
+      { title: 'Schedule community health events', unassigned: true },
+      { title: 'Launch multilingual outreach materials' },
+      { title: 'Track enrollment conversion metrics' },
+    ],
+  },
+  pharmacy: {
+    key: 'pharmacy',
+    name: '340B Pharmacy Compliance Audit',
+    description: 'Audit 340B program eligibility, inventory, and contract pharmacy arrangements.',
+    startOffset: -22,
+    durationDays: 80,
+    tasks: [
+      { title: 'Verify 340B eligibility & registration' },
+      { title: 'Reconcile split-billing inventory', attention: { type: 'missing', count: 4 } },
+      { title: 'Audit contract pharmacy claims', unassigned: true },
+      { title: 'Confirm patient definition compliance', attention: { type: 'needs', count: 2 } },
+      { title: 'Document self-audit corrective actions' },
+      { title: 'Finalize 340B compliance summary' },
+    ],
+  },
+  ehr: {
+    key: 'ehr',
+    name: 'EHR Optimization & Meaningful Use',
+    description: 'Optimize EHR workflows and validate quality reporting for incentive programs.',
+    startOffset: -14,
+    durationDays: 70,
+    tasks: [
+      { title: 'Audit clinical documentation templates' },
+      { title: 'Validate eCQM reporting accuracy', attention: { type: 'missing', count: 2 } },
+      { title: 'Streamline provider order workflows' },
+      { title: 'Configure patient portal messaging', unassigned: true },
+      { title: 'Train staff on optimized workflows' },
+    ],
+  },
+  behavioralHealth: {
+    key: 'behavioralHealth',
+    name: 'Behavioral Health Integration Review',
+    description: 'Assess integration of behavioral health services into primary care workflows.',
+    startOffset: -16,
+    durationDays: 80,
+    tasks: [
+      { title: 'Map behavioral health referral workflow' },
+      { title: 'Verify warm-handoff documentation', attention: { type: 'needs', count: 2 } },
+      { title: 'Audit PHQ-9 / screening completion rates', attention: { type: 'missing', count: 3 } },
+      { title: 'Review collaborative care billing codes', unassigned: true },
+      { title: 'Confirm SUD confidentiality (42 CFR Part 2) controls' },
+      { title: 'Summarize integration outcomes for leadership' },
+    ],
+  },
+  telehealth: {
+    key: 'telehealth',
+    name: 'Telehealth Program Compliance Check',
+    description: 'Validate telehealth consent, security, and reimbursement compliance.',
+    startOffset: -9,
+    durationDays: 65,
+    tasks: [
+      { title: 'Review telehealth informed consent forms' },
+      { title: 'Verify platform HIPAA / BAA coverage', attention: { type: 'missing', count: 1 } },
+      { title: 'Audit originating & distant site documentation' },
+      { title: 'Confirm modifier & POS billing accuracy', attention: { type: 'needs', count: 2 } },
+      { title: 'Survey patient access & satisfaction', unassigned: true },
+      { title: 'Update telehealth policy & workflow guide' },
     ],
   },
 };
 
-// ── Assignment map: pre-assign a few projects to each health center ──────────
+// Ordered key list — assignments rotate through this so each center pulls a
+// different slice of the template catalog.
+const TEMPLATE_KEYS = Object.keys(TEMPLATES);
 
-const ASSIGNMENTS: Array<{ center: string; templates: string[] }> = [
-  { center: 'Downtown Medical Center',    templates: ['ftca', 'uds', 'qi'] },
-  { center: 'Westside Health Clinic',     templates: ['ftca', 'slidingFee'] },
-  { center: 'Central Medical Plaza',      templates: ['uds', 'governance', 'credentialing'] },
-  { center: 'Northside Community Health', templates: ['qi', 'ftca'] },
-  { center: 'Eastside Medical Group',     templates: ['slidingFee', 'uds'] },
-  { center: 'Southside Wellness Center',  templates: ['governance', 'credentialing'] },
-  { center: 'Mountain View Clinic',       templates: ['ftca', 'governance'] },
-  { center: 'Riverside Health Center',    templates: ['credentialing', 'qi'] },
-  { center: 'Eastside Family Clinic',     templates: ['uds', 'slidingFee'] },
-  { center: 'Harbor View Health',         templates: ['ftca', 'qi', 'governance'] },
+// ── Assignment map ───────────────────────────────────────────────────────────
+// Each center gets a DIFFERENT number of projects (`count`), and a different
+// starting point in the template list (`start`) so the project mix varies too.
+// `count` stays <= TEMPLATE_KEYS.length so a center never gets a duplicate
+// project name.
+
+const ASSIGNMENTS: Array<{ center: string; count: number; start: number }> = [
+  { center: 'Downtown Medical Center',    count: 14, start: 0 },
+  { center: 'Westside Health Clinic',     count: 5,  start: 3 },
+  { center: 'Central Medical Plaza',      count: 12, start: 1 },
+  { center: 'Northside Community Health', count: 7,  start: 6 },
+  { center: 'Eastside Medical Group',     count: 13, start: 2 },
+  { center: 'Southside Wellness Center',  count: 6,  start: 9 },
+  { center: 'Mountain View Clinic',       count: 10, start: 4 },
+  { center: 'Riverside Health Center',    count: 8,  start: 5 },
+  { center: 'Eastside Family Clinic',     count: 11, start: 7 },
+  { center: 'Harbor View Health',         count: 9,  start: 10 },
 ];
+
+// ── Generic phase tasks (pad every project to ~2x its authored task count) ───
+// Realistic, project-agnostic compliance workflow steps. Repeating across
+// projects reads naturally; within a single project the slice never repeats.
+
+const GENERIC_PHASES: TaskTemplate[] = [
+  { title: 'Kickoff & scope alignment meeting', kind: 'custom' },
+  { title: 'Assign owners and responsibilities' },
+  { title: 'Collect baseline documentation', kind: 'multi' },
+  { title: 'Draft initial findings summary' },
+  { title: 'Internal peer review', kind: 'single' },
+  { title: 'Address review feedback', attention: { type: 'needs', count: 2 } },
+  { title: 'Compliance lead sign-off', kind: 'custom' },
+  { title: 'Prepare final submission packet', kind: 'multi' },
+  { title: 'Submit to oversight body', unassigned: true },
+  { title: 'Archive records & lessons learned', kind: 'single' },
+];
+
+// ── Completion profiles (rotated per project → different progress each one) ──
+
+const COMPLETION_PROFILES: Array<{ ratio: number; blocked?: boolean }> = [
+  { ratio: 0 }, // not started
+  { ratio: 0.15 }, // just kicked off
+  { ratio: 0.35 }, // early
+  { ratio: 0.5 }, // half done
+  { ratio: 0.4, blocked: true }, // blocked mid-way
+  { ratio: 0.7 }, // mostly done
+  { ratio: 0.9 }, // nearly done
+  { ratio: 1 }, // complete
+];
+
+// ── System-task upload subtasks (so the side panel isn't blank) ───────────────
+
+const REGLANTERN = { initials: 'RL', name: 'Reglantern' };
+
+const SUBTASK_DEFS = [
+  { title: 'Policy Document', description: 'Upload the current signed policy or procedure document.' },
+  { title: 'Supporting Evidence', description: 'Attach supporting evidence, logs, or source records.' },
+  { title: 'Completed Checklist', description: 'Upload the completed self-review checklist.' },
+  { title: 'Approval Sign-off', description: 'Attach the signed approval / board sign-off sheet.' },
+  { title: 'Corrective Action Plan', description: 'Upload any corrective action plan for identified gaps.' },
+] as const;
+
+const DOC_CATEGORIES = [
+  '1.0 - Governance & Administration',
+  '2.0 - Clinical Operations',
+  '3.0 - Compliance & Risk',
+  '4.0 - Fiscal & Finance',
+] as const;
+
+let fileSeq = 0;
+
+function mkFile(title: string, sizeKB: number, catSeed: number) {
+  return {
+    id: `seedfile-${fileSeq++}`,
+    name: `${title.replace(/\s+/g, '_')}.pdf`,
+    size: sizeKB * 1024,
+    category: DOC_CATEGORIES[catSeed % DOC_CATEGORIES.length],
+  };
+}
+
+/** Builds upload subtasks for a system task. `single` = one subtask, `multi` = four with a realistic mix. */
+function makeSubtasks(
+  seed: number,
+  kind: 'single' | 'multi',
+  completed: boolean,
+): NonNullable<Task['subtasks']> {
+  if (kind === 'single') {
+    const def = SUBTASK_DEFS[seed % SUBTASK_DEFS.length];
+    return [
+      {
+        id: `sub-${seed}-1`,
+        title: def.title,
+        description: def.description,
+        uploadedFiles: completed ? [mkFile(def.title, 820, seed)] : [],
+      },
+    ];
+  }
+
+  // multi: four subtasks. Completed tasks have every subtask filled; in-flight
+  // tasks show a realistic mix (one with two files, one with one, one empty,
+  // one marked not-applicable).
+  return Array.from({ length: 4 }, (_, idx) => {
+    const def = SUBTASK_DEFS[(seed + idx) % SUBTASK_DEFS.length];
+    const base = { id: `sub-${seed}-${idx + 1}`, title: def.title, description: def.description };
+
+    if (completed) {
+      return { ...base, uploadedFiles: [mkFile(def.title, 640 + idx * 120, seed + idx)] };
+    }
+    if (idx === 0) {
+      return {
+        ...base,
+        uploadedFiles: [mkFile(`${def.title} v2`, 1200, seed), mkFile('Appendix A', 480, seed + 1)],
+      };
+    }
+    if (idx === 1) return { ...base, uploadedFiles: [mkFile(def.title, 760, seed + 1)] };
+    if (idx === 3) return { ...base, uploadedFiles: [], notApplicable: true };
+    return { ...base, uploadedFiles: [] };
+  });
+}
+
+/** Resolves a template task's index into a concrete kind, honouring explicit overrides. */
+function resolveKind(tt: TaskTemplate, i: number): 'single' | 'multi' | 'custom' {
+  if (tt.kind) return tt.kind;
+  if (i % 2 !== 0) return 'custom';
+  return i % 4 === 0 ? 'multi' : 'single';
+}
 
 // ── Generator ────────────────────────────────────────────────────────────────
 
@@ -197,31 +482,65 @@ function buildProjects(): Project[] {
   const projects: Project[] = [];
   let projectId = 100;
   let taskId = 10000;
+  let globalProjectIdx = 0;
 
-  for (const { center, templates } of ASSIGNMENTS) {
-    templates.forEach((tplKey, idxInCenter) => {
+  for (const { center, count, start } of ASSIGNMENTS) {
+    for (let k = 0; k < count; k++) {
+      const tplKey = TEMPLATE_KEYS[(start + k) % TEMPLATE_KEYS.length];
       const tpl = TEMPLATES[tplKey];
-      if (!tpl) return;
+      if (!tpl) continue;
 
       const startDate = offsetFromToday(tpl.startOffset);
       const endDate = addDays(startDate, tpl.durationDays);
       const assignedAt = startDate;
 
-      const tasks: Task[] = tpl.tasks.map((tt, i) => {
-        const person = PEOPLE[(idxInCenter + i) % PEOPLE.length];
-        const dueDate = addDays(startDate, tt.dueOffset);
+      // Full task list = authored core + generic phases, padded to ~2x the
+      // authored count (minimum 12) so every project is task-heavy.
+      const target = Math.max(tpl.tasks.length * 2, 12);
+      const fillerCount = Math.max(0, target - tpl.tasks.length);
+      const allTemplates: TaskTemplate[] = [...tpl.tasks, ...GENERIC_PHASES.slice(0, fillerCount)];
+      const N = allTemplates.length;
+
+      // Rotating completion profile → each project shows a different status.
+      const profile = COMPLETION_PROFILES[globalProjectIdx % COMPLETION_PROFILES.length];
+      globalProjectIdx++;
+      const completedCount = Math.round(profile.ratio * N);
+
+      const tasks: Task[] = allTemplates.map((tt, i) => {
+        const id = taskId++;
+        const person = PEOPLE[(k + i) % PEOPLE.length];
+        // Spread due dates evenly across the project window.
+        const dueDate = addDays(startDate, Math.round((tpl.durationDays * (i + 1)) / (N + 1)));
+        const kind = resolveKind(tt, i);
+        const isSystem = kind !== 'custom';
+        const isCompleted = i < completedCount;
+
+        let status: string;
+        if (isCompleted) status = 'Complete';
+        else if (i === completedCount) status = profile.blocked ? 'Blocked' : 'In Progress';
+        else status = 'Not Started';
+
+        // Completed tasks always carry an assignee; unassigned only applies
+        // while a task is still open.
+        const unassigned = !!tt.unassigned && !isCompleted;
+
         return {
-          id: taskId++,
+          id,
           title: tt.title,
-          completed: !!tt.completed,
-          status: tt.completed ? 'Complete' : i === 0 ? 'In Progress' : 'Not Started',
-          ...(tt.completed ? { completedAt: addDays(dueDate, -3) } : {}),
+          completed: isCompleted,
+          status,
+          ...(isCompleted ? { completedAt: addDays(dueDate, -3) } : {}),
           dueDate,
-          assignedTo: { initials: person.initials, name: person.name },
+          ...(unassigned
+            ? {}
+            : { assignedTo: { initials: person.initials, name: person.name } }),
           healthCenter: center,
-          taskType: 'custom',
-          createdBy: CREATED_BY,
-          ...(tt.attention ? { attention: tt.attention } : {}),
+          taskType: isSystem ? 'system' : 'custom',
+          createdBy: isSystem ? REGLANTERN : CREATED_BY,
+          ...(tt.attention && !isCompleted ? { attention: tt.attention } : {}),
+          ...(isSystem
+            ? { subtasks: makeSubtasks(id, kind as 'single' | 'multi', isCompleted) }
+            : {}),
         };
       });
 
@@ -235,7 +554,7 @@ function buildProjects(): Project[] {
         assignedHealthCenters: [{ name: center, assignedAt }],
         tasks,
       });
-    });
+    }
   }
 
   return projects;
@@ -243,19 +562,58 @@ function buildProjects(): Project[] {
 
 export const INITIAL_PROJECTS: Project[] = buildProjects();
 
+/** Number of distinct health centers the seed assigns at least one project to. */
+function countAssignedCenters(projects: Project[]): number {
+  const centers = new Set<string>();
+  for (const p of projects) {
+    for (const hc of p.assignedHealthCenters ?? []) centers.add(hc.name);
+  }
+  return centers.size;
+}
+
+// Content signature of a healthy seed: a stored payload that has materially
+// fewer projects, or covers materially fewer health centers, than the current
+// generator is treated as stale (e.g. a key populated before the seed grew)
+// and is discarded in favour of a clean reseed.
+const EXPECTED_PROJECT_COUNT = INITIAL_PROJECTS.length;
+const EXPECTED_ASSIGNED_CENTERS = countAssignedCenters(INITIAL_PROJECTS);
+
 /**
  * Reads projects from localStorage and falls back to the seed array
- * when no saved data is present or parsing fails. Stored payloads are
- * trusted shape-wise -- the app is the only writer.
+ * when no saved data is present, parsing fails, or the stored payload
+ * looks stale relative to the current seed (so a cached single-center
+ * snapshot can't keep masking a richer reseed).
  */
 export function loadProjects(): Project[] {
   if (typeof window === 'undefined') return INITIAL_PROJECTS;
   try {
+    // Purge any stale payloads written under an earlier seed version so an
+    // old cached tab can't keep serving outdated projects after a key bump.
+    for (let i = window.localStorage.length - 1; i >= 0; i--) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith('reglantern.projects.') && k !== PROJECTS_STORAGE_KEY) {
+        window.localStorage.removeItem(k);
+      }
+    }
+
     const raw = window.localStorage.getItem(PROJECTS_STORAGE_KEY);
     if (!raw) return INITIAL_PROJECTS;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return INITIAL_PROJECTS;
-    return parsed as Project[];
+
+    // Staleness guard: if the cached payload is meaningfully smaller than the
+    // current generator output, it predates the latest seed expansion. Drop it
+    // and reseed so every health center gets its projects back.
+    const stored = parsed as Project[];
+    if (
+      stored.length < EXPECTED_PROJECT_COUNT ||
+      countAssignedCenters(stored) < EXPECTED_ASSIGNED_CENTERS
+    ) {
+      window.localStorage.removeItem(PROJECTS_STORAGE_KEY);
+      return INITIAL_PROJECTS;
+    }
+
+    return stored;
   } catch {
     return INITIAL_PROJECTS;
   }

@@ -66,15 +66,15 @@ export function TopNav({
   const hcLabel = selectedHC ?? 'All Health Centers';
 
   return (
-    <header className="bg-[#32383e] h-[80px] flex items-center justify-between px-5 shrink-0 z-50">
-      <div className="flex items-center gap-4">
+    <header className="bg-[#32383e] h-[80px] flex items-center justify-between pl-6 pr-5 shrink-0 z-50">
+      <div className="flex items-center gap-7">
         {/* Health Center selector dropdown */}
         <div ref={hcRef} className="relative">
           <button
             onClick={() => setHcDropOpen((v) => !v)}
-            className="bg-transparent border border-[#fc6] rounded-md px-4 py-2 flex items-center gap-2 cursor-pointer"
+            className="bg-transparent border border-[#fc6] rounded-md w-[240px] px-4 py-2 flex items-center justify-between gap-2 cursor-pointer"
           >
-            <span className="text-[#fc6] text-sm font-medium whitespace-nowrap max-w-[220px] truncate">
+            <span className="text-[#fc6] text-sm font-medium whitespace-nowrap truncate">
               {hcLabel}
             </span>
             <ChevronDown

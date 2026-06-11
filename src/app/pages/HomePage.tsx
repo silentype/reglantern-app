@@ -21,7 +21,7 @@ import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type AdminTab = 'health-centers' | 'tasks';
+type AdminTab = 'health-centers' | 'tasks' | 'projects';
 
 interface HomePageProps {
   userRole: 'admin' | 'member';
@@ -35,7 +35,7 @@ interface HomePageProps {
   handleUpdateTaskStatus?: (taskId: number, status: string) => void;
   handleUpdateTaskDetails?: (taskId: number, updates: Partial<Task>) => void;
   selectedTaskId?: number | null;
-  homeTab?: 'health-centers' | 'tasks';
+  homeTab?: 'health-centers' | 'tasks' | 'projects';
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -72,8 +72,46 @@ function greeting(): string {
 
 // ── Shared primitives ──────────────────────────────────────────────────────
 
+// Count "chip" styles used in the Health Center rows. Neutral pill for most
+// counts; a red-tinted variant for overdue.
+const COUNT_CHIP =
+  'inline-flex items-center justify-center min-w-[32px] px-2.5 py-1 rounded-full border border-[#e4e4e7] bg-[#f4f4f5] text-xs font-medium text-[#18181b] hover:border-[#fc6] hover:bg-[#fff7e6] transition-colors';
+const OVERDUE_CHIP =
+  'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#fecaca] bg-[#fef2f2] text-xs font-medium text-[#dc2626] hover:border-[#dc2626] transition-colors';
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="text-base font-semibold text-[#18181b] mb-3">{children}</h2>;
+}
+
+// Sorting for the Projects tab grid.
+type ProjectSort = 'name' | 'progress' | 'centers' | 'tasks';
+
+const PROJECT_SORT_OPTIONS: { value: ProjectSort; label: string }[] = [
+  { value: 'name',     label: 'Name (A–Z)' },
+  { value: 'progress', label: 'Progress' },
+  { value: 'centers',  label: 'Health Centers' },
+  { value: 'tasks',    label: 'Task Count' },
+];
+
+function projectProgress(p: Project): number {
+  const total = p.tasks.length;
+  if (total === 0) return 0;
+  return p.tasks.filter(t => t.completed).length / total;
+}
+
+function sortProjects(projects: Project[], sort: ProjectSort): Project[] {
+  const copy = [...projects];
+  switch (sort) {
+    case 'progress':
+      return copy.sort((a, b) => projectProgress(b) - projectProgress(a));
+    case 'centers':
+      return copy.sort((a, b) => (b.assignedHealthCenters?.length ?? 0) - (a.assignedHealthCenters?.length ?? 0));
+    case 'tasks':
+      return copy.sort((a, b) => b.tasks.length - a.tasks.length);
+    case 'name':
+    default:
+      return copy.sort((a, b) => a.name.localeCompare(b.name));
+  }
 }
 
 function ProgressBar({ done, total }: { done: number; total: number }) {
@@ -85,16 +123,6 @@ function ProgressBar({ done, total }: { done: number; total: number }) {
       </div>
       <span className="text-xs text-[#71717a] shrink-0">{done}/{total}</span>
     </div>
-  );
-}
-
-function ComplianceDot({ value }: { value: string }) {
-  const isYes = value === 'Yes';
-  return (
-    <span
-      className={`inline-block w-2 h-2 rounded-full ${isYes ? 'bg-[#16a34a]' : 'bg-[#e4e4e7]'}`}
-      title={isYes ? 'Yes' : value || 'Unknown'}
-    />
   );
 }
 
@@ -113,7 +141,7 @@ function AdminDashboard({
   handleUpdateTaskStatus?: (taskId: number, status: string) => void;
   handleUpdateTaskDetails?: (taskId: number, updates: Partial<Task>) => void;
   selectedTaskId?: number | null;
-  homeTab?: 'health-centers' | 'tasks';
+  homeTab?: 'health-centers' | 'tasks' | 'projects';
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -126,7 +154,7 @@ function AdminDashboard({
   const handleTabChange = useCallback((tab: AdminTab) => {
     setActiveTab(tab);
     const search = location.search;
-    navigate(tab === 'tasks' ? `/home/tasks${search}` : `/home${search}`);
+    navigate(tab === 'health-centers' ? `/home${search}` : `/home/${tab}${search}`);
   }, [navigate, location.search]);
 
   // ── Filter state (identical to TasksPage) ──────────────────────────────
@@ -141,9 +169,12 @@ function AdminDashboard({
   const [healthCenterOpen, setHealthCenterOpen] = useState(false);
   const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
   const [columnsOpen, setColumnsOpen] = useState(false);
+  const [projectSort, setProjectSort] = useState<ProjectSort>('name');
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     'title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention',
   ]);
+
+  const sortedProjects = useMemo(() => sortProjects(projects, projectSort), [projects, projectSort]);
 
   const allColumns = [
     { id: 'title',        label: 'Task Name' },
@@ -204,18 +235,37 @@ function AdminDashboard({
     () => openTasks.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && isBefore(d, today); }),
     [openTasks, today],
   );
+  const unassignedTasks = useMemo(() => tasks.filter(t => !t.assignedTo), [tasks]);
   const activeProjects = useMemo(
     () => projects.filter(p => p.assignedHealthCenters && p.assignedHealthCenters.length > 0),
     [projects],
   );
 
+  // End of the current week (Sunday) — for the "Due this week" counts.
+  const endOfWeek = useMemo(() => {
+    const e = new Date(today);
+    e.setDate(today.getDate() + (7 - today.getDay()));
+    return e;
+  }, [today]);
+
   const hcRows = useMemo(() =>
     healthCenters.map(hc => {
-      const hcOpen    = openTasks.filter(t => t.healthCenter === hc.name);
-      const hcOverdue = hcOpen.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && isBefore(d, today); });
-      return { hc, openCount: hcOpen.length, overdueCount: hcOverdue.length };
+      const forHc      = tasks.filter(t => t.healthCenter === hc.name);
+      const hcOpen     = forHc.filter(t => !t.completed);
+      const hcOverdue  = hcOpen.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && isBefore(d, today); });
+      const hcThisWeek = hcOpen.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && !isBefore(d, today) && !isAfter(d, endOfWeek); });
+      const hcCompleted  = forHc.filter(t => t.completed);
+      const hcUnassigned = forHc.filter(t => !t.assignedTo);
+      return {
+        hc,
+        openCount: hcOpen.length,
+        overdueCount: hcOverdue.length,
+        thisWeekCount: hcThisWeek.length,
+        completedCount: hcCompleted.length,
+        unassignedCount: hcUnassigned.length,
+      };
     }).sort((a, b) => b.overdueCount - a.overdueCount),
-    [healthCenters, openTasks, today],
+    [healthCenters, tasks, today, endOfWeek],
   );
 
   const activeFilterCount = useMemo(() => {
@@ -274,38 +324,7 @@ function AdminDashboard({
   return (
     <div className="h-full flex">
 
-      {/* ── Left sidebar: Projects ── */}
-      <div className="w-[280px] border-r border-[#e4e4e7] bg-[#f9fafb] overflow-y-auto">
-        <div className="px-[16px] py-6">
-          <h3 className="text-sm font-semibold text-[#18181b] mb-3">Projects</h3>
-          <div className="space-y-2">
-            {projects.length > 0 ? (
-              projects.map(p => {
-                const total = p.tasks.length;
-                const done  = p.tasks.filter(t => t.completed).length;
-                const count = p.assignedHealthCenters?.length ?? 0;
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => navigate(`/admin/project-builder/${p.id}`)}
-                    className="w-full bg-white border border-[#e4e4e7] rounded-[6px] p-3 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
-                  >
-                    <p className="text-xs font-semibold text-[#18181b] mb-2 truncate">{p.name}</p>
-                    <ProgressBar done={done} total={total} />
-                    <p className="text-xs text-[#71717a] mt-2">
-                      {count === 0 ? 'No centers' : `${count} center${count > 1 ? 's' : ''}`}
-                    </p>
-                  </button>
-                );
-              })
-            ) : (
-              <p className="text-xs text-[#71717a] italic">No projects yet</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ── Right side: Header + Content ── */}
+      {/* ── Header + Content ── */}
       <div className="flex-1 flex flex-col">
 
         {/* ── Sticky header ── */}
@@ -323,33 +342,38 @@ function AdminDashboard({
             </div>
           </div>
 
-          {/* Stat chips */}
+          {/* Stat chips — clickable; tasks chips deep-link to the pre-filtered Tasks page */}
           <div className="flex items-center gap-3 mt-4 mb-4">
             {([
-              { label: 'Health Centers',  value: healthCenters.length },
-              { label: 'Open Tasks',      value: openTasks.length },
-              { label: 'Overdue',         value: overdueTasks.length,   danger: true },
-              { label: 'Active Projects', value: activeProjects.length },
-            ] as { label: string; value: number; danger?: boolean }[]).map(({ label, value, danger }) => (
-              <div key={label} className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full">
+              { label: 'Health Centers',  value: healthCenters.length, onClick: () => handleTabChange('health-centers') },
+              { label: 'Open Tasks',      value: openTasks.length,      onClick: () => navigate('/tasks/my-tasks?status=incomplete') },
+              { label: 'Overdue',         value: overdueTasks.length,   danger: true, onClick: () => navigate('/tasks/my-tasks?due=overdue&status=incomplete') },
+              { label: 'Unassigned',      value: unassignedTasks.length, onClick: () => navigate('/tasks/my-tasks?assigned=unassigned') },
+              { label: 'Active Projects', value: activeProjects.length, onClick: () => handleTabChange('projects') },
+            ] as { label: string; value: number; danger?: boolean; onClick: () => void }[]).map(({ label, value, danger, onClick }) => (
+              <button
+                key={label}
+                onClick={onClick}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full hover:bg-[#e5e5e5] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+              >
                 <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>
                   {value}
                 </span>
                 <span className="text-xs text-[#71717a]">{label}</span>
-              </div>
+              </button>
             ))}
           </div>
 
           {/* Underline tabs — same style as HealthCenterAdminPage */}
           <div className={`flex gap-0 mt-[16px] ${activeTab === 'tasks' ? 'mb-[16px]' : '-mb-px'}`}>
-            {(['health-centers', 'tasks'] as const).map(tab => (
+            {(['projects', 'health-centers'] as const).map(tab => (
               <button key={tab} onClick={() => handleTabChange(tab)}
                 className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-[#fc6] text-[#18181b]'
                     : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
                 }`}>
-                {tab === 'health-centers' ? 'Health Centers' : 'Tasks'}
+                {tab === 'health-centers' ? 'Health Centers' : 'Projects'}
               </button>
             ))}
           </div>
@@ -616,37 +640,68 @@ function AdminDashboard({
                       <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Health Center</th>
                       <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Open Tasks</th>
                       <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Overdue</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FQHC</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FTCA</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Due This Week</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Completed</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Unassigned</th>
                       <th className="px-4 py-2.5" />
                     </tr>
                   </thead>
                   <tbody>
-                    {hcRows.map(({ hc, openCount, overdueCount }) => (
-                      <tr key={hc.name} className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors">
+                    {hcRows.map(({ hc, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount }) => {
+                      const hcQuery = `healthCenter=${encodeURIComponent(hc.name)}`;
+                      return (
+                      <tr
+                        key={hc.name}
+                        onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
+                        className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                      >
                         <td className="px-4 py-3 font-medium text-[#18181b]">{hc.name}</td>
-                        <td className="px-4 py-3 text-[#18181b]">{openCount}</td>
+                        <td className="px-4 py-3">
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=incomplete`); }} className={COUNT_CHIP}>
+                            {openCount}
+                          </button>
+                        </td>
                         <td className="px-4 py-3">
                           {overdueCount > 0
-                            ? <span className="inline-flex items-center gap-1 text-xs font-medium text-[#dc2626]">
+                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=overdue&status=incomplete`); }} className={OVERDUE_CHIP}>
                                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}
-                              </span>
+                              </button>
                             : <span className="text-[#71717a]">—</span>}
                         </td>
-                        <td className="px-4 py-3"><ComplianceDot value={hc.compliance.fqhc} /></td>
-                        <td className="px-4 py-3"><ComplianceDot value={hc.compliance.ftca} /></td>
+                        <td className="px-4 py-3">
+                          {thisWeekCount > 0
+                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=thisweek&status=incomplete`); }} className={COUNT_CHIP}>
+                                {thisWeekCount}
+                              </button>
+                            : <span className="text-[#71717a]">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {completedCount > 0
+                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=complete`); }} className={COUNT_CHIP}>
+                                {completedCount}
+                              </button>
+                            : <span className="text-[#71717a]">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {unassignedCount > 0
+                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&assigned=unassigned`); }} className={COUNT_CHIP}>
+                                {unassignedCount}
+                              </button>
+                            : <span className="text-[#71717a]">—</span>}
+                        </td>
                         <td className="px-4 py-3 text-right">
                           <button
-                            onClick={() => navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`)}
+                            onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`); }}
                             className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
                           >
-                            View →
+                            View Details →
                           </button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                     {hcRows.length === 0 && (
-                      <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-[#71717a]">No health centers yet</td></tr>
+                      <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#71717a]">No health centers yet</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -666,6 +721,55 @@ function AdminDashboard({
               onDeleteTask={() => {}}
               visibleColumns={visibleColumns}
             />
+          )}
+
+          {/* Projects tab — grid of project cards. Assigned projects deep-link
+              to the filtered Tasks page; unassigned ones open the builder. */}
+          {activeTab === 'projects' && (
+            projects.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <span className="text-xs font-medium text-[#71717a]">Sort by</span>
+                  <select
+                    value={projectSort}
+                    onChange={(e) => setProjectSort(e.target.value as ProjectSort)}
+                    className="text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md px-2.5 py-1.5 cursor-pointer hover:border-[#fc6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+                  >
+                    {PROJECT_SORT_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sortedProjects.map(p => {
+                  const total = p.tasks.length;
+                  const done  = p.tasks.filter(t => t.completed).length;
+                  const count = p.assignedHealthCenters?.length ?? 0;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() =>
+                        navigate(
+                          count > 0
+                            ? `/tasks/my-tasks?category=${encodeURIComponent(p.name)}`
+                            : `/admin/project-builder/${p.id}`,
+                        )
+                      }
+                      className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
+                    >
+                      <p className="text-sm font-semibold text-[#18181b] mb-3 truncate">{p.name}</p>
+                      <ProgressBar done={done} total={total} />
+                      <p className="text-xs text-[#71717a] mt-3">
+                        {count === 0 ? 'No centers' : `${count} center${count > 1 ? 's' : ''}`}
+                      </p>
+                    </button>
+                  );
+                })}
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-[#71717a] italic">No projects yet</p>
+            )
           )}
         </div>
       </div>
@@ -693,7 +797,7 @@ function MemberDashboard({
   handleUpdateTaskStatus?: (taskId: number, status: string) => void;
   handleUpdateTaskDetails?: (taskId: number, updates: Partial<Task>) => void;
   selectedTaskId?: number | null;
-  homeTab?: 'health-centers' | 'tasks';
+  homeTab?: 'health-centers' | 'tasks' | 'projects';
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -707,7 +811,7 @@ function MemberDashboard({
   const handleTabChange = useCallback((tab: AdminTab) => {
     setActiveTab(tab);
     const search = location.search;
-    navigate(tab === 'tasks' ? `/home/tasks${search}` : `/home${search}`);
+    navigate(tab === 'health-centers' ? `/home${search}` : `/home/${tab}${search}`);
   }, [navigate, location.search]);
 
   // Stats: tasks assigned to the current user
@@ -732,16 +836,32 @@ function MemberDashboard({
       return d !== null && !isBefore(d, monthStart);
     });
   }, [myTasks, today]);
+  // Open tasks with no assignee — surfaced so they can be picked up.
+  const unassignedTasks = useMemo(
+    () => tasks.filter(t => !t.completed && !t.assignedTo),
+    [tasks],
+  );
 
   // HC rows — only the member's health center(s)
   const hcRows = useMemo(() => {
     const memberHCs = healthCenters.filter(hc => hc.name === memberHealthCenter);
     return memberHCs.map(hc => {
-      const hcOpen    = tasks.filter(t => t.healthCenter === hc.name && !t.completed);
-      const hcOverdue = hcOpen.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && isBefore(d, today); });
-      return { hc, openCount: hcOpen.length, overdueCount: hcOverdue.length };
+      const forHc      = tasks.filter(t => t.healthCenter === hc.name);
+      const hcOpen     = forHc.filter(t => !t.completed);
+      const hcOverdue  = hcOpen.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && isBefore(d, today); });
+      const hcThisWeek = hcOpen.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && !isBefore(d, today) && !isAfter(d, weekEnd); });
+      const hcCompleted  = forHc.filter(t => t.completed);
+      const hcUnassigned = forHc.filter(t => !t.assignedTo);
+      return {
+        hc,
+        openCount: hcOpen.length,
+        overdueCount: hcOverdue.length,
+        thisWeekCount: hcThisWeek.length,
+        completedCount: hcCompleted.length,
+        unassignedCount: hcUnassigned.length,
+      };
     });
-  }, [healthCenters, memberHealthCenter, tasks, today]);
+  }, [healthCenters, memberHealthCenter, tasks, today, weekEnd]);
 
   // HC deadlines
   const hc = healthCenters.find(h => h.name === memberHealthCenter);
@@ -832,49 +952,22 @@ function MemberDashboard({
   return (
     <div className="h-full flex">
 
-      {/* ── Left sidebar: Assigned Projects ── */}
-      <div className="w-[280px] border-r border-[#e4e4e7] bg-[#f9fafb] overflow-y-auto">
-        <div className="px-[16px] py-6">
-          <h3 className="text-sm font-semibold text-[#18181b] mb-3">My Projects</h3>
-          <div className="space-y-2">
-            {assignedProjects.length > 0 ? (
-              assignedProjects.map(p => {
-                const total = p.tasks.length;
-                const done  = p.tasks.filter(t => t.completed).length;
-                const assignment = p.assignedHealthCenters?.find(a => a.name === memberHealthCenter);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() => navigate(`/admin/project-builder/${p.id}`)}
-                    className="w-full bg-white border border-[#e4e4e7] rounded-[6px] p-3 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
-                  >
-                    <p className="text-xs font-semibold text-[#18181b] mb-1 truncate">{p.name}</p>
-                    {assignment && <p className="text-xs text-[#71717a] mb-2">Assigned {assignment.assignedAt}</p>}
-                    <ProgressBar done={done} total={total} />
-                  </button>
-                );
-              })
-            ) : (
-              <p className="text-xs text-[#71717a] italic">No assigned projects</p>
-            )}
-          </div>
-
-          {/* Upcoming Deadlines */}
-          {upcomingDeadlines.length > 0 && (
-            <div className="mt-8">
-              <h3 className="text-xs font-semibold text-[#18181b] mb-3">Upcoming Deadlines</h3>
-              <div className="space-y-2">
-                {upcomingDeadlines.map(({ label, date }) => (
-                  <div key={label} className="p-2 bg-white border border-[#e4e4e7] rounded-[6px]">
-                    <p className="text-xs text-[#18181b] truncate">{label}</p>
-                    <p className="text-xs font-medium text-[#71717a] mt-1">{format(date, 'MMM d')}</p>
-                  </div>
-                ))}
-              </div>
+      {/* ── Left sidebar: Upcoming Deadlines (only when present) ── */}
+      {upcomingDeadlines.length > 0 && (
+        <div className="w-[280px] border-r border-[#e4e4e7] bg-[#f9fafb] overflow-y-auto">
+          <div className="px-[16px] py-6">
+            <h3 className="text-xs font-semibold text-[#18181b] mb-3">Upcoming Deadlines</h3>
+            <div className="space-y-2">
+              {upcomingDeadlines.map(({ label, date }) => (
+                <div key={label} className="p-2 bg-white border border-[#e4e4e7] rounded-[6px]">
+                  <p className="text-xs text-[#18181b] truncate">{label}</p>
+                  <p className="text-xs font-medium text-[#71717a] mt-1">{format(date, 'MMM d')}</p>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Right side: Header + Content ── */}
       <div className="flex-1 flex flex-col">
@@ -894,31 +987,36 @@ function MemberDashboard({
             </div>
           </div>
 
-          {/* Stat chips */}
+          {/* Stat chips — clickable; deep-link to the pre-filtered Tasks page */}
           <div className="flex items-center gap-3 mt-4 mb-4">
             {([
-              { label: 'My Open Tasks',  value: myOpen.length },
-              { label: 'Overdue',        value: myOverdue.length,           danger: true },
-              { label: 'Due This Week',  value: myDueThisWeek.length },
-              { label: 'Completed',      value: myCompletedThisMonth.length },
-            ] as { label: string; value: number; danger?: boolean }[]).map(({ label, value, danger }) => (
-              <div key={label} className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full">
+              { label: 'My Open Tasks',  value: myOpen.length,              onClick: () => navigate('/tasks/my-tasks?status=incomplete') },
+              { label: 'Overdue',        value: myOverdue.length,           danger: true, onClick: () => navigate('/tasks/my-tasks?due=overdue&status=incomplete') },
+              { label: 'Due This Week',  value: myDueThisWeek.length,       onClick: () => navigate('/tasks/my-tasks?due=thisweek&status=incomplete') },
+              { label: 'Completed',      value: myCompletedThisMonth.length, onClick: () => navigate('/tasks/my-tasks?status=complete') },
+              { label: 'Unassigned',     value: unassignedTasks.length,     onClick: () => navigate('/tasks/my-tasks?assigned=unassigned') },
+            ] as { label: string; value: number; danger?: boolean; onClick: () => void }[]).map(({ label, value, danger, onClick }) => (
+              <button
+                key={label}
+                onClick={onClick}
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full hover:bg-[#e5e5e5] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+              >
                 <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>{value}</span>
                 <span className="text-xs text-[#71717a]">{label}</span>
-              </div>
+              </button>
             ))}
           </div>
 
           {/* Underline tabs */}
           <div className={`flex gap-0 mt-[16px] ${activeTab === 'tasks' ? 'mb-[16px]' : '-mb-px'}`}>
-            {(['health-centers', 'tasks'] as const).map(tab => (
+            {(['projects', 'health-centers'] as const).map(tab => (
               <button key={tab} onClick={() => handleTabChange(tab)}
                 className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-[#fc6] text-[#18181b]'
                     : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
                 }`}>
-                {tab === 'health-centers' ? 'Health Center' : 'Tasks'}
+                {tab === 'projects' ? 'Projects' : 'Health Center'}
               </button>
             ))}
           </div>
@@ -1038,6 +1136,32 @@ function MemberDashboard({
         {/* ── Scrollable content ── */}
         <div className={`flex-1 overflow-y-auto overflow-x-auto ${activeTab === 'tasks' ? 'px-[24px] pb-6' : 'px-[24px] py-6'}`}>
 
+          {/* Projects tab — assigned projects, each deep-links to filtered Tasks */}
+          {activeTab === 'projects' && (
+            assignedProjects.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {assignedProjects.map(p => {
+                  const total = p.tasks.length;
+                  const done  = p.tasks.filter(t => t.completed).length;
+                  const assignment = p.assignedHealthCenters?.find(a => a.name === memberHealthCenter);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => navigate(`/tasks/my-tasks?category=${encodeURIComponent(p.name)}`)}
+                      className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
+                    >
+                      <p className="text-sm font-semibold text-[#18181b] mb-1 truncate">{p.name}</p>
+                      {assignment && <p className="text-xs text-[#71717a] mb-3">Assigned {assignment.assignedAt}</p>}
+                      <ProgressBar done={done} total={total} />
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-[#71717a] italic">No assigned projects</p>
+            )
+          )}
+
           {/* Health Center tab */}
           {activeTab === 'health-centers' && (
             <div className="space-y-8">
@@ -1048,29 +1172,52 @@ function MemberDashboard({
                       <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Health Center</th>
                       <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Open Tasks</th>
                       <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Overdue</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FQHC</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">FTCA</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Due This Week</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Completed</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Unassigned</th>
                       <th className="px-4 py-2.5" />
                     </tr>
                   </thead>
                   <tbody>
-                    {hcRows.map(({ hc: center, openCount, overdueCount }) => (
-                      <tr key={center.name} className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors">
+                    {hcRows.map(({ hc: center, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount }) => {
+                      const hcQuery = `healthCenter=${encodeURIComponent(center.name)}`;
+                      return (
+                      <tr
+                        key={center.name}
+                        onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
+                        className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                      >
                         <td className="px-4 py-3 font-medium text-[#18181b]">{center.name}</td>
-                        <td className="px-4 py-3 text-[#18181b]">{openCount}</td>
+                        <td className="px-4 py-3">
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=incomplete`); }} className={COUNT_CHIP}>{openCount}</button>
+                        </td>
                         <td className="px-4 py-3">
                           {overdueCount > 0
-                            ? <span className="inline-flex items-center gap-1 text-xs font-medium text-[#dc2626]"><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}</span>
+                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=overdue&status=incomplete`); }} className={OVERDUE_CHIP}><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}</button>
                             : <span className="text-[#71717a]">—</span>}
                         </td>
-                        <td className="px-4 py-3"><ComplianceDot value={center.compliance.fqhc} /></td>
-                        <td className="px-4 py-3"><ComplianceDot value={center.compliance.ftca} /></td>
+                        <td className="px-4 py-3">
+                          {thisWeekCount > 0
+                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=thisweek&status=incomplete`); }} className={COUNT_CHIP}>{thisWeekCount}</button>
+                            : <span className="text-[#71717a]">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {completedCount > 0
+                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=complete`); }} className={COUNT_CHIP}>{completedCount}</button>
+                            : <span className="text-[#71717a]">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {unassignedCount > 0
+                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&assigned=unassigned`); }} className={COUNT_CHIP}>{unassignedCount}</button>
+                            : <span className="text-[#71717a]">—</span>}
+                        </td>
                         <td className="px-4 py-3 text-right">
-                          <button onClick={() => navigate(`/admin/health-centers/${encodeURIComponent(center.name)}`)}
-                            className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors">View →</button>
+                          <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(center.name)}`); }}
+                            className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors">View Details →</button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
