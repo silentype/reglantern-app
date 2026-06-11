@@ -45,6 +45,9 @@ import {
 } from '../constants';
 import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
 
+// Persisted user preference for which task-table columns are shown.
+const VISIBLE_COLUMNS_STORAGE_KEY = 'reglantern.tasks.visibleColumns';
+
 export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, sideNavOpen: _sideNavOpen, tasks, handleToggleTaskComplete, handleUpdateTaskStatus, handleUpdateTaskDetails, selectedTaskId, onAddTask, onDeleteTask, defaultHCFilter }: { onTaskClick: (taskId: number, taskTitle: string) => void; onToggleSideNav: () => void; sideNavOpen: boolean; tasks: Task[]; handleToggleTaskComplete: (taskId: number) => void; handleUpdateTaskStatus: (taskId: number, status: string) => void; handleUpdateTaskDetails: (taskId: number, updates: { status?: string; dueDate?: string; assignedTo?: { initials: string; name: string }; collaborators?: Array<{ initials: string; name: string }>; healthCenter?: string; }) => void; selectedTaskId: number | null; onAddTask: () => void; onDeleteTask: (taskId: number) => void; defaultHCFilter?: string; }) {
   const [searchParams, setSearchParams] = useSearchParams();
   // Deep-link filter params. The homepage stat chips, project cards, and
@@ -99,9 +102,29 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
   const [needsAttentionOpenChip, setNeedsAttentionOpenChip] = useState(false);
 
   // Column visibility state - all columns visible by default
-  const [visibleColumns, setVisibleColumns] = useState<string[]>([
-    'title', 'category', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'
-  ]);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(VISIBLE_COLUMNS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.every(c => typeof c === 'string') && parsed.includes('title')) {
+          return parsed;
+        }
+      }
+    } catch {
+      /* ignore malformed/unavailable storage */
+    }
+    return ['title', 'category', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'];
+  });
+
+  // Persist column visibility so it survives navigating away and back.
+  useEffect(() => {
+    try {
+      localStorage.setItem(VISIBLE_COLUMNS_STORAGE_KEY, JSON.stringify(visibleColumns));
+    } catch {
+      /* storage may be unavailable (private mode, quota) */
+    }
+  }, [visibleColumns]);
   const [columnVisibilityOpenFilterBar, setColumnVisibilityOpenFilterBar] = useState(false);
 
   const allColumns = [

@@ -2,8 +2,10 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { parse, isBefore, isAfter, isValid, startOfDay, endOfDay, addDays, format } from 'date-fns';
 import {
-  CalendarIcon, User, Building2, X, Check, AlertCircle,
+  CalendarIcon, User, Building2, X, Check, AlertCircle, LayoutGrid, List,
+  ChevronUp, ChevronDown, ChevronsUpDown,
 } from 'lucide-react';
+import { Pill, type PillColor } from '../components/design-system/Pill';
 
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import {
@@ -79,6 +81,9 @@ const COUNT_CHIP =
 const OVERDUE_CHIP =
   'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#fecaca] bg-[#fef2f2] text-xs font-medium text-[#dc2626] hover:border-[#dc2626] transition-colors';
 
+// The current user — replace with auth context once backend is wired up.
+const CURRENT_USER = 'Tim Freeman';
+
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h2 className="text-base font-semibold text-[#18181b] mb-3">{children}</h2>;
 }
@@ -99,29 +104,183 @@ function projectProgress(p: Project): number {
   return p.tasks.filter(t => t.completed).length / total;
 }
 
-function sortProjects(projects: Project[], sort: ProjectSort): Project[] {
+function firstCenterName(p: Project): string {
+  return p.assignedHealthCenters?.[0]?.name ?? '';
+}
+
+function sortProjects(projects: Project[], sort: ProjectSort, dir: 'asc' | 'desc' = sort === 'name' ? 'asc' : 'desc'): Project[] {
+  const sign = dir === 'asc' ? 1 : -1;
   const copy = [...projects];
   switch (sort) {
     case 'progress':
-      return copy.sort((a, b) => projectProgress(b) - projectProgress(a));
+      return copy.sort((a, b) => sign * (projectProgress(a) - projectProgress(b)));
     case 'centers':
-      return copy.sort((a, b) => (b.assignedHealthCenters?.length ?? 0) - (a.assignedHealthCenters?.length ?? 0));
+      return copy.sort((a, b) => sign * firstCenterName(a).localeCompare(firstCenterName(b)));
     case 'tasks':
-      return copy.sort((a, b) => b.tasks.length - a.tasks.length);
+      return copy.sort((a, b) => sign * (a.tasks.length - b.tasks.length));
     case 'name':
     default:
-      return copy.sort((a, b) => a.name.localeCompare(b.name));
+      return copy.sort((a, b) => sign * a.name.localeCompare(b.name));
   }
 }
 
-function ProgressBar({ done, total }: { done: number; total: number }) {
+function ProgressBar({ done, total, color = '#fc6' }: { done: number; total: number; color?: string }) {
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-1.5 bg-[#e4e4e7] rounded-full overflow-hidden">
-        <div className="h-full bg-[#fc6] rounded-full" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
       <span className="text-xs text-[#71717a] shrink-0">{done}/{total}</span>
+    </div>
+  );
+}
+
+// Derive a project's status from task completion. Drives the colored progress
+// bar + pill on the homepage project cards.
+function projectStatus(done: number, total: number): { label: string; pill: PillColor; bar: string } {
+  if (total === 0) return { label: 'No Tasks', pill: 'neutral', bar: '#e4e4e7' };
+  if (done === 0) return { label: 'Not Started', pill: 'neutral', bar: '#a1a1aa' };
+  if (done >= total) return { label: 'Complete', pill: 'green', bar: '#16a34a' };
+  return { label: 'In Progress', pill: 'yellow', bar: '#fc6' };
+}
+
+// Sortable table header that mirrors the Tasks-page column header design:
+// semibold label + ChevronsUpDown when idle, ChevronUp/Down when active.
+function SortHeader<T extends string>({
+  label, col, sort, dir, onSort, className,
+}: { label: string; col: T; sort: T; dir: 'asc' | 'desc'; onSort: (c: T) => void; className?: string }) {
+  const active = sort === col;
+  return (
+    <th className={`text-left px-4 py-2.5 ${className ?? ''}`}>
+      <button
+        onClick={() => onSort(col)}
+        className="flex items-center gap-1 hover:bg-[#e5e5e5] px-1 py-0.5 rounded transition-colors"
+      >
+        <span className="font-semibold text-[#18181b] text-[14px] leading-[20px]">{label}</span>
+        {active
+          ? dir === 'asc'
+            ? <ChevronUp size={16} className="text-[#71717a]" />
+            : <ChevronDown size={16} className="text-[#71717a]" />
+          : <ChevronsUpDown size={16} className="text-[#71717a]" />}
+      </button>
+    </th>
+  );
+}
+
+// ── Health Center table (sortable; shared by both dashboards) ────────────────
+
+type HCSort = 'name' | 'open' | 'overdue' | 'thisweek' | 'completed' | 'unassigned' | 'mine';
+
+interface HCRow {
+  hc: HealthCenter;
+  openCount: number;
+  overdueCount: number;
+  thisWeekCount: number;
+  completedCount: number;
+  unassignedCount: number;
+  assignedToMeCount: number;
+}
+
+function HealthCenterTable({ rows, navigate }: { rows: HCRow[]; navigate: (to: string) => void }) {
+  const [sort, setSort] = useState<HCSort>('overdue');
+  const [dir, setDir] = useState<'asc' | 'desc'>('desc');
+
+  const onSort = useCallback((col: HCSort) => {
+    setSort(prev => {
+      if (prev === col) { setDir(d => (d === 'asc' ? 'desc' : 'asc')); return prev; }
+      setDir(col === 'name' ? 'asc' : 'desc');
+      return col;
+    });
+  }, []);
+
+  const sorted = useMemo(() => {
+    const sign = dir === 'asc' ? 1 : -1;
+    const num = (r: HCRow): number => {
+      switch (sort) {
+        case 'open': return r.openCount;
+        case 'overdue': return r.overdueCount;
+        case 'thisweek': return r.thisWeekCount;
+        case 'completed': return r.completedCount;
+        case 'unassigned': return r.unassignedCount;
+        case 'mine': return r.assignedToMeCount;
+        default: return 0;
+      }
+    };
+    return [...rows].sort((a, b) =>
+      sort === 'name' ? sign * a.hc.name.localeCompare(b.hc.name) : sign * (num(a) - num(b)),
+    );
+  }, [rows, sort, dir]);
+
+  return (
+    <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
+            <SortHeader label="Health Center" col="name" sort={sort} dir={dir} onSort={onSort} />
+            <SortHeader label="Open Tasks" col="open" sort={sort} dir={dir} onSort={onSort} />
+            <SortHeader label="Overdue" col="overdue" sort={sort} dir={dir} onSort={onSort} />
+            <SortHeader label="Due This Week" col="thisweek" sort={sort} dir={dir} onSort={onSort} />
+            <SortHeader label="Completed" col="completed" sort={sort} dir={dir} onSort={onSort} />
+            <SortHeader label="Unassigned" col="unassigned" sort={sort} dir={dir} onSort={onSort} />
+            <SortHeader label="Assigned to Me" col="mine" sort={sort} dir={dir} onSort={onSort} />
+            <th className="px-4 py-2.5" />
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map(({ hc, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount, assignedToMeCount }) => {
+            const hcQuery = `healthCenter=${encodeURIComponent(hc.name)}`;
+            return (
+              <tr
+                key={hc.name}
+                onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
+                className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+              >
+                <td className="px-4 py-3 font-medium text-[#18181b]">{hc.name}</td>
+                <td className="px-4 py-3">
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=incomplete`); }} className={COUNT_CHIP}>{openCount}</button>
+                </td>
+                <td className="px-4 py-3">
+                  {overdueCount > 0
+                    ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=overdue&status=incomplete`); }} className={OVERDUE_CHIP}><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}</button>
+                    : <span className="text-[#71717a]">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  {thisWeekCount > 0
+                    ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=thisweek&status=incomplete`); }} className={COUNT_CHIP}>{thisWeekCount}</button>
+                    : <span className="text-[#71717a]">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  {completedCount > 0
+                    ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=complete`); }} className={COUNT_CHIP}>{completedCount}</button>
+                    : <span className="text-[#71717a]">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  {unassignedCount > 0
+                    ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&assigned=unassigned`); }} className={COUNT_CHIP}>{unassignedCount}</button>
+                    : <span className="text-[#71717a]">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  {assignedToMeCount > 0
+                    ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&assigned=${encodeURIComponent(CURRENT_USER)}`); }} className={COUNT_CHIP}>{assignedToMeCount}</button>
+                    : <span className="text-[#71717a]">—</span>}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`); }}
+                    className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
+                  >
+                    View Details →
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+          {sorted.length === 0 && (
+            <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#71717a]">No health centers yet</td></tr>
+          )}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -170,11 +329,48 @@ function AdminDashboard({
   const [needsAttentionOpen, setNeedsAttentionOpen] = useState(false);
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [projectSort, setProjectSort] = useState<ProjectSort>('name');
+  const [projectSortDir, setProjectSortDir] = useState<'asc' | 'desc'>('asc');
+  const [projectView, setProjectView] = useState<'grid' | 'list'>('grid');
+  const [projectSearch, setProjectSearch] = useState<string>('');
+  const [projectHCFilter, setProjectHCFilter] = useState<string[]>(['All Health Centers']);
+  const [projectHCOpen, setProjectHCOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
     'title', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention',
   ]);
 
-  const sortedProjects = useMemo(() => sortProjects(projects, projectSort), [projects, projectSort]);
+  const toggleProjectHCFilter = useCallback((v: string) => {
+    if (v === 'All Health Centers') { setProjectHCFilter(['All Health Centers']); return; }
+    setProjectHCFilter(prev => {
+      const next = prev.includes('All Health Centers')
+        ? [v]
+        : prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v];
+      return next.length === 0 ? ['All Health Centers'] : next;
+    });
+  }, []);
+
+  const sortedProjects = useMemo(() => {
+    const q = projectSearch.trim().toLowerCase();
+    const allHC = projectHCFilter.includes('All Health Centers');
+    const scoped = projects.filter(p => {
+      if (q && !p.name.toLowerCase().includes(q)) return false;
+      if (!allHC && !p.assignedHealthCenters?.some(a => projectHCFilter.includes(a.name))) return false;
+      return true;
+    });
+    return sortProjects(scoped, projectSort, projectSortDir);
+  }, [projects, projectSort, projectSortDir, projectSearch, projectHCFilter]);
+
+  // Clicking a list-view column header sorts by it; clicking the active column
+  // toggles direction. New columns default to ascending.
+  const handleProjectHeaderSort = useCallback((col: ProjectSort) => {
+    setProjectSort(prev => {
+      if (prev === col) {
+        setProjectSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+        return prev;
+      }
+      setProjectSortDir('asc');
+      return col;
+    });
+  }, []);
 
   const allColumns = [
     { id: 'title',        label: 'Task Name' },
@@ -256,6 +452,7 @@ function AdminDashboard({
       const hcThisWeek = hcOpen.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && !isBefore(d, today) && !isAfter(d, endOfWeek); });
       const hcCompleted  = forHc.filter(t => t.completed);
       const hcUnassigned = forHc.filter(t => !t.assignedTo);
+      const hcMine       = hcOpen.filter(t => t.assignedTo?.name === CURRENT_USER);
       return {
         hc,
         openCount: hcOpen.length,
@@ -263,6 +460,7 @@ function AdminDashboard({
         thisWeekCount: hcThisWeek.length,
         completedCount: hcCompleted.length,
         unassignedCount: hcUnassigned.length,
+        assignedToMeCount: hcMine.length,
       };
     }).sort((a, b) => b.overdueCount - a.overdueCount),
     [healthCenters, tasks, today, endOfWeek],
@@ -633,79 +831,7 @@ function AdminDashboard({
           {/* Health Centers tab */}
           {activeTab === 'health-centers' && (
             <div className="space-y-8">
-              <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Health Center</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Open Tasks</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Overdue</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Due This Week</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Completed</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Unassigned</th>
-                      <th className="px-4 py-2.5" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {hcRows.map(({ hc, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount }) => {
-                      const hcQuery = `healthCenter=${encodeURIComponent(hc.name)}`;
-                      return (
-                      <tr
-                        key={hc.name}
-                        onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
-                        className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
-                      >
-                        <td className="px-4 py-3 font-medium text-[#18181b]">{hc.name}</td>
-                        <td className="px-4 py-3">
-                          <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=incomplete`); }} className={COUNT_CHIP}>
-                            {openCount}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3">
-                          {overdueCount > 0
-                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=overdue&status=incomplete`); }} className={OVERDUE_CHIP}>
-                                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}
-                              </button>
-                            : <span className="text-[#71717a]">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {thisWeekCount > 0
-                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=thisweek&status=incomplete`); }} className={COUNT_CHIP}>
-                                {thisWeekCount}
-                              </button>
-                            : <span className="text-[#71717a]">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {completedCount > 0
-                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=complete`); }} className={COUNT_CHIP}>
-                                {completedCount}
-                              </button>
-                            : <span className="text-[#71717a]">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {unassignedCount > 0
-                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&assigned=unassigned`); }} className={COUNT_CHIP}>
-                                {unassignedCount}
-                              </button>
-                            : <span className="text-[#71717a]">—</span>}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`); }}
-                            className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
-                          >
-                            View Details →
-                          </button>
-                        </td>
-                      </tr>
-                      );
-                    })}
-                    {hcRows.length === 0 && (
-                      <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#71717a]">No health centers yet</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <HealthCenterTable rows={hcRows} navigate={navigate} />
             </div>
           )}
 
@@ -728,44 +854,188 @@ function AdminDashboard({
           {activeTab === 'projects' && (
             projects.length > 0 ? (
               <div className="space-y-4">
-                <div className="flex items-center justify-end gap-2">
-                  <span className="text-xs font-medium text-[#71717a]">Sort by</span>
-                  <select
-                    value={projectSort}
-                    onChange={(e) => setProjectSort(e.target.value as ProjectSort)}
-                    className="text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md px-2.5 py-1.5 cursor-pointer hover:border-[#fc6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
-                  >
-                    {PROJECT_SORT_OPTIONS.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
-                  </select>
+                <div className="flex items-center gap-2">
+                  <SearchInput
+                    placeholder="Search projects…"
+                    value={projectSearch}
+                    onChange={(e) => setProjectSearch(e.target.value)}
+                    onClear={() => setProjectSearch('')}
+                    className="w-[200px]"
+                  />
+                  <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+
+                  {/* Health Center */}
+                  <Popover open={projectHCOpen} onOpenChange={setProjectHCOpen}>
+                    <PopoverTrigger asChild>
+                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
+                        !projectHCFilter.includes('All Health Centers') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+                      }`}>
+                        <Building2 className="h-3.5 w-3.5" />
+                        Health Center {!projectHCFilter.includes('All Health Centers') && `(${projectHCFilter.length})`}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[280px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search health centers..." />
+                        <CommandList>
+                          <CommandEmpty>No health centers found.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem value="all" onSelect={() => { toggleProjectHCFilter('All Health Centers'); setProjectHCOpen(false); }}>
+                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${projectHCFilter.includes('All Health Centers') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                                {projectHCFilter.includes('All Health Centers') && <Check className="h-3 w-3" />}
+                              </div>
+                              All Health Centers
+                            </CommandItem>
+                            {healthCenters.map(hc => (
+                              <CommandItem key={hc.name} value={hc.name} onSelect={() => toggleProjectHCFilter(hc.name)}>
+                                <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${projectHCFilter.includes(hc.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                                  {projectHCFilter.includes(hc.name) && <Check className="h-3 w-3" />}
+                                </div>
+                                {hc.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+
+                  <div className="ml-auto flex items-center gap-3">
+                    {/* View toggle */}
+                    <div className="flex items-center bg-[#f4f4f5] rounded-md p-0.5 gap-0.5 shrink-0">
+                      <button
+                        onClick={() => setProjectView('grid')}
+                        aria-label="Grid view"
+                        className={`p-1.5 rounded transition-colors ${projectView === 'grid' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                      >
+                        <LayoutGrid className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setProjectView('list')}
+                        aria-label="List view"
+                        className={`p-1.5 rounded transition-colors ${projectView === 'list' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                      >
+                        <List className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-[#71717a] shrink-0">Sort by</span>
+                      <select
+                        value={projectSort}
+                        onChange={(e) => { setProjectSort(e.target.value as ProjectSort); setProjectSortDir(e.target.value === 'name' ? 'asc' : 'desc'); }}
+                        className="text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md px-2.5 py-1.5 cursor-pointer hover:border-[#fc6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+                      >
+                        {PROJECT_SORT_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sortedProjects.map(p => {
-                  const total = p.tasks.length;
-                  const done  = p.tasks.filter(t => t.completed).length;
-                  const count = p.assignedHealthCenters?.length ?? 0;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() =>
-                        navigate(
-                          count > 0
-                            ? `/tasks/my-tasks?category=${encodeURIComponent(p.name)}`
-                            : `/admin/project-builder/${p.id}`,
-                        )
-                      }
-                      className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
-                    >
-                      <p className="text-sm font-semibold text-[#18181b] mb-3 truncate">{p.name}</p>
-                      <ProgressBar done={done} total={total} />
-                      <p className="text-xs text-[#71717a] mt-3">
-                        {count === 0 ? 'No centers' : `${count} center${count > 1 ? 's' : ''}`}
-                      </p>
-                    </button>
-                  );
-                })}
+                {sortedProjects.length === 0 ? (
+                  <p className="text-sm text-[#71717a] italic">No projects match your filters</p>
+                ) : projectView === 'grid' ? (
+                <div className="space-y-6">
+                {(() => {
+                  // Group projects by assigned health center. A project assigned
+                  // to multiple centers appears under each; unassigned projects
+                  // fall into a trailing "Unassigned" group.
+                  const groups: { name: string; projects: Project[] }[] = [];
+                  healthCenters.forEach(hc => {
+                    const inGroup = sortedProjects.filter(p => p.assignedHealthCenters?.some(a => a.name === hc.name));
+                    if (inGroup.length > 0) groups.push({ name: hc.name, projects: inGroup });
+                  });
+                  const unassigned = sortedProjects.filter(p => !p.assignedHealthCenters || p.assignedHealthCenters.length === 0);
+                  if (unassigned.length > 0) groups.push({ name: 'Unassigned', projects: unassigned });
+
+                  return groups.map(group => (
+                    <div key={group.name}>
+                      <h3 className="text-xs font-semibold text-[#71717a] uppercase tracking-wide mb-3">
+                        {group.name} <span className="text-[#a1a1aa]">({group.projects.length})</span>
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {group.projects.map(p => {
+                          const total = p.tasks.length;
+                          const done  = p.tasks.filter(t => t.completed).length;
+                          const centers = p.assignedHealthCenters ?? [];
+                          const count = centers.length;
+                          const centerLabel = count === 0
+                            ? 'Unassigned'
+                            : count === 1
+                              ? centers[0].name
+                              : `${centers[0].name} +${count - 1} more`;
+                          const status = projectStatus(done, total);
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() =>
+                                navigate(
+                                  count > 0
+                                    ? `/tasks/my-tasks?category=${encodeURIComponent(p.name)}`
+                                    : `/admin/project-builder/${p.id}`,
+                                )
+                              }
+                              className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
+                            >
+                              <p className="text-sm font-semibold text-[#18181b] mb-3 truncate">{p.name}</p>
+                              <ProgressBar done={done} total={total} color={status.bar} />
+                              <div className="mt-3 flex items-center justify-between gap-2">
+                                <Pill color={status.pill}>{status.label}</Pill>
+                                <span className="text-xs text-[#71717a] truncate text-right">{centerLabel}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ));
+                })()}
                 </div>
+                ) : (
+                <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
+                        <SortHeader label="Project"       col="name"     sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
+                        <SortHeader label="Progress"      col="progress" sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} className="w-[220px]" />
+                        <SortHeader label="Health Center" col="centers"  sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
+                        <SortHeader label="Tasks"         col="tasks"    sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedProjects.map(p => {
+                        const total = p.tasks.length;
+                        const done  = p.tasks.filter(t => t.completed).length;
+                        const centers = p.assignedHealthCenters ?? [];
+                        const count = centers.length;
+                        const centerLabel = count === 0
+                          ? 'Unassigned'
+                          : count === 1
+                            ? centers[0].name
+                            : `${centers[0].name} +${count - 1} more`;
+                        return (
+                          <tr
+                            key={p.id}
+                            onClick={() =>
+                              navigate(
+                                count > 0
+                                  ? `/tasks/my-tasks?category=${encodeURIComponent(p.name)}`
+                                  : `/admin/project-builder/${p.id}`,
+                              )
+                            }
+                            className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                          >
+                            <td className="px-4 py-3 font-medium text-[#18181b]">{p.name}</td>
+                            <td className="px-4 py-3"><ProgressBar done={done} total={total} /></td>
+                            <td className="px-4 py-3 text-[#71717a]">{centerLabel}</td>
+                            <td className="px-4 py-3 text-[#71717a]">{done}/{total}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-[#71717a] italic">No projects yet</p>
@@ -778,9 +1048,6 @@ function AdminDashboard({
 }
 
 // ── Member Dashboard ───────────────────────────────────────────────────────
-
-// The current user — replace with auth context once backend is wired up.
-const CURRENT_USER = 'Tim Freeman';
 
 function MemberDashboard({
   memberHealthCenter, tasks, projects, healthCenters, fieldDefs, onTaskClick,
@@ -852,6 +1119,7 @@ function MemberDashboard({
       const hcThisWeek = hcOpen.filter(t => { const d = parseTaskDate(t.dueDate); return d !== null && !isBefore(d, today) && !isAfter(d, weekEnd); });
       const hcCompleted  = forHc.filter(t => t.completed);
       const hcUnassigned = forHc.filter(t => !t.assignedTo);
+      const hcMine       = hcOpen.filter(t => t.assignedTo?.name === CURRENT_USER);
       return {
         hc,
         openCount: hcOpen.length,
@@ -859,6 +1127,7 @@ function MemberDashboard({
         thisWeekCount: hcThisWeek.length,
         completedCount: hcCompleted.length,
         unassignedCount: hcUnassigned.length,
+        assignedToMeCount: hcMine.length,
       };
     });
   }, [healthCenters, memberHealthCenter, tasks, today, weekEnd]);
@@ -879,6 +1148,27 @@ function MemberDashboard({
     () => projects.filter(p => p.assignedHealthCenters?.some(a => a.name === memberHealthCenter)),
     [projects, memberHealthCenter],
   );
+
+  // Projects-tab controls — mirror the admin dashboard (search + view toggle +
+  // sort). The single-center context has no health-center filter or grouping.
+  const [projectSort, setProjectSort] = useState<ProjectSort>('name');
+  const [projectSortDir, setProjectSortDir] = useState<'asc' | 'desc'>('asc');
+  const [projectView, setProjectView] = useState<'grid' | 'list'>('grid');
+  const [projectSearch, setProjectSearch] = useState<string>('');
+
+  const handleProjectHeaderSort = useCallback((col: ProjectSort) => {
+    setProjectSort(prev => {
+      if (prev === col) { setProjectSortDir(d => (d === 'asc' ? 'desc' : 'asc')); return prev; }
+      setProjectSortDir('asc');
+      return col;
+    });
+  }, []);
+
+  const sortedAssignedProjects = useMemo(() => {
+    const q = projectSearch.trim().toLowerCase();
+    const scoped = q ? assignedProjects.filter(p => p.name.toLowerCase().includes(q)) : assignedProjects;
+    return sortProjects(scoped, projectSort, projectSortDir);
+  }, [assignedProjects, projectSort, projectSortDir, projectSearch]);
 
   // Filter state for Tasks tab (assigned-to-me tasks only)
   const [statusFilter,         setStatusFilter]         = useState<string[]>(['all']);
@@ -1139,23 +1429,108 @@ function MemberDashboard({
           {/* Projects tab — assigned projects, each deep-links to filtered Tasks */}
           {activeTab === 'projects' && (
             assignedProjects.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {assignedProjects.map(p => {
-                  const total = p.tasks.length;
-                  const done  = p.tasks.filter(t => t.completed).length;
-                  const assignment = p.assignedHealthCenters?.find(a => a.name === memberHealthCenter);
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => navigate(`/tasks/my-tasks?category=${encodeURIComponent(p.name)}`)}
-                      className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
-                    >
-                      <p className="text-sm font-semibold text-[#18181b] mb-1 truncate">{p.name}</p>
-                      {assignment && <p className="text-xs text-[#71717a] mb-3">Assigned {assignment.assignedAt}</p>}
-                      <ProgressBar done={done} total={total} />
-                    </button>
-                  );
-                })}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <SearchInput
+                    placeholder="Search projects…"
+                    value={projectSearch}
+                    onChange={(e) => setProjectSearch(e.target.value)}
+                    onClear={() => setProjectSearch('')}
+                    className="w-[200px]"
+                  />
+
+                  <div className="ml-auto flex items-center gap-3">
+                    {/* View toggle */}
+                    <div className="flex items-center bg-[#f4f4f5] rounded-md p-0.5 gap-0.5 shrink-0">
+                      <button
+                        onClick={() => setProjectView('grid')}
+                        aria-label="Grid view"
+                        className={`p-1.5 rounded transition-colors ${projectView === 'grid' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                      >
+                        <LayoutGrid className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => setProjectView('list')}
+                        aria-label="List view"
+                        className={`p-1.5 rounded transition-colors ${projectView === 'list' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                      >
+                        <List className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-[#71717a] shrink-0">Sort by</span>
+                      <select
+                        value={projectSort}
+                        onChange={(e) => { setProjectSort(e.target.value as ProjectSort); setProjectSortDir(e.target.value === 'name' ? 'asc' : 'desc'); }}
+                        className="text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md px-2.5 py-1.5 cursor-pointer hover:border-[#fc6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+                      >
+                        {PROJECT_SORT_OPTIONS.map(o => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {sortedAssignedProjects.length === 0 ? (
+                  <p className="text-sm text-[#71717a] italic">No projects match your filters</p>
+                ) : projectView === 'grid' ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {sortedAssignedProjects.map(p => {
+                      const total = p.tasks.length;
+                      const done  = p.tasks.filter(t => t.completed).length;
+                      const assignment = p.assignedHealthCenters?.find(a => a.name === memberHealthCenter);
+                      const status = projectStatus(done, total);
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => navigate(`/tasks/my-tasks?category=${encodeURIComponent(p.name)}`)}
+                          className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
+                        >
+                          <p className="text-sm font-semibold text-[#18181b] mb-1 truncate">{p.name}</p>
+                          {assignment && <p className="text-xs text-[#71717a] mb-3">Assigned {assignment.assignedAt}</p>}
+                          <ProgressBar done={done} total={total} color={status.bar} />
+                          <div className="mt-3 flex items-center justify-between gap-2">
+                            <Pill color={status.pill}>{status.label}</Pill>
+                            <span className="text-xs text-[#71717a] truncate text-right">{memberHealthCenter}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
+                          <SortHeader label="Project"  col="name"     sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
+                          <SortHeader label="Progress" col="progress" sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} className="w-[220px]" />
+                          <SortHeader label="Status"   col="progress" sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
+                          <SortHeader label="Tasks"    col="tasks"    sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedAssignedProjects.map(p => {
+                          const total = p.tasks.length;
+                          const done  = p.tasks.filter(t => t.completed).length;
+                          const status = projectStatus(done, total);
+                          return (
+                            <tr
+                              key={p.id}
+                              onClick={() => navigate(`/tasks/my-tasks?category=${encodeURIComponent(p.name)}`)}
+                              className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                            >
+                              <td className="px-4 py-3 font-medium text-[#18181b]">{p.name}</td>
+                              <td className="px-4 py-3"><ProgressBar done={done} total={total} color={status.bar} /></td>
+                              <td className="px-4 py-3"><Pill color={status.pill}>{status.label}</Pill></td>
+                              <td className="px-4 py-3 text-[#71717a]">{done}/{total}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-[#71717a] italic">No assigned projects</p>
@@ -1165,62 +1540,7 @@ function MemberDashboard({
           {/* Health Center tab */}
           {activeTab === 'health-centers' && (
             <div className="space-y-8">
-              <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Health Center</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Open Tasks</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Overdue</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Due This Week</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Completed</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-medium text-[#71717a]">Unassigned</th>
-                      <th className="px-4 py-2.5" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {hcRows.map(({ hc: center, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount }) => {
-                      const hcQuery = `healthCenter=${encodeURIComponent(center.name)}`;
-                      return (
-                      <tr
-                        key={center.name}
-                        onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
-                        className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
-                      >
-                        <td className="px-4 py-3 font-medium text-[#18181b]">{center.name}</td>
-                        <td className="px-4 py-3">
-                          <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=incomplete`); }} className={COUNT_CHIP}>{openCount}</button>
-                        </td>
-                        <td className="px-4 py-3">
-                          {overdueCount > 0
-                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=overdue&status=incomplete`); }} className={OVERDUE_CHIP}><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}</button>
-                            : <span className="text-[#71717a]">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {thisWeekCount > 0
-                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=thisweek&status=incomplete`); }} className={COUNT_CHIP}>{thisWeekCount}</button>
-                            : <span className="text-[#71717a]">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {completedCount > 0
-                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=complete`); }} className={COUNT_CHIP}>{completedCount}</button>
-                            : <span className="text-[#71717a]">—</span>}
-                        </td>
-                        <td className="px-4 py-3">
-                          {unassignedCount > 0
-                            ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&assigned=unassigned`); }} className={COUNT_CHIP}>{unassignedCount}</button>
-                            : <span className="text-[#71717a]">—</span>}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(center.name)}`); }}
-                            className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors">View Details →</button>
-                        </td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <HealthCenterTable rows={hcRows} navigate={navigate} />
             </div>
           )}
 
