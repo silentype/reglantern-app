@@ -33,7 +33,7 @@ import type { Task } from '../components/task-table/types';
 // Bumped to v8 when the seed was doubled (more projects per center, more tasks
 // per project, rotating completion profiles). Older payloads predate the new
 // shape, so the key bump forces a clean reseed.
-export const PROJECTS_STORAGE_KEY = 'reglantern.projects.v8';
+export const PROJECTS_STORAGE_KEY = 'reglantern.projects.v9';
 
 // ── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -71,6 +71,7 @@ const PEOPLE = [
   { initials: 'RP', name: 'Robert Park' },
   { initials: 'EC', name: 'Emma Chen' },
   { initials: 'MG', name: 'Michael Garcia' },
+  { initials: 'TF', name: 'Tim Freeman' },
 ] as const;
 
 const CREATED_BY = { initials: 'TF', name: 'Tim Freeman' };

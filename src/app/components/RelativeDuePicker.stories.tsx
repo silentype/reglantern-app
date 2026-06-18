@@ -222,6 +222,45 @@ export const BrokenTaskReference: Story = {
   },
 };
 
+export const BrokenHealthCenterField: Story = {
+  args: {
+    initialRule: {
+      anchor: { kind: 'healthCenterField', fieldId: 'nonexistent-field-id' },
+      amount: 14,
+      unit: 'days',
+      direction: 'before',
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'When the rule references a health-center field that has since been removed from Settings, the picker shows a red banner, clears the Field selection, and disables Save until the user picks a valid field or switches Type.',
+      },
+    },
+  },
+};
+
+export const CustomSaveLabel: Story = {
+  args: {
+    saveLabel: 'Apply rule',
+    initialRule: {
+      anchor: { kind: 'projectStart' },
+      amount: 3,
+      unit: 'weeks',
+      direction: 'after',
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'The save button label is customizable via the `saveLabel` prop (default: "Save rule"). Used when the picker is embedded in a context with different affordances (e.g. a modal with its own Save/Cancel).',
+      },
+    },
+  },
+};
+
 export const NoProjectStartDate: Story = {
   args: {
     projectStartDate: undefined,

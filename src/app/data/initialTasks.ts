@@ -191,7 +191,7 @@ export const INITIAL_TASKS: Task[] = [
     title: "Conduct patient safety assessment",
     completed: false,
     dueDate: "02/25/2026",
-    assignedTo: { initials: "AM", name: "Angela Miller" },
+    assignedTo: { initials: "TF", name: "Tim Freeman" },
     healthCenter: "Westwood Clinic",
     category: "Clinical",
     attention: { type: 'needs', count: 3 },
@@ -209,7 +209,7 @@ export const INITIAL_TASKS: Task[] = [
     title: "Archive old study materials",
     completed: true,
     dueDate: "01/30/2026",
-    assignedTo: { initials: "DK", name: "David Kim" },
+    assignedTo: { initials: "TF", name: "Tim Freeman" },
     healthCenter: "Southside Practice",
     taskType: 'custom',
     createdBy: { initials: 'TF', name: 'Tim Freeman' }
@@ -227,7 +227,7 @@ export const INITIAL_TASKS: Task[] = [
     id: 11,
     title: "Finalize budget amendments",
     completed: false,
-    assignedTo: { initials: "EC", name: "Emma Chen" },
+    assignedTo: { initials: "TF", name: "Tim Freeman" },
     attention: { type: 'missing', count: 1 },
     taskType: 'system',
     createdBy: { initials: 'RL', name: 'Reglantern' }

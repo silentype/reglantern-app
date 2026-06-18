@@ -68,8 +68,8 @@ export const TaskRow = memo(function TaskRow({
   disableCompletion,
 }: TaskRowProps) {
   const canBeCompleted = useMemo(
-    () => !task.attention && task.assignedTo && task.dueDate,
-    [task.attention, task.assignedTo, task.dueDate],
+    () => task.alwaysCompletable || (!task.attention && task.assignedTo && task.dueDate),
+    [task.alwaysCompletable, task.attention, task.assignedTo, task.dueDate],
   );
 
   const blockCompletionReason = useMemo(() => {

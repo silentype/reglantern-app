@@ -68,6 +68,7 @@ export default function MultiFileUploadPanel({
   siblingTasks,
   currentProjectName,
   availableProjects,
+  relatedLink,
 }: {
   taskId: number | null;
   taskTitle: string;
@@ -142,6 +143,11 @@ export default function MultiFileUploadPanel({
   currentProjectName?: string;
   /** Other projects in the system (cross-project anchor options). */
   availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
+  /**
+   * Optional contextual link shown near the top of the panel (e.g. "Open this
+   * row in Form 5A"). Lets a task deep-link to the place where its work lives.
+   */
+  relatedLink?: { label: string; onClick: () => void };
 }) {
   // Panel sub-state lives in URL search params so each view is paste-able:
   //   ?subtask=:subtaskId  -> drilled into subtask upload page (omit -> task overview)
@@ -1252,6 +1258,15 @@ export default function MultiFileUploadPanel({
 
         {/* Tabs and Details */}
         <div className="px-6 pt-4 pb-8 bg-white border-t-2 border-[#E4E4E7]">
+          {relatedLink && (
+            <button
+              onClick={relatedLink.onClick}
+              className="w-full mb-4 flex items-center justify-between gap-2 rounded-md border border-[#fc6] bg-[#fff7e0] px-3 py-2.5 text-left hover:bg-[#fff2cc] transition-colors"
+            >
+              <span className="text-[13px] font-medium text-[#18181b]">{relatedLink.label}</span>
+              <ExternalLink size={16} className="text-[#71717a] shrink-0" />
+            </button>
+          )}
           <TabStrip className="mb-6">
             <Tab active={activeTab === 'details'} onClick={() => setActiveTab('details')}>Details</Tab>
             <Tab active={activeTab === 'comments'} onClick={() => setActiveTab('comments')}>Comments</Tab>

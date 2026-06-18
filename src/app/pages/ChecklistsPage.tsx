@@ -1,22 +1,31 @@
 /**
  * ChecklistsPage
  *
- * Placeholder for the "Tools" / Checklists area. Extracted from App.tsx as
- * part of the Phase 5 page split. Currently renders a "coming soon" message;
- * the actual checklist content (Site Visit Protocol, Ryan White Part C/D,
- * FTCA Site Visit Protocol) is selected via the sidebar but not yet
- * implemented.
- *
- * Props are passed by App.tsx but currently unused — kept on the signature
- * so the App-side wiring doesn't have to change as content fills in.
+ * Dispatcher for the "Tools" / Checklists area. Selects content by the active
+ * URL slug. Form 5A is a fully-built workspace; the other checklists (Site Visit
+ * Protocol, Ryan White Part C/D, FTCA Site Visit Protocol) are still placeholders.
  */
+
+import { Form5APage } from './Form5APage';
+import type { Form5AForm } from '../data/form5a';
 
 interface ChecklistsPageProps {
   onToggleSideNav: () => void;
   sideNavOpen: boolean;
+  /** The active checklist slug (second URL segment, e.g. "form-5a"). */
+  slug: string;
+  /** Effective health center from the top-nav selector (null = All Health Centers). */
+  healthCenter: string | null;
+  /** Form 5A for the selected health center (owned by App so tasks stay in sync). */
+  form5a?: Form5AForm;
+  onForm5AChange: (next: Form5AForm) => void;
 }
 
-export function ChecklistsPage(_props: ChecklistsPageProps) {
+export function ChecklistsPage({ slug, healthCenter, form5a, onForm5AChange }: ChecklistsPageProps) {
+  if (slug === 'form-5a') {
+    return <Form5APage healthCenter={healthCenter} form={form5a} onChange={onForm5AChange} />;
+  }
+
   return (
     <div className="p-6">
       <div className="mb-2">

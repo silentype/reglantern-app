@@ -20,6 +20,28 @@ import {
   type HealthCenterDateFieldDef,
 } from './data/healthCenters';
 import { PROJECTS_STORAGE_KEY, loadProjects } from './data/initialProjects';
+import {
+  type Form5AForm,
+  FORM_5A_SERVICE_CATALOG,
+  loadAllForm5A,
+  saveAllForm5A,
+  makeEmptyForm,
+  form5aTaskId,
+  isForm5ATaskId,
+  decodeForm5ATaskId,
+} from './data/form5a';
+import { HEALTH_CENTERS } from './constants';
+
+// Simulated user profiles for prototype login switching.
+// Tim Freeman = multi-HC admin; Emily Chen = single-HC member.
+const SIMULATED_USERS = [
+  { name: 'Tim Freeman', initials: 'TF', role: 'admin' as const,  healthCenter: null as string | null },
+  { name: 'Emily Chen',  initials: 'EC', role: 'member' as const, healthCenter: HEALTH_CENTERS[0] as string | null },
+];
+type SimulatedUser = typeof SIMULATED_USERS[number];
+
+const CURRENT_USER_STORAGE_KEY  = 'reglantern.currentUser';
+const ADMIN_SELECTED_HC_KEY     = 'reglantern.adminSelectedHC';
 
 // Project type re-exported from AdminPage; we type-import it so the lazy
 // chunk doesn't include AdminPage in the initial bundle.
@@ -60,13 +82,12 @@ const PageFallback = () => (
   </div>
 );
 
-const USER_ROLE_STORAGE_KEY = 'reglantern.userRole';
-const MEMBER_HC_STORAGE_KEY = 'reglantern.memberHealthCenter';
 
 // URL <-> sidebar nav item mappings. URL is the source of truth for navigation.
 const NAV_ITEM_TO_URL: Record<string, string> = {
   'Home': '/home',
   'My Tasks': '/tasks/my-tasks',
+  'Form 5A': '/checklists/form-5a',
   'Site Visit Protocol Checklist': '/checklists/site-visit-protocol',
   'Ryan White Part C/D': '/checklists/ryan-white-c-d',
   'FTCA Site Visit Protocol': '/checklists/ftca-site-visit-protocol',
@@ -78,6 +99,7 @@ const NAV_ITEM_TO_URL: Record<string, string> = {
 
 const URL_TO_NAV_ITEM: Record<string, string> = {
   'my-tasks': 'My Tasks',
+  'form-5a': 'Form 5A',
   'site-visit-protocol': 'Site Visit Protocol Checklist',
   'ryan-white-c-d': 'Ryan White Part C/D',
   'ftca-site-visit-protocol': 'FTCA Site Visit Protocol',
@@ -167,6 +189,10 @@ export default function App() {
         if (Number.isInteger(tid)) selectedTaskId = tid;
       }
     }
+  } else if (currentPage === 'checklists' && itemSeg === 'form-5a') {
+    // Form 5A rows open the shared task panel over the form via ?task=<id>.
+    const tq = Number(new URLSearchParams(location.search).get('task'));
+    if (Number.isInteger(tq) && tq > 0) selectedTaskId = tq;
   }
 
   const sidePanelOpen = isCreatingNewTask || selectedTaskId !== null;
@@ -188,72 +214,38 @@ export default function App() {
   const [sideNavOpen, setSideNavOpen] = useState(true);
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
-  // Role is stored in localStorage (persists across pages) AND reflected in
-  // the /home URL (?role=admin|member&hc=NAME) so html.to.design can capture
-  // both dashboard variants with a direct link.
-  const [userRole, setUserRole] = useState<'admin' | 'member'>(() => {
-    const saved = localStorage.getItem(USER_ROLE_STORAGE_KEY);
-    return saved === 'member' ? 'member' : 'admin';
-  });
-  // null = "All Health Centers" (admin default); string = specific HC
-  const [selectedHC, setSelectedHC] = useState<string | null>(() => {
-    return localStorage.getItem(MEMBER_HC_STORAGE_KEY) || null;
+  // Simulated user login — persisted to localStorage.
+  const [currentUser, setCurrentUser] = useState<SimulatedUser>(() => {
+    const saved = localStorage.getItem(CURRENT_USER_STORAGE_KEY);
+    return SIMULATED_USERS.find(u => u.name === saved) ?? SIMULATED_USERS[0];
   });
 
-  // URL params override localStorage — lets html.to.design load any variant
-  // via a direct URL: /home?role=member&hc=Downtown+Medical+Center
-  const urlSearchParams = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search]
+  // Admin's selected HC: null = All Health Centers, string = specific HC.
+  // Members are always locked to their assigned healthCenter, ignoring this.
+  const [adminSelectedHC, setAdminSelectedHC] = useState<string | null>(() =>
+    localStorage.getItem(ADMIN_SELECTED_HC_KEY) || null
   );
-  const effectiveRole = useMemo((): 'admin' | 'member' => {
-    const r = urlSearchParams.get('role');
-    if (r === 'admin' || r === 'member') return r;
-    return userRole;
-  }, [urlSearchParams, userRole]);
-  const effectiveHC = useMemo((): string | null => {
-    return urlSearchParams.get('hc') || selectedHC;
-  }, [urlSearchParams, selectedHC]);
 
-  // Navigate to a path while preserving current ?role= and ?hc= params so
-  // the HC context survives page transitions and html.to.design captures work.
-  const appNavigate = useCallback((path: string, opts?: { replace?: boolean }) => {
-    const params = new URLSearchParams();
-    if (effectiveRole === 'member') params.set('role', 'member');
-    if (effectiveHC) params.set('hc', effectiveHC);
-    const search = params.toString();
-    navigate(search ? `${path}?${search}` : path, opts);
-  }, [navigate, effectiveRole, effectiveHC]);
+  // The HC that scopes the current view. Members are always locked to their HC.
+  const effectiveHC = currentUser.role === 'member'
+    ? currentUser.healthCenter
+    : adminSelectedHC;
 
   const handleHCChange = useCallback((hc: string | null) => {
-    setSelectedHC(hc);
-    if (hc) {
-      localStorage.setItem(MEMBER_HC_STORAGE_KEY, hc);
-    } else {
-      localStorage.removeItem(MEMBER_HC_STORAGE_KEY);
-    }
-    const params = new URLSearchParams();
-    if (effectiveRole === 'member') params.set('role', 'member');
-    if (hc) params.set('hc', hc);
-    const search = params.toString();
-    navigate(`${location.pathname}${search ? '?' + search : ''}`, { replace: true });
-  }, [navigate, effectiveRole, location.pathname]);
+    setAdminSelectedHC(hc);
+    if (hc) localStorage.setItem(ADMIN_SELECTED_HC_KEY, hc);
+    else localStorage.removeItem(ADMIN_SELECTED_HC_KEY);
+  }, []);
 
-  const handleRoleChange = useCallback((role: 'admin' | 'member') => {
-    setUserRole(role);
-    localStorage.setItem(USER_ROLE_STORAGE_KEY, role);
-    let hc = selectedHC;
-    if (role === 'member' && !hc && INITIAL_HEALTH_CENTERS.length > 0) {
-      hc = INITIAL_HEALTH_CENTERS[0].name;
-      setSelectedHC(hc);
-      localStorage.setItem(MEMBER_HC_STORAGE_KEY, hc);
-    }
-    const params = new URLSearchParams();
-    if (role === 'member') params.set('role', 'member');
-    if (hc) params.set('hc', hc);
-    const search = params.toString();
-    navigate(search ? `/home?${search}` : '/home');
-  }, [selectedHC, navigate]);
+  const handleUserChange = useCallback((name: string) => {
+    const next = SIMULATED_USERS.find(u => u.name === name);
+    if (!next) return;
+    setCurrentUser(next);
+    localStorage.setItem(CURRENT_USER_STORAGE_KEY, name);
+    // Members don't use adminSelectedHC, so no need to reset it —
+    // Tim's last selection will be waiting when he switches back.
+  }, []);
+
 
   // Data state
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
@@ -262,6 +254,11 @@ export default function App() {
     INITIAL_HEALTH_CENTER_FIELD_DEFS
   );
   const [projects, setProjects] = useState<Project[]>(() => loadProjects());
+
+  // Form 5A is per-health-center; each service also surfaces as a Task. The
+  // whole store lives here (not in Form5APage) so the derived tasks and the
+  // page stay in sync and completion toggles flow both ways.
+  const [form5aByHC, setForm5aByHC] = useState<Record<string, Form5AForm>>(() => loadAllForm5A());
 
   // Mirror new projects + tasks into localStorage so a refresh (or an
   // html.to.design capture) picks the same state back up.
@@ -272,6 +269,38 @@ export default function App() {
       // localStorage unavailable (private mode, quota, etc.) -- non-fatal.
     }
   }, [projects]);
+
+  useEffect(() => {
+    saveAllForm5A(form5aByHC);
+  }, [form5aByHC]);
+
+  const updateForm5AForm = useCallback((hc: string, next: Form5AForm) => {
+    setForm5aByHC((prev) => ({ ...prev, [hc]: next }));
+  }, []);
+
+  // Seed a health center's Form 5A the first time its workspace is opened.
+  useEffect(() => {
+    if (currentPage === 'checklists' && itemSeg === 'form-5a' && effectiveHC) {
+      setForm5aByHC((prev) => (prev[effectiveHC!] ? prev : { ...prev, [effectiveHC!]: makeEmptyForm(effectiveHC!) }));
+    }
+  }, [currentPage, itemSeg, effectiveHC]);
+
+  // Reverse-map a Form 5A task id back to its (health center, service) and
+  // apply a service update. Used by the task-list completion/status handlers.
+  const mutateForm5AService = useCallback(
+    (taskId: number, patch: (svc: Form5AForm['services'][number]) => Form5AForm['services'][number]) => {
+      const { hcIndex, serviceIndex } = decodeForm5ATaskId(taskId);
+      const hc = HEALTH_CENTERS[hcIndex];
+      if (!hc) return;
+      setForm5aByHC((prev) => {
+        const form = prev[hc];
+        if (!form) return prev;
+        const services = form.services.map((s, i) => (i === serviceIndex ? patch(s) : s));
+        return { ...prev, [hc]: { ...form, services } };
+      });
+    },
+    [],
+  );
 
   const handleAddNewTask = useCallback(() => {
     setNewTaskTitle('');
@@ -398,8 +427,30 @@ export default function App() {
   }, [selectedTaskId, navigate]);
 
   const handleTaskClick = useCallback((taskId: number, _taskTitle: string) => {
+    // All tasks (including Form 5A) open the shared task panel over the current
+    // page. Form 5A tasks get a "go to the form" link inside the panel.
     navigate(`/tasks/my-tasks/${taskId}`);
   }, [navigate]);
+
+  // For a Form 5A task open in the panel, a link that jumps to that row in the
+  // Form 5A workspace (expanded + scrolled into view).
+  const form5aRelatedLink = useMemo(() => {
+    if (selectedTaskId === null || !isForm5ATaskId(selectedTaskId)) return undefined;
+    const { hcIndex, serviceIndex } = decodeForm5ATaskId(selectedTaskId);
+    const hc = HEALTH_CENTERS[hcIndex];
+    const svc = FORM_5A_SERVICE_CATALOG[serviceIndex];
+    if (!hc || !svc) return undefined;
+    const slug = svc.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    return {
+      label: `Open “${svc.name}” in Form 5A`,
+      onClick: () => {
+        const params = new URLSearchParams();
+        params.set('hc', hc);
+        params.set('service', slug);
+        navigate(`/checklists/form-5a?${params}`);
+      },
+    };
+  }, [selectedTaskId, navigate]);
 
   const handleClosePanel = useCallback(() => {
     setNewTaskTitle('');
@@ -407,12 +458,24 @@ export default function App() {
       navigate('/test/compact-rows');
     } else if (currentPage === 'admin' && itemSeg === 'project-builder' && selectedProjectId !== null) {
       navigate(`/admin/project-builder/${selectedProjectId}`);
+    } else if (currentPage === 'checklists') {
+      // Close the panel but stay on the Form 5A page: drop ?task only.
+      const params = new URLSearchParams(location.search);
+      params.delete('task');
+      navigate(`${location.pathname}${params.toString() ? `?${params}` : ''}`, { replace: true });
     } else {
       navigate('/tasks/my-tasks');
     }
-  }, [navigate, currentPage, itemSeg, selectedProjectId]);
+  }, [navigate, currentPage, itemSeg, selectedProjectId, location.pathname, location.search]);
 
   const handleToggleTaskComplete = useCallback((taskId: number) => {
+    if (isForm5ATaskId(taskId)) {
+      mutateForm5AService(taskId, (svc) => {
+        const completed = !svc.completed;
+        return { ...svc, completed, completedAt: completed ? new Date().toISOString() : undefined };
+      });
+      return;
+    }
     // Tasks shown on the Tasks page live inside projects, so always route
     // completion toggles into project state by task id.
     setProjects(prevProjects =>
@@ -434,9 +497,16 @@ export default function App() {
         task.id === taskId ? { ...task, completed: !task.completed } : task
       )
     );
-  }, []);
+  }, [mutateForm5AService]);
 
   const handleUpdateTaskStatus = useCallback((taskId: number, status: string) => {
+    if (isForm5ATaskId(taskId)) {
+      mutateForm5AService(taskId, (svc) => {
+        const completed = status === 'Complete';
+        return { ...svc, completed, completedAt: completed ? new Date().toISOString() : undefined };
+      });
+      return;
+    }
     setProjects(prevProjects =>
       prevProjects.map(project => ({
         ...project,
@@ -452,7 +522,7 @@ export default function App() {
         task.id === taskId ? { ...task, completed: status === 'Complete' } : task
       )
     );
-  }, []);
+  }, [mutateForm5AService]);
 
   const handleUpdateTaskFiles = useCallback((taskId: number, files: Array<{
     patientId: number;
@@ -521,6 +591,19 @@ export default function App() {
     taskId: number,
     updates: Partial<Task>
   ) => {
+    if (isForm5ATaskId(taskId)) {
+      mutateForm5AService(taskId, (svc) => {
+        const next = { ...svc };
+        if (updates.assignedTo !== undefined) next.assignedTo = updates.assignedTo;
+        if (updates.dueDate !== undefined) next.dueDate = updates.dueDate;
+        if (updates.status !== undefined) {
+          next.completed = updates.status === 'Complete';
+          next.completedAt = next.completed ? new Date().toISOString() : undefined;
+        }
+        return next;
+      });
+      return;
+    }
     // Check if we're updating a project task
     if (selectedProjectId !== null) {
       setProjects(prevProjects =>
@@ -574,32 +657,64 @@ export default function App() {
         return task;
       })
     );
-  }, [selectedProjectId]);
+  }, [selectedProjectId, mutateForm5AService]);
 
   const toggleSideNav = useCallback(() => {
     setSideNavOpen(prev => !prev);
   }, []);
 
   const handleNavChange = useCallback((page: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings') => {
-    if (page === 'home') appNavigate('/home');
-    else if (page === 'tasks') appNavigate('/tasks/my-tasks');
-    else if (page === 'admin') appNavigate('/admin/project-builder');
-    else if (page === 'settings') appNavigate('/settings');
-    else appNavigate('/checklists/site-visit-protocol');
-  }, [appNavigate]);
+    if (page === 'home') navigate('/home');
+    else if (page === 'tasks') navigate('/tasks/my-tasks');
+    else if (page === 'admin') navigate('/admin/project-builder');
+    else if (page === 'settings') navigate('/settings');
+    else navigate('/checklists/site-visit-protocol');
+  }, [navigate]);
 
   const handleSideNavItemSelect = useCallback((item: string) => {
     const url = NAV_ITEM_TO_URL[item];
-    if (url) appNavigate(url);
-  }, [appNavigate]);
+    if (url) navigate(url);
+  }, [navigate]);
 
   // Tasks shown on the Tasks page come *exclusively* from projects that have
   // at least one assigned health center. Each task is stamped with its source
   // project's name as `category` so the Category column renders the project it
   // originated from. Standalone (non-project) tasks are intentionally excluded.
+  // Each Form 5A service becomes a Task in the shared task list. Completion +
+  // assignment live on the service record; the derived task is read-through.
+  const form5aTasks = useMemo(() => {
+    const out: Task[] = [];
+    for (const [hc, form] of Object.entries(form5aByHC)) {
+      const hcIndex = HEALTH_CENTERS.indexOf(hc as (typeof HEALTH_CENTERS)[number]);
+      if (hcIndex < 0) continue;
+      form.services.forEach((svc, i) => {
+        out.push({
+          id: form5aTaskId(hcIndex, i),
+          title: `Form 5A — ${svc.name}`,
+          completed: svc.completed,
+          status: svc.completed ? 'Complete' : 'Not Started',
+          completedAt: svc.completedAt,
+          dueDate: svc.dueDate,
+          healthCenter: hc,
+          category: 'Form 5A',
+          assignedTo: svc.assignedTo ?? { initials: 'TF', name: 'Tim Freeman' },
+          createdBy: { initials: 'RL', name: 'Reglantern' },
+          taskType: 'custom',
+          alwaysCompletable: true,
+          comments: (svc.comments ?? []).map((c) => ({
+            id: c.id,
+            user: c.user,
+            text: c.text,
+            timestamp: new Date(c.timestamp),
+          })),
+        });
+      });
+    }
+    return out;
+  }, [form5aByHC]);
+
   const allTasksIncludingProjects = useMemo(() => {
     const projectTasks: Task[] = [];
-
     projects.forEach(project => {
       if (project.assignedHealthCenters && project.assignedHealthCenters.length > 0 && project.tasks.length > 0) {
         project.tasks.forEach(task => {
@@ -607,9 +722,22 @@ export default function App() {
         });
       }
     });
+    return [...projectTasks, ...form5aTasks];
+  }, [projects, form5aTasks]);
 
-    return projectTasks;
-  }, [projects]);
+  // Scope tasks and projects to the selected HC (or show all when admin + All HCs).
+  const visibleTasks = useMemo(() =>
+    effectiveHC
+      ? allTasksIncludingProjects.filter(t => t.healthCenter === effectiveHC)
+      : allTasksIncludingProjects,
+    [allTasksIncludingProjects, effectiveHC],
+  );
+  const visibleProjects = useMemo(() =>
+    effectiveHC
+      ? projects.filter(p => p.assignedHealthCenters?.some(a => a.name === effectiveHC))
+      : projects,
+    [projects, effectiveHC],
+  );
 
   // Memoize current task to avoid recalculation on every render
   const currentTask = useMemo(() => {
@@ -617,15 +745,11 @@ export default function App() {
       const project = projects.find(p => p.id === selectedProjectId);
       return project?.tasks.find(t => t.id === selectedTaskId);
     }
-    // The Tasks page is driven by `allTasksIncludingProjects` (tasks sourced
-    // from assigned projects), so the side-panel lookup must search that set
-    // first. Fall back to the standalone `tasks` state for any non-project
-    // tasks that may still exist.
     return (
-      allTasksIncludingProjects.find(t => t.id === selectedTaskId) ??
+      visibleTasks.find(t => t.id === selectedTaskId) ??
       tasks.find(t => t.id === selectedTaskId)
     );
-  }, [tasks, projects, selectedTaskId, selectedProjectId, allTasksIncludingProjects]);
+  }, [tasks, projects, selectedTaskId, selectedProjectId, visibleTasks]);
 
   // The project the side panel is currently scoped to (if any). Used to pass
   // project-relative date context (start date + sibling tasks) into the panel.
@@ -653,11 +777,14 @@ export default function App() {
       <TopNav
         currentPage={currentPage === 'test' ? 'tasks' : currentPage}
         onNavChange={handleNavChange}
-        userRole={effectiveRole}
-        onRoleChange={handleRoleChange}
+        user={currentUser}
+        isAdmin={currentUser.role === 'admin'}
+        canChangeHC={currentUser.role === 'admin'}
         healthCenterNames={healthCenters.map((hc) => hc.name)}
         selectedHC={effectiveHC}
         onHCChange={handleHCChange}
+        users={SIMULATED_USERS}
+        onUserChange={handleUserChange}
       />
 
       {/* Main Content Area */}
@@ -676,32 +803,24 @@ export default function App() {
           <Suspense fallback={<PageFallback />}>
           {currentPage === 'test' ? (
             <CompactRowTestPage
-              tasks={allTasksIncludingProjects}
+              tasks={visibleTasks}
               selectedTaskId={selectedTaskId}
               onTaskClick={handleTaskClick}
               onUpdateTask={handleUpdateTaskDetails}
             />
           ) : currentPage === 'home' ? (
             <HomePage
-              userRole={effectiveRole}
-              memberHealthCenter={effectiveHC ?? ''}
-              tasks={allTasksIncludingProjects}
-              projects={projects}
-              healthCenters={healthCenters}
-              fieldDefs={healthCenterFieldDefs}
-              onTaskClick={handleTaskClick}
-              handleToggleTaskComplete={handleToggleTaskComplete}
-              handleUpdateTaskStatus={handleUpdateTaskStatus}
-              handleUpdateTaskDetails={handleUpdateTaskDetails}
-              selectedTaskId={selectedTaskId}
-              homeTab={homeTab}
+              tasks={visibleTasks}
+              projects={visibleProjects}
+              healthCenters={effectiveHC ? healthCenters.filter(hc => hc.name === effectiveHC) : healthCenters}
+              homeTab={homeTab === 'tasks' ? 'projects' : homeTab}
             />
           ) : currentPage === 'tasks' ? (
             <TasksPage
               onTaskClick={handleTaskClick}
               onToggleSideNav={toggleSideNav}
               sideNavOpen={sideNavOpen}
-              tasks={allTasksIncludingProjects}
+              tasks={visibleTasks}
               handleToggleTaskComplete={handleToggleTaskComplete}
               handleUpdateTaskStatus={handleUpdateTaskStatus}
               handleUpdateTaskDetails={handleUpdateTaskDetails}
@@ -710,7 +829,14 @@ export default function App() {
               onDeleteTask={handleDeleteTask}
             />
           ) : currentPage === 'checklists' ? (
-            <ChecklistsPage onToggleSideNav={toggleSideNav} sideNavOpen={sideNavOpen} />
+            <ChecklistsPage
+              onToggleSideNav={toggleSideNav}
+              sideNavOpen={sideNavOpen}
+              slug={itemSeg ?? ''}
+              healthCenter={effectiveHC}
+              form5a={effectiveHC ? form5aByHC[effectiveHC] : undefined}
+              onForm5AChange={(next) => effectiveHC && updateForm5AForm(effectiveHC, next)}
+            />
           ) : currentPage === 'settings' ? (
             <SettingsPage
               onToggleSideNav={toggleSideNav}
@@ -833,6 +959,7 @@ export default function App() {
               availableProjects={projects
                 .filter((p) => p.id !== currentProject?.id)
                 .map((p) => ({ id: p.id, name: p.name, startDate: p.startDate, endDate: p.endDate }))}
+              relatedLink={form5aRelatedLink}
             />
           ) : null}
           </Suspense>

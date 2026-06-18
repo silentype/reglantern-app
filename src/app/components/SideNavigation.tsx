@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react';
-import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, Settings2, UserPlus, HelpCircle, Info, PanelLeftClose, PanelLeftOpen, Pin } from 'lucide-react';
+import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, FileCheck2, Settings2, UserPlus, HelpCircle, Info, PanelLeftClose, PanelLeftOpen, Pin } from 'lucide-react';
 
 interface SideNavigationProps {
   pageType: 'tasks' | 'checklists' | 'admin' | 'settings';
@@ -11,6 +11,7 @@ interface SideNavigationProps {
 
 const TASKS_ITEMS = ['My Tasks'] as const;
 const CHECKLISTS_ITEMS = [
+  'Form 5A',
   'Site Visit Protocol Checklist',
   'Ryan White Part C/D',
   'FTCA Site Visit Protocol',
@@ -24,6 +25,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   'Compliance Review': ClipboardCheck,
   'Compliance Tasks': ClipboardList,
   'Health Centers': Building2,
+  'Form 5A': FileCheck2,
   'Site Visit Protocol Checklist': ClipboardList,
   'Ryan White Part C/D': ClipboardList,
   'FTCA Site Visit Protocol': ClipboardList,

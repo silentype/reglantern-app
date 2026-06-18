@@ -105,6 +105,12 @@ export interface Task {
   createdBy?: { initials: string; name: string };
   taskType?: 'system' | 'custom'; // system = has uploads, read-only title/desc; custom = no uploads, editable title/desc
   category?: string;
+  /**
+   * When true, the completion checkbox bypasses the usual gate (assignee +
+   * due date + no attention). Used by manually-toggled tasks such as the
+   * Form 5A service tasks, which have no due date.
+   */
+  alwaysCompletable?: boolean;
   comments?: Array<{
     id: string;
     user: { initials: string; name: string };
