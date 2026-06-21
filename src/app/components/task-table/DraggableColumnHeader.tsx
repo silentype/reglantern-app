@@ -96,7 +96,7 @@ export const DraggableColumnHeader = memo(function DraggableColumnHeader({
     >
       <div
         aria-hidden="true"
-        className="absolute border-[#cdd7e1] border-r border-solid inset-0 pointer-events-none"
+        className="absolute border-[#cdd7e1] dark:border-[#2a2f3a] border-r border-solid inset-0 pointer-events-none"
       />
 
       <SortButton
@@ -109,8 +109,8 @@ export const DraggableColumnHeader = memo(function DraggableColumnHeader({
       />
 
       {/* Drag handle, near right divider, aligned with chevrons */}
-      <div className="absolute right-[10px] cursor-grab active:cursor-grabbing opacity-0 group-hover/column:opacity-100 transition-opacity z-20 bg-white rounded p-0.5">
-        <GripVertical size={16} className="text-[#71717a]" />
+      <div className="absolute right-[10px] cursor-grab active:cursor-grabbing opacity-0 group-hover/column:opacity-100 transition-opacity z-20 bg-white dark:bg-[#1e2129] rounded p-0.5">
+        <GripVertical size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />
       </div>
 
       {/* Resize handle */}

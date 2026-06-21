@@ -52,9 +52,9 @@ function greeting(): string {
 // Count "chip" styles used in the Health Center rows. Neutral pill for most
 // counts; a red-tinted variant for overdue.
 const COUNT_CHIP =
-  'inline-flex items-center justify-center min-w-[32px] px-2.5 py-1 rounded-full border border-[#e4e4e7] bg-[#f4f4f5] text-xs font-medium text-[#18181b] hover:border-[#fc6] hover:bg-[#fff7e6] transition-colors';
+  'inline-flex items-center justify-center min-w-[32px] px-2.5 py-1 rounded-full border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-xs font-medium text-[#18181b] dark:text-[#f4f4f5] hover:border-[#fc6] hover:bg-[#fff7e6] dark:hover:bg-[#2a3a2a] transition-colors';
 const OVERDUE_CHIP =
-  'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#fecaca] bg-[#fef2f2] text-xs font-medium text-[#dc2626] hover:border-[#dc2626] transition-colors';
+  'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#fecaca] dark:border-[#7f1d1d] bg-[#fef2f2] dark:bg-[#2d1010] text-xs font-medium text-[#dc2626] hover:border-[#dc2626] transition-colors';
 
 // The current user — replace with auth context once backend is wired up.
 const CURRENT_USER = 'Tim Freeman';
@@ -99,10 +99,10 @@ function ProgressBar({ done, total, color = '#fc6' }: { done: number; total: num
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-[#e4e4e7] rounded-full overflow-hidden">
+      <div className="flex-1 h-1.5 bg-[#e4e4e7] dark:bg-[#2a2f3a] rounded-full overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <span className="text-xs text-[#71717a] shrink-0">{done}/{total}</span>
+      <span className="text-xs text-[#71717a] dark:text-[#a1a1aa] shrink-0">{done}/{total}</span>
     </div>
   );
 }
@@ -126,14 +126,14 @@ function SortHeader<T extends string>({
     <th className={`text-left px-4 py-2.5 ${className ?? ''}`}>
       <button
         onClick={() => onSort(col)}
-        className="flex items-center gap-1 hover:bg-[#e5e5e5] px-1 py-0.5 rounded transition-colors"
+        className="flex items-center gap-1 hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] px-1 py-0.5 rounded transition-colors"
       >
-        <span className="font-semibold text-[#18181b] text-[14px] leading-[20px]">{label}</span>
+        <span className="font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[14px] leading-[20px]">{label}</span>
         {active
           ? dir === 'asc'
-            ? <ChevronUp size={16} className="text-[#71717a]" />
-            : <ChevronDown size={16} className="text-[#71717a]" />
-          : <ChevronsUpDown size={16} className="text-[#71717a]" />}
+            ? <ChevronUp size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />
+            : <ChevronDown size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />
+          : <ChevronsUpDown size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />}
       </button>
     </th>
   );
@@ -198,13 +198,13 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
             <button
               key={hc.name}
               onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
-              className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+              className="bg-white dark:bg-[#1e2129] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
             >
               <div className="flex items-start justify-between gap-2 mb-4">
-                <p className="text-sm font-semibold text-[#18181b] leading-snug">{hc.name}</p>
+                <p className="text-sm font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-snug">{hc.name}</p>
                 <button
                   onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`); }}
-                  className="text-xs text-[#71717a] hover:text-[#18181b] transition-colors shrink-0 mt-0.5"
+                  className="text-xs text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] transition-colors shrink-0 mt-0.5"
                 >
                   Details →
                 </button>
@@ -221,10 +221,10 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
                   <button
                     key={label}
                     onClick={(e) => { e.stopPropagation(); navigate(url); }}
-                    className="flex flex-col items-center p-2 rounded-md bg-[#f9fafb] hover:bg-[#f4f4f5] transition-colors"
+                    className="flex flex-col items-center p-2 rounded-md bg-[#f9fafb] dark:bg-[#1c1f26] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] transition-colors"
                   >
-                    <span className={`text-base font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>{value}</span>
-                    <span className="text-[10px] text-[#71717a] mt-0.5 text-center leading-tight">{label}</span>
+                    <span className={`text-base font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b] dark:text-[#f4f4f5]'}`}>{value}</span>
+                    <span className="text-[10px] text-[#71717a] dark:text-[#a1a1aa] mt-0.5 text-center leading-tight">{label}</span>
                   </button>
                 ))}
               </div>
@@ -239,10 +239,10 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
   }
 
   return (
-    <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
+    <div className="bg-white dark:bg-[#1e2129] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[8px] overflow-hidden">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
+          <tr className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26]">
             <SortHeader label="Health Center" col="name" sort={sort} dir={dir} onSort={onSort} />
             <SortHeader label="Open Tasks" col="open" sort={sort} dir={dir} onSort={onSort} />
             <SortHeader label="Overdue" col="overdue" sort={sort} dir={dir} onSort={onSort} />
@@ -260,9 +260,9 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
               <tr
                 key={hc.name}
                 onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
-                className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] last:border-0 hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer"
               >
-                <td className="px-4 py-3 font-medium text-[#18181b]">{hc.name}</td>
+                <td className="px-4 py-3 font-medium text-[#18181b] dark:text-[#f4f4f5]">{hc.name}</td>
                 <td className="px-4 py-3">
                   <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=incomplete`); }} className={COUNT_CHIP}>{openCount}</button>
                 </td>
@@ -294,7 +294,7 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
                 <td className="px-4 py-3 text-right">
                   <button
                     onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`); }}
-                    className="text-xs font-medium text-[#71717a] hover:text-[#18181b] transition-colors"
+                    className="text-xs font-medium text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] transition-colors"
                   >
                     View Details →
                   </button>
@@ -429,15 +429,15 @@ function AdminDashboard({
       <div className="flex-1 flex flex-col">
 
         {/* ── Sticky header ── */}
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+        <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
 
           {/* Title + date */}
           <div className="flex items-end justify-between gap-4 mb-1">
             <div>
-              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
+              <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
                 {greeting()}, Tim
               </h1>
-              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+              <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
                 {format(new Date(), 'EEEE, MMMM d')}
               </p>
             </div>
@@ -455,12 +455,12 @@ function AdminDashboard({
               <button
                 key={label}
                 onClick={onClick}
-                className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] rounded-full hover:bg-[#e5e5e5] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] dark:bg-[#1c1f26] rounded-full hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
               >
-                <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>
+                <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b] dark:text-[#f4f4f5]'}`}>
                   {value}
                 </span>
-                <span className="text-xs text-[#71717a]">{label}</span>
+                <span className="text-xs text-[#71717a] dark:text-[#a1a1aa]">{label}</span>
               </button>
             ))}
           </div>
@@ -471,8 +471,8 @@ function AdminDashboard({
               <button key={tab} onClick={() => handleTabChange(tab)}
                 className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab
-                    ? 'border-[#fc6] text-[#18181b]'
-                    : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
+                    ? 'border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
+                    : 'border-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:border-[#e4e4e7] dark:hover:border-[#2a2f3a]'
                 }`}>
                 {tab === 'health-centers' ? 'Health Centers' : 'Projects'}
               </button>
@@ -495,11 +495,11 @@ function AdminDashboard({
                   onClear={() => setHcSearch('')}
                   className="w-[220px]"
                 />
-                <div className="ml-auto flex items-center border border-[#e4e4e7] rounded-md overflow-hidden shrink-0">
+                <div className="ml-auto flex items-center border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md overflow-hidden shrink-0">
                   <button
                     onClick={() => setHcView('grid')}
                     aria-label="Grid view"
-                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] ${hcView === 'grid' ? 'bg-white text-[#18181b]' : 'bg-transparent text-[#71717a] hover:text-[#18181b] hover:bg-[#fafafa]'}`}
+                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] dark:border-[#2a2f3a] ${hcView === 'grid' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a]'}`}
                   >
                     <LayoutGrid className="h-3.5 w-3.5" />
                     Grid
@@ -507,7 +507,7 @@ function AdminDashboard({
                   <button
                     onClick={() => setHcView('list')}
                     aria-label="List view"
-                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'list' ? 'bg-white text-[#18181b]' : 'bg-transparent text-[#71717a] hover:text-[#18181b] hover:bg-[#fafafa]'}`}
+                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'list' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a]'}`}
                   >
                     <List className="h-3.5 w-3.5" />
                     List
@@ -531,7 +531,7 @@ function AdminDashboard({
                     onClear={() => setProjectSearch('')}
                     className="w-[200px]"
                   />
-                  <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
+                  <div className="h-5 w-px bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
 
                   {/* Health Center */}
                   <Popover open={projectHCOpen} onOpenChange={setProjectHCOpen}>
@@ -571,11 +571,11 @@ function AdminDashboard({
 
                   <div className="ml-auto flex items-center gap-3">
                     {/* View toggle */}
-                    <div className="flex items-center border border-[#e4e4e7] rounded-md overflow-hidden shrink-0">
+                    <div className="flex items-center border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md overflow-hidden shrink-0">
                       <button
                         onClick={() => setProjectView('grid')}
                         aria-label="Grid view"
-                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] ${projectView === 'grid' ? 'bg-white text-[#18181b]' : 'bg-transparent text-[#71717a] hover:text-[#18181b] hover:bg-[#fafafa]'}`}
+                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] dark:border-[#2a2f3a] ${projectView === 'grid' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a]'}`}
                       >
                         <LayoutGrid className="h-3.5 w-3.5" />
                         Grid
@@ -583,18 +583,18 @@ function AdminDashboard({
                       <button
                         onClick={() => setProjectView('list')}
                         aria-label="List view"
-                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'list' ? 'bg-white text-[#18181b]' : 'bg-transparent text-[#71717a] hover:text-[#18181b] hover:bg-[#fafafa]'}`}
+                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'list' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a]'}`}
                       >
                         <List className="h-3.5 w-3.5" />
                         List
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-[#71717a] shrink-0">Sort by</span>
+                      <span className="text-xs font-medium text-[#71717a] dark:text-[#a1a1aa] shrink-0">Sort by</span>
                       <select
                         value={projectSort}
                         onChange={(e) => { setProjectSort(e.target.value as ProjectSort); setProjectSortDir(e.target.value === 'name' ? 'asc' : 'desc'); }}
-                        className="text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md px-2.5 py-1.5 cursor-pointer hover:border-[#fc6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+                        className="text-xs font-medium text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md px-2.5 py-1.5 cursor-pointer hover:border-[#fc6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
                       >
                         {PROJECT_SORT_OPTIONS.map(o => (
                           <option key={o.value} value={o.value}>{o.label}</option>
@@ -621,8 +621,8 @@ function AdminDashboard({
 
                   return groups.map(group => (
                     <div key={group.name}>
-                      <h3 className="text-xs font-semibold text-[#71717a] uppercase tracking-wide mb-3">
-                        {group.name} <span className="text-[#a1a1aa]">({group.projects.length})</span>
+                      <h3 className="text-xs font-semibold text-[#71717a] dark:text-[#a1a1aa] uppercase tracking-wide mb-3">
+                        {group.name} <span className="text-[#a1a1aa] dark:text-[#71717a]">({group.projects.length})</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {group.projects.map(p => {
@@ -646,13 +646,13 @@ function AdminDashboard({
                                     : `/admin/project-builder/${p.id}`,
                                 )
                               }
-                              className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
+                              className="bg-white dark:bg-[#1e2129] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
                             >
-                              <p className="text-sm font-semibold text-[#18181b] mb-3 truncate">{p.name}</p>
+                              <p className="text-sm font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-3 truncate">{p.name}</p>
                               <ProgressBar done={done} total={total} color={status.bar} />
                               <div className="mt-3 flex items-center justify-between gap-2">
                                 <Pill color={status.pill}>{status.label}</Pill>
-                                <span className="text-xs text-[#71717a] truncate text-right">{centerLabel}</span>
+                                <span className="text-xs text-[#71717a] dark:text-[#a1a1aa] truncate text-right">{centerLabel}</span>
                               </div>
                             </button>
                           );
@@ -663,10 +663,10 @@ function AdminDashboard({
                 })()}
                 </div>
                 ) : (
-                <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
+                <div className="bg-white dark:bg-[#1e2129] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[8px] overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-[#e4e4e7] bg-[#f4f4f5]">
+                      <tr className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26]">
                         <SortHeader label="Project"       col="name"     sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
                         <SortHeader label="Progress"      col="progress" sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} className="w-[220px]" />
                         <SortHeader label="Health Center" col="centers"  sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
@@ -694,12 +694,12 @@ function AdminDashboard({
                                   : `/admin/project-builder/${p.id}`,
                               )
                             }
-                            className="border-b border-[#e4e4e7] last:border-0 hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                            className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] last:border-0 hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer"
                           >
-                            <td className="px-4 py-3 font-medium text-[#18181b]">{p.name}</td>
+                            <td className="px-4 py-3 font-medium text-[#18181b] dark:text-[#f4f4f5]">{p.name}</td>
                             <td className="px-4 py-3"><ProgressBar done={done} total={total} /></td>
-                            <td className="px-4 py-3 text-[#71717a]">{centerLabel}</td>
-                            <td className="px-4 py-3 text-[#71717a]">{done}/{total}</td>
+                            <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{centerLabel}</td>
+                            <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{done}/{total}</td>
                           </tr>
                         );
                       })}

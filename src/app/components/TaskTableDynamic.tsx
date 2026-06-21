@@ -205,13 +205,13 @@ function TaskTableDynamicInner({
       {/* Column headers. The bottom border lives on the outermost element
           so it spans the same width as the bleed (-mx-6 px-6) — i.e. fully
           across the page section, even past the table's inner padding. */}
-      <div className="hidden lg:block h-[40px] sticky top-0 z-20 shrink-0 w-[calc(100%+48px)] bg-white -mx-6 px-6 border-b border-[#e4e4e7]">
+      <div className="hidden lg:block h-[40px] sticky top-0 z-20 shrink-0 w-[calc(100%+48px)] bg-white dark:bg-[#111318] -mx-6 px-6 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
         <div
           className="flex flex-row items-center size-full"
           style={{ minWidth: `${minHeaderWidth}px` }}
         >
           <div
-            className="content-stretch flex items-center relative bg-white"
+            className="content-stretch flex items-center relative bg-white dark:bg-[#111318]"
             style={{ width: '100%', height: '100%' }}
           >
             {!disableCompletion && (

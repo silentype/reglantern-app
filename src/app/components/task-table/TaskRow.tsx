@@ -134,7 +134,7 @@ export const TaskRow = memo(function TaskRow({
 
   const isSelected = selectedTaskId === task.id;
   const outlineClass = `absolute border border-solid inset-[-1px] pointer-events-none rounded-[9px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-colors z-10 ${
-    isSelected ? 'border-[#47515B]' : 'border-[#cdd7e1]'
+    isSelected ? 'border-[#47515B] dark:border-[#5a7a9a]' : 'border-[#cdd7e1] dark:border-[#2a2f3a]'
   }`;
 
   // Minimum row width prevents background cutoff. The checkbox column is
@@ -194,7 +194,7 @@ export const TaskRow = memo(function TaskRow({
     <>
       {/* Desktop layout */}
       <div
-        className="hidden lg:block bg-white h-[40px] relative rounded-[8px] shrink-0 transition-colors"
+        className="hidden lg:block bg-white dark:bg-[#1e2129] h-[40px] relative rounded-[8px] shrink-0 transition-colors"
         style={{ minWidth: `${minRowWidth}px`, width: '100%' }}
       >
         <div aria-hidden="true" className={outlineClass} />
@@ -212,7 +212,7 @@ export const TaskRow = memo(function TaskRow({
               >
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] group-active:bg-[#f5f5f5] rounded-l-[8px] transition-colors"
+                  className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] dark:group-hover:bg-[#2a2f3a] group-active:bg-[#f5f5f5] dark:group-active:bg-[#2a2f3a] rounded-l-[8px] transition-colors"
                 />
                 <button className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer z-10">
                   <CheckboxIcon completed={task.completed} />
@@ -228,7 +228,7 @@ export const TaskRow = memo(function TaskRow({
             <div className="ml-auto content-stretch flex h-full items-center justify-center relative shrink-0 w-[60px] group/ellipsis">
               <div
                 aria-hidden="true"
-                className="absolute inset-0 bg-transparent group-hover/ellipsis:bg-[#f5f5f5] transition-colors rounded-r-[8px]"
+                className="absolute inset-0 bg-transparent group-hover/ellipsis:bg-[#f5f5f5] dark:group-hover/ellipsis:bg-[#2a2f3a] transition-colors rounded-r-[8px]"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -236,7 +236,7 @@ export const TaskRow = memo(function TaskRow({
                     className="flex items-center justify-center cursor-pointer relative z-10 p-2 rounded"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <MoreHorizontal className="size-[20px] text-[#18181b]" />
+                    <MoreHorizontal className="size-[20px] text-[#18181b] dark:text-[#f4f4f5]" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -271,7 +271,7 @@ export const TaskRow = memo(function TaskRow({
       {/* Mobile layout — simpler than desktop. No relative-date mode,
           no shared popover state, no column reordering. Kept inline
           because its handlers don't overlap with the desktop cells'. */}
-      <div className="lg:hidden bg-white relative rounded-[8px] shrink-0 w-full transition-colors p-4">
+      <div className="lg:hidden bg-white dark:bg-[#1e2129] relative rounded-[8px] shrink-0 w-full transition-colors p-4">
         <div aria-hidden="true" className={outlineClass} />
         <div className="flex items-start gap-3 mb-4">
           {!disableCompletion && (
@@ -285,7 +285,7 @@ export const TaskRow = memo(function TaskRow({
           <div className="flex-1 min-w-0">
             <button
               onClick={onClick}
-              className="font-['Geist:Regular',sans-serif] font-normal text-[#18181b] text-[14px] leading-[20px] text-left w-full overflow-hidden text-ellipsis"
+              className="font-['Geist:Regular',sans-serif] font-normal text-[#18181b] dark:text-[#f4f4f5] text-[14px] leading-[20px] text-left w-full overflow-hidden text-ellipsis"
               style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
             >
               {task.title}
@@ -294,7 +294,7 @@ export const TaskRow = memo(function TaskRow({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex items-center justify-center hover:bg-[#f5f5f5] transition-colors cursor-pointer p-1 rounded"
+                className="flex items-center justify-center hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer p-1 rounded"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="size-[20px] text-[#18181b]" />
@@ -323,13 +323,13 @@ export const TaskRow = memo(function TaskRow({
         </div>
         <div className="space-y-3 pl-8">
           <div className="flex flex-col gap-1">
-            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] text-[12px] leading-[20px]">
+            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
               Due Date
             </label>
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] hover:bg-[#e5e5e5] rounded-md transition-colors text-left w-full"
+                  className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] dark:bg-[#1c1f26] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] rounded-md transition-colors text-left w-full"
                   onClick={(e) => e.stopPropagation()}
                   title={task.dueDate}
                 >
@@ -365,7 +365,7 @@ export const TaskRow = memo(function TaskRow({
             </Popover>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] text-[12px] leading-[20px]">
+            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
               Assigned To
             </label>
             <Select
@@ -373,7 +373,7 @@ export const TaskRow = memo(function TaskRow({
               onValueChange={handleMobileUserChange}
             >
               <SelectTrigger
-                className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] hover:bg-[#e5e5e5] data-[state=open]:bg-[#e5e5e5] border-0 rounded-md shadow-none focus:ring-0 transition-colors w-full [&>svg]:hidden"
+                className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] dark:bg-[#1c1f26] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] data-[state=open]:bg-[#e5e5e5] dark:data-[state=open]:bg-[#2a2f3a] border-0 rounded-md shadow-none focus:ring-0 transition-colors w-full [&>svg]:hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {task.assignedTo ? (
@@ -395,7 +395,7 @@ export const TaskRow = memo(function TaskRow({
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] text-[12px] leading-[20px]">
+            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
               Health Center
             </label>
             <Select
@@ -403,7 +403,7 @@ export const TaskRow = memo(function TaskRow({
               onValueChange={handleMobileHealthCenterChange}
             >
               <SelectTrigger
-                className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] hover:bg-[#e5e5e5] data-[state=open]:bg-[#e5e5e5] border-0 rounded-md shadow-none focus:ring-0 transition-colors w-full [&>svg]:hidden"
+                className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] dark:bg-[#1c1f26] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] data-[state=open]:bg-[#e5e5e5] dark:data-[state=open]:bg-[#2a2f3a] border-0 rounded-md shadow-none focus:ring-0 transition-colors w-full [&>svg]:hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {task.healthCenter ? (
