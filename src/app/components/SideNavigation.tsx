@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react';
-import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, FileCheck2, Settings2, UserPlus, HelpCircle, Info, PanelLeftClose, PanelLeftOpen, Pin } from 'lucide-react';
+import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, FileCheck2, Settings2, UserPlus, HelpCircle, Info, PanelLeftClose, PanelLeftOpen, Pin, Sun, Moon } from 'lucide-react';
 
 interface SideNavigationProps {
   pageType: 'tasks' | 'checklists' | 'admin' | 'settings';
@@ -7,6 +7,8 @@ interface SideNavigationProps {
   onItemSelect?: (item: string) => void;
   isOpen: boolean;
   onToggle?: () => void;
+  darkMode?: boolean;
+  onToggleDarkMode?: () => void;
 }
 
 const TASKS_ITEMS = ['My Tasks'] as const;
@@ -55,12 +57,12 @@ const NavItem = memo(({ item, isSelected, onClick, isExpanded, isPinned, onToggl
       <button
         onClick={onClick}
         title={!isExpanded ? item : undefined}
-        className={`h-[40px] w-full rounded-[6px] flex items-center text-sm font-medium text-[#18181b] leading-[20px] transition-all duration-300 hover:bg-[#e4e4e7] overflow-hidden whitespace-nowrap ${
-          isSelected ? 'bg-[#cdd7e1]' : ''
+        className={`h-[40px] w-full rounded-[6px] flex items-center text-sm font-medium text-[#18181b] dark:text-[#f4f4f5] leading-[20px] transition-all duration-300 hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] overflow-hidden whitespace-nowrap ${
+          isSelected ? 'bg-[#cdd7e1] dark:bg-[#2a3a4a]' : ''
         } ${isExpanded ? 'pl-3 pr-9' : 'pl-[15px] pr-0'}`}
       >
         <div className="shrink-0 size-[20px] flex items-center justify-center">
-          <Icon size={18} className="text-[#18181b]" strokeWidth={2} />
+          <Icon size={18} className="text-[#18181b] dark:text-[#f4f4f5]" strokeWidth={2} />
         </div>
         <span className={`ml-2 transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
           {item}
@@ -93,12 +95,12 @@ const UtilityButton = memo(({ label, isExpanded }: { label: string; isExpanded: 
   return (
     <button
       title={!isExpanded ? label : undefined}
-      className={`h-[40px] w-full rounded-[6px] flex items-center text-sm font-medium text-[#18181b] leading-[20px] hover:bg-[#e4e4e7] transition-all duration-300 overflow-hidden whitespace-nowrap ${
+      className={`h-[40px] w-full rounded-[6px] flex items-center text-sm font-medium text-[#18181b] dark:text-[#f4f4f5] leading-[20px] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] transition-all duration-300 overflow-hidden whitespace-nowrap ${
         isExpanded ? 'pl-3 pr-3' : 'pl-[15px] pr-0'
       }`}
     >
       <div className="shrink-0 size-[20px] flex items-center justify-center">
-        <Icon size={18} className="text-[#18181b]" strokeWidth={2} />
+        <Icon size={18} className="text-[#18181b] dark:text-[#f4f4f5]" strokeWidth={2} />
       </div>
       <span className={`ml-2 transition-opacity duration-200 ${isExpanded ? 'opacity-100' : 'opacity-0'}`}>
         {label}
@@ -108,7 +110,7 @@ const UtilityButton = memo(({ label, isExpanded }: { label: string; isExpanded: 
 });
 UtilityButton.displayName = 'UtilityButton';
 
-export const SideNavigation = memo(function SideNavigation({ pageType, selectedItem, onItemSelect, isOpen, onToggle }: SideNavigationProps) {
+export const SideNavigation = memo(function SideNavigation({ pageType, selectedItem, onItemSelect, isOpen, onToggle, darkMode = false, onToggleDarkMode }: SideNavigationProps) {
   const navItems = useMemo(
     () =>
       pageType === 'tasks'
@@ -142,7 +144,7 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
 
   return (
     <div
-      className={`bg-[#f4f4f5] h-[calc(100vh-80px)] flex flex-col justify-between fixed left-0 top-[80px] z-40 transition-all duration-300 ease-in-out ${
+      className={`bg-[#f4f4f5] dark:bg-[#1c1f26] h-[calc(100vh-80px)] flex flex-col justify-between fixed left-0 top-[80px] z-40 transition-all duration-300 ease-in-out ${
         isOpen ? 'w-[280px]' : 'w-[66px]'
       }`}
     >
@@ -153,7 +155,7 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
           <button
             onClick={onToggle}
             aria-label="Toggle side navigation"
-            className={`h-[40px] w-full rounded-[6px] flex items-center hover:bg-[#e4e4e7] transition-all duration-300 overflow-hidden whitespace-nowrap ${isOpen ? 'justify-end pr-3' : 'pl-[15px]'}`}
+            className={`h-[40px] w-full rounded-[6px] flex items-center hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] transition-all duration-300 overflow-hidden whitespace-nowrap ${isOpen ? 'justify-end pr-3' : 'pl-[15px]'}`}
           >
             <div className="shrink-0 size-[20px] flex items-center justify-center">
               {isOpen
@@ -180,7 +182,7 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
                 />
               ))}
             </div>
-            <div className="mx-3 my-2 border-t border-[#cdd7e1]" />
+            <div className="mx-3 my-2 border-t border-[#cdd7e1] dark:border-[#2a2f3a]" />
           </>
         )}
 
@@ -201,11 +203,37 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
       </div>
 
       {/* Bottom Section */}
-      <div className="border-t border-[#cdd7e1]">
+      <div className="border-t border-[#cdd7e1] dark:border-[#2a2f3a]">
         <div className="flex flex-col gap-1 px-2 py-2">
           <UtilityButton label="Invite Teammates" isExpanded={isOpen} />
           <UtilityButton label="Ask an Expert" isExpanded={isOpen} />
           <UtilityButton label="About" isExpanded={isOpen} />
+
+          {/* Dark mode toggle */}
+          <button
+            onClick={onToggleDarkMode}
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className={`h-[40px] w-full rounded-[6px] flex items-center text-sm font-medium leading-[20px] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] transition-all duration-300 overflow-hidden whitespace-nowrap ${
+              isOpen ? 'pl-3 pr-3 justify-between' : 'pl-[15px] pr-0'
+            }`}
+          >
+            <div className="flex items-center gap-0 overflow-hidden">
+              <div className="shrink-0 size-[20px] flex items-center justify-center">
+                {darkMode
+                  ? <Sun size={18} strokeWidth={2} className="text-[#18181b] dark:text-[#f4f4f5]" />
+                  : <Moon size={18} strokeWidth={2} className="text-[#18181b] dark:text-[#f4f4f5]" />
+                }
+              </div>
+              <span className={`ml-2 text-[#18181b] dark:text-[#f4f4f5] transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
+                {darkMode ? 'Light Mode' : 'Dark Mode'}
+              </span>
+            </div>
+            {isOpen && (
+              <div className={`w-8 h-4 rounded-full relative flex-shrink-0 transition-colors duration-200 ${darkMode ? 'bg-[#fc6]' : 'bg-[#d4d4d8]'}`}>
+                <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-200 ${darkMode ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              </div>
+            )}
+          </button>
         </div>
       </div>
     </div>

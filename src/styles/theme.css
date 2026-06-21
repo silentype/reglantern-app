@@ -97,6 +97,14 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+
+  /* Brand overrides for dark mode */
+  --app-background: #111318;
+  --sidebar-bg: #1c1f26;
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --header-dark: #1c1f26;
 }
 
 @theme inline {

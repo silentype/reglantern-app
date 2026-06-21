@@ -82,6 +82,8 @@ const PageFallback = () => (
   </div>
 );
 
+const DARK_MODE_STORAGE_KEY = 'reglantern.darkMode';
+
 // ── Session-based password gate ────────────────────────────────────────────
 // Low-security: just keeps casual visitors out. Clears on tab close.
 const APP_PASSWORD = 'reglantern2026!';
@@ -287,6 +289,13 @@ export default function App() {
 
   // Session-based password gate — clears when the tab closes.
   const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === '1');
+
+  // Dark mode — persisted to localStorage, applied as .dark on <html>.
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem(DARK_MODE_STORAGE_KEY) === '1');
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem(DARK_MODE_STORAGE_KEY, darkMode ? '1' : '0');
+  }, [darkMode]);
 
   // Simulated user login — persisted to localStorage.
   const [currentUser, setCurrentUser] = useState<SimulatedUser>(() => {
@@ -835,7 +844,7 @@ export default function App() {
   if (!authed) return <LoginScreen onAuth={() => setAuthed(true)} />;
 
   return (
-    <div className="h-screen bg-[#f9fafb] flex flex-col">
+    <div className="h-screen bg-[#f9fafb] dark:bg-[#111318] flex flex-col">
       <Toaster 
         position="bottom-right" 
         toastOptions={{
@@ -872,6 +881,8 @@ export default function App() {
           onItemSelect={handleSideNavItemSelect}
           isOpen={sideNavOpen}
           onToggle={toggleSideNav}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode(d => !d)}
         />
 
         {/* Main Page Content */}
