@@ -282,7 +282,7 @@ export default function App() {
   }, [location.pathname, navigate]);
 
   // UI-only state (intentionally not in URL — user preference / transient)
-  const [sideNavOpen, setSideNavOpen] = useState(true);
+  const [sideNavOpen, setSideNavOpen] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
 
   // Session-based password gate — clears when the tab closes.
