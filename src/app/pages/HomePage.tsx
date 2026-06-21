@@ -153,7 +153,7 @@ interface HCRow {
   assignedToMeCount: number;
 }
 
-function HealthCenterTable({ rows, navigate, view = 'list' }: { rows: HCRow[]; navigate: (to: string) => void; view?: 'grid' | 'list' }) {
+function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { rows: HCRow[]; navigate: (to: string) => void; view?: 'grid' | 'list'; search?: string }) {
   const [sort, setSort] = useState<HCSort>('overdue');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
 
@@ -183,10 +183,16 @@ function HealthCenterTable({ rows, navigate, view = 'list' }: { rows: HCRow[]; n
     );
   }, [rows, sort, dir]);
 
+  const filtered = useMemo(() => {
+    if (!search.trim()) return sorted;
+    const q = search.toLowerCase();
+    return sorted.filter(r => r.hc.name.toLowerCase().includes(q));
+  }, [sorted, search]);
+
   if (view === 'grid') {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {sorted.map(({ hc, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount, assignedToMeCount }) => {
+        {filtered.map(({ hc, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount, assignedToMeCount }) => {
           const hcQuery = `healthCenter=${encodeURIComponent(hc.name)}`;
           return (
             <button
@@ -225,8 +231,8 @@ function HealthCenterTable({ rows, navigate, view = 'list' }: { rows: HCRow[]; n
             </button>
           );
         })}
-        {sorted.length === 0 && (
-          <p className="col-span-3 py-8 text-center text-sm text-[#71717a]">No health centers yet</p>
+        {filtered.length === 0 && (
+          <p className="col-span-3 py-8 text-center text-sm text-[#71717a]">{search ? 'No matching health centers' : 'No health centers yet'}</p>
         )}
       </div>
     );
@@ -248,7 +254,7 @@ function HealthCenterTable({ rows, navigate, view = 'list' }: { rows: HCRow[]; n
           </tr>
         </thead>
         <tbody>
-          {sorted.map(({ hc, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount, assignedToMeCount }) => {
+          {filtered.map(({ hc, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount, assignedToMeCount }) => {
             const hcQuery = `healthCenter=${encodeURIComponent(hc.name)}`;
             return (
               <tr
@@ -296,8 +302,8 @@ function HealthCenterTable({ rows, navigate, view = 'list' }: { rows: HCRow[]; n
               </tr>
             );
           })}
-          {sorted.length === 0 && (
-            <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#71717a]">No health centers yet</td></tr>
+          {filtered.length === 0 && (
+            <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#71717a]">{search ? 'No matching health centers' : 'No health centers yet'}</td></tr>
           )}
         </tbody>
       </table>
@@ -336,6 +342,7 @@ function AdminDashboard({
   const [projectSortDir, setProjectSortDir] = useState<'asc' | 'desc'>('asc');
   const [projectView, setProjectView] = useState<'grid' | 'list'>('grid');
   const [hcView, setHcView] = useState<'grid' | 'list'>('list');
+  const [hcSearch, setHcSearch] = useState<string>('');
   const [projectSearch, setProjectSearch] = useState<string>('');
   const [projectHCFilter, setProjectHCFilter] = useState<string[]>(['All Health Centers']);
   const [projectHCOpen, setProjectHCOpen] = useState(false);
@@ -480,12 +487,19 @@ function AdminDashboard({
           {/* Health Centers tab */}
           {activeTab === 'health-centers' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-end">
-                <div className="flex items-center bg-[#f4f4f5] rounded-md p-0.5 gap-0.5 shrink-0">
+              <div className="flex items-center gap-2">
+                <SearchInput
+                  placeholder="Search health centers…"
+                  value={hcSearch}
+                  onChange={(e) => setHcSearch(e.target.value)}
+                  onClear={() => setHcSearch('')}
+                  className="w-[220px]"
+                />
+                <div className="ml-auto flex items-center border border-[#e4e4e7] rounded-md overflow-hidden shrink-0">
                   <button
                     onClick={() => setHcView('grid')}
                     aria-label="Grid view"
-                    className={`px-2.5 py-1.5 rounded flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'grid' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] ${hcView === 'grid' ? 'bg-white text-[#18181b]' : 'bg-transparent text-[#71717a] hover:text-[#18181b] hover:bg-[#fafafa]'}`}
                   >
                     <LayoutGrid className="h-3.5 w-3.5" />
                     Grid
@@ -493,14 +507,14 @@ function AdminDashboard({
                   <button
                     onClick={() => setHcView('list')}
                     aria-label="List view"
-                    className={`px-2.5 py-1.5 rounded flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'list' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'list' ? 'bg-white text-[#18181b]' : 'bg-transparent text-[#71717a] hover:text-[#18181b] hover:bg-[#fafafa]'}`}
                   >
                     <List className="h-3.5 w-3.5" />
                     List
                   </button>
                 </div>
               </div>
-              <HealthCenterTable rows={hcRows} navigate={navigate} view={hcView} />
+              <HealthCenterTable rows={hcRows} navigate={navigate} view={hcView} search={hcSearch} />
             </div>
           )}
 
@@ -557,11 +571,11 @@ function AdminDashboard({
 
                   <div className="ml-auto flex items-center gap-3">
                     {/* View toggle */}
-                    <div className="flex items-center bg-[#f4f4f5] rounded-md p-0.5 gap-0.5 shrink-0">
+                    <div className="flex items-center border border-[#e4e4e7] rounded-md overflow-hidden shrink-0">
                       <button
                         onClick={() => setProjectView('grid')}
                         aria-label="Grid view"
-                        className={`px-2.5 py-1.5 rounded flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'grid' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] ${projectView === 'grid' ? 'bg-white text-[#18181b]' : 'bg-transparent text-[#71717a] hover:text-[#18181b] hover:bg-[#fafafa]'}`}
                       >
                         <LayoutGrid className="h-3.5 w-3.5" />
                         Grid
@@ -569,7 +583,7 @@ function AdminDashboard({
                       <button
                         onClick={() => setProjectView('list')}
                         aria-label="List view"
-                        className={`px-2.5 py-1.5 rounded flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'list' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'list' ? 'bg-white text-[#18181b]' : 'bg-transparent text-[#71717a] hover:text-[#18181b] hover:bg-[#fafafa]'}`}
                       >
                         <List className="h-3.5 w-3.5" />
                         List
