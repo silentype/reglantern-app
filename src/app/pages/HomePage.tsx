@@ -153,7 +153,7 @@ interface HCRow {
   assignedToMeCount: number;
 }
 
-function HealthCenterTable({ rows, navigate }: { rows: HCRow[]; navigate: (to: string) => void }) {
+function HealthCenterTable({ rows, navigate, view = 'list' }: { rows: HCRow[]; navigate: (to: string) => void; view?: 'grid' | 'list' }) {
   const [sort, setSort] = useState<HCSort>('overdue');
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
 
@@ -182,6 +182,55 @@ function HealthCenterTable({ rows, navigate }: { rows: HCRow[]; navigate: (to: s
       sort === 'name' ? sign * a.hc.name.localeCompare(b.hc.name) : sign * (num(a) - num(b)),
     );
   }, [rows, sort, dir]);
+
+  if (view === 'grid') {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {sorted.map(({ hc, openCount, overdueCount, thisWeekCount, completedCount, unassignedCount, assignedToMeCount }) => {
+          const hcQuery = `healthCenter=${encodeURIComponent(hc.name)}`;
+          return (
+            <button
+              key={hc.name}
+              onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
+              className="bg-white border border-[#e4e4e7] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+            >
+              <div className="flex items-start justify-between gap-2 mb-4">
+                <p className="text-sm font-semibold text-[#18181b] leading-snug">{hc.name}</p>
+                <button
+                  onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`); }}
+                  className="text-xs text-[#71717a] hover:text-[#18181b] transition-colors shrink-0 mt-0.5"
+                >
+                  Details →
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: 'Open', value: openCount, url: `/tasks/my-tasks?${hcQuery}&status=incomplete` },
+                  { label: 'Overdue', value: overdueCount, url: `/tasks/my-tasks?${hcQuery}&due=overdue&status=incomplete`, danger: true },
+                  { label: 'This Week', value: thisWeekCount, url: `/tasks/my-tasks?${hcQuery}&due=thisweek&status=incomplete` },
+                  { label: 'Completed', value: completedCount, url: `/tasks/my-tasks?${hcQuery}&status=complete` },
+                  { label: 'Unassigned', value: unassignedCount, url: `/tasks/my-tasks?${hcQuery}&assigned=unassigned` },
+                  { label: 'Mine', value: assignedToMeCount, url: `/tasks/my-tasks?${hcQuery}&assigned=${encodeURIComponent(CURRENT_USER)}` },
+                ].map(({ label, value, url, danger }) => (
+                  <button
+                    key={label}
+                    onClick={(e) => { e.stopPropagation(); navigate(url); }}
+                    className="flex flex-col items-center p-2 rounded-md bg-[#f9fafb] hover:bg-[#f4f4f5] transition-colors"
+                  >
+                    <span className={`text-base font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b]'}`}>{value}</span>
+                    <span className="text-[10px] text-[#71717a] mt-0.5 text-center leading-tight">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </button>
+          );
+        })}
+        {sorted.length === 0 && (
+          <p className="col-span-3 py-8 text-center text-sm text-[#71717a]">No health centers yet</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border border-[#e4e4e7] rounded-[8px] overflow-hidden">
@@ -286,6 +335,7 @@ function AdminDashboard({
   const [projectSort, setProjectSort] = useState<ProjectSort>('name');
   const [projectSortDir, setProjectSortDir] = useState<'asc' | 'desc'>('asc');
   const [projectView, setProjectView] = useState<'grid' | 'list'>('grid');
+  const [hcView, setHcView] = useState<'grid' | 'list'>('list');
   const [projectSearch, setProjectSearch] = useState<string>('');
   const [projectHCFilter, setProjectHCFilter] = useState<string[]>(['All Health Centers']);
   const [projectHCOpen, setProjectHCOpen] = useState(false);
@@ -429,8 +479,28 @@ function AdminDashboard({
 
           {/* Health Centers tab */}
           {activeTab === 'health-centers' && (
-            <div className="space-y-8">
-              <HealthCenterTable rows={hcRows} navigate={navigate} />
+            <div className="space-y-4">
+              <div className="flex items-center justify-end">
+                <div className="flex items-center bg-[#f4f4f5] rounded-md p-0.5 gap-0.5 shrink-0">
+                  <button
+                    onClick={() => setHcView('grid')}
+                    aria-label="Grid view"
+                    className={`px-2.5 py-1.5 rounded flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'grid' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Grid
+                  </button>
+                  <button
+                    onClick={() => setHcView('list')}
+                    aria-label="List view"
+                    className={`px-2.5 py-1.5 rounded flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'list' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                    List
+                  </button>
+                </div>
+              </div>
+              <HealthCenterTable rows={hcRows} navigate={navigate} view={hcView} />
             </div>
           )}
 
@@ -491,16 +561,18 @@ function AdminDashboard({
                       <button
                         onClick={() => setProjectView('grid')}
                         aria-label="Grid view"
-                        className={`p-1.5 rounded transition-colors ${projectView === 'grid' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                        className={`px-2.5 py-1.5 rounded flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'grid' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
                       >
-                        <LayoutGrid className="h-4 w-4" />
+                        <LayoutGrid className="h-3.5 w-3.5" />
+                        Grid
                       </button>
                       <button
                         onClick={() => setProjectView('list')}
                         aria-label="List view"
-                        className={`p-1.5 rounded transition-colors ${projectView === 'list' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
+                        className={`px-2.5 py-1.5 rounded flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'list' ? 'bg-white text-[#18181b] shadow-sm' : 'text-[#71717a] hover:text-[#18181b]'}`}
                       >
-                        <List className="h-4 w-4" />
+                        <List className="h-3.5 w-3.5" />
+                        List
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
