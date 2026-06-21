@@ -82,6 +82,77 @@ const PageFallback = () => (
   </div>
 );
 
+// ── Session-based password gate ────────────────────────────────────────────
+// Low-security: just keeps casual visitors out. Clears on tab close.
+const APP_PASSWORD = 'reglantern2026!';
+const SESSION_KEY  = 'reglantern.authed';
+
+function LoginScreen({ onAuth }: { onAuth: () => void }) {
+  const [value, setValue] = useState('');
+  const [error, setError] = useState(false);
+  const [shake, setShake] = useState(false);
+
+  const submit = () => {
+    if (value === APP_PASSWORD) {
+      sessionStorage.setItem(SESSION_KEY, '1');
+      onAuth();
+    } else {
+      setError(true);
+      setShake(true);
+      setTimeout(() => setShake(false), 500);
+      setValue('');
+    }
+  };
+
+  return (
+    <div className="h-screen bg-[#32383e] flex flex-col items-center justify-center gap-6">
+      <img
+        src={new URL('./../../assets/5c768d7f259dcbb31703dfef4853e9bbf108c1dc.png', import.meta.url).href}
+        alt="RegLantern"
+        className="h-10 w-auto opacity-90"
+        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+      />
+      <div
+        className={`bg-white rounded-[10px] shadow-2xl p-8 w-[340px] flex flex-col gap-4 transition-all ${shake ? 'animate-[shake_0.4s_ease]' : ''}`}
+        style={shake ? { animation: 'shake 0.4s ease' } : {}}
+      >
+        <div>
+          <h1 className="text-lg font-semibold text-[#18181b]">Welcome to RegLantern</h1>
+          <p className="text-sm text-[#71717a] mt-0.5">Enter the access password to continue.</p>
+        </div>
+        <input
+          type="password"
+          autoFocus
+          placeholder="Password"
+          value={value}
+          onChange={(e) => { setValue(e.target.value); setError(false); }}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          className={`w-full px-3 py-2.5 text-sm border rounded-[6px] outline-none transition-colors ${
+            error
+              ? 'border-[#dc2626] focus:border-[#dc2626] bg-[#fef2f2]'
+              : 'border-[#e4e4e7] focus:border-[#fc6]'
+          }`}
+        />
+        {error && <p className="text-xs text-[#dc2626] -mt-2">Incorrect password. Try again.</p>}
+        <button
+          onClick={submit}
+          className="w-full bg-[#fc6] hover:bg-[#eab308] active:bg-[#ca8a04] text-[#18181b] font-semibold text-sm py-2.5 rounded-[6px] transition-colors"
+        >
+          Sign in
+        </button>
+      </div>
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          20%       { transform: translateX(-8px); }
+          40%       { transform: translateX(8px); }
+          60%       { transform: translateX(-6px); }
+          80%       { transform: translateX(6px); }
+        }
+      `}</style>
+    </div>
+  );
+}
 
 // URL <-> sidebar nav item mappings. URL is the source of truth for navigation.
 const NAV_ITEM_TO_URL: Record<string, string> = {
@@ -131,11 +202,11 @@ export default function App() {
 
   // On /home, second segment selects the tab
   const homeTab: 'health-centers' | 'tasks' | 'projects' =
-    sectionSeg === 'home' && itemSeg === 'tasks'
-      ? 'tasks'
-      : sectionSeg === 'home' && itemSeg === 'projects'
-        ? 'projects'
-        : 'health-centers';
+    sectionSeg === 'home' && itemSeg === 'health-centers'
+      ? 'health-centers'
+      : sectionSeg === 'home' && itemSeg === 'tasks'
+        ? 'tasks'
+        : 'projects';
 
   const currentPage: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings' | 'test' =
     sectionSeg === 'home' ? 'home' :
@@ -200,7 +271,7 @@ export default function App() {
   // Redirect bare / and bare section URLs to canonical defaults
   useEffect(() => {
     if (location.pathname === '/') {
-      navigate('/home', { replace: true });
+      navigate('/home/projects', { replace: true });
     } else if (location.pathname === '/tasks') {
       navigate('/tasks/my-tasks', { replace: true });
     } else if (location.pathname === '/checklists') {
@@ -213,6 +284,9 @@ export default function App() {
   // UI-only state (intentionally not in URL — user preference / transient)
   const [sideNavOpen, setSideNavOpen] = useState(true);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+
+  // Session-based password gate — clears when the tab closes.
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === '1');
 
   // Simulated user login — persisted to localStorage.
   const [currentUser, setCurrentUser] = useState<SimulatedUser>(() => {
@@ -664,7 +738,7 @@ export default function App() {
   }, []);
 
   const handleNavChange = useCallback((page: 'home' | 'tasks' | 'checklists' | 'admin' | 'settings') => {
-    if (page === 'home') navigate('/home');
+    if (page === 'home') navigate('/home/projects');
     else if (page === 'tasks') navigate('/tasks/my-tasks');
     else if (page === 'admin') navigate('/admin/project-builder');
     else if (page === 'settings') navigate('/settings');
@@ -757,6 +831,8 @@ export default function App() {
     () => (selectedProjectId !== null ? projects.find(p => p.id === selectedProjectId) : undefined),
     [projects, selectedProjectId]
   );
+
+  if (!authed) return <LoginScreen onAuth={() => setAuthed(true)} />;
 
   return (
     <div className="h-screen bg-[#f9fafb] flex flex-col">

@@ -280,7 +280,7 @@ function AdminDashboard({
   const handleTabChange = useCallback((tab: AdminTab) => {
     setActiveTab(tab);
     const search = location.search;
-    navigate(tab === 'health-centers' ? `/home${search}` : `/home/${tab}${search}`);
+    navigate(`/home/${tab}${search}`);
   }, [navigate, location.search]);
 
   const [projectSort, setProjectSort] = useState<ProjectSort>('name');
