@@ -21,6 +21,7 @@ import {
   Building2,
   AlertCircle,
   Tag,
+  FolderOpen,
 } from 'lucide-react';
 
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -58,7 +59,9 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
   //   ?due=overdue|thisweek|week…  -> Due-Date filter
   //   ?status=incomplete|complete  -> Status filter
   //   ?healthCenter=<name>         -> Health Center filter
+  //   ?project=<project name>      -> Project filter
   const urlCategory = searchParams.get('category') ?? '';
+  const urlProject = searchParams.get('project') ?? '';
   const urlAssigned = searchParams.get('assigned') ?? '';
   const urlDue = searchParams.get('due') ?? '';
   const urlStatus = searchParams.get('status') ?? '';
@@ -68,11 +71,17 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
     urlCategory ? [urlCategory] : ['all']
   );
   const [categoryOpen, setCategoryOpen] = useState(false);
-  // Keep the selection in sync when the deep-link param changes (e.g. clicking
-  // a different project card while the page stays mounted).
   useEffect(() => {
     setCategoryFilter(urlCategory ? [urlCategory] : ['all']);
   }, [urlCategory]);
+
+  const [projectFilter, setProjectFilter] = useState<string[]>(() =>
+    urlProject ? [urlProject] : ['all']
+  );
+  const [projectOpen, setProjectOpen] = useState(false);
+  useEffect(() => {
+    setProjectFilter(urlProject ? [urlProject] : ['all']);
+  }, [urlProject]);
 
   const [statusFilter, setStatusFilter] = useState<string[]>(() => urlStatus ? [urlStatus] : ['all']);
   const [dueDateFilter, setDueDateFilter] = useState<string>(() => urlDue);
@@ -108,13 +117,14 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.every(c => typeof c === 'string') && parsed.includes('title')) {
-          return parsed;
+          // Ensure the new 'project' column is visible for existing stored prefs.
+          return parsed.includes('project') ? parsed : ['project', ...parsed];
         }
       }
     } catch {
       /* ignore malformed/unavailable storage */
     }
-    return ['title', 'category', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'];
+    return ['title', 'project', 'category', 'dueDate', 'assignedTo', 'healthCenter', 'subtasks', 'taskType', 'attention'];
   });
 
   // Persist column visibility so it survives navigating away and back.
@@ -129,6 +139,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
 
   const allColumns = [
     { id: 'title', label: 'Task Name' },
+    { id: 'project', label: 'Project' },
     { id: 'category', label: 'Category' },
     { id: 'dueDate', label: 'Due Date' },
     { id: 'assignedTo', label: 'Assigned To' },
@@ -230,8 +241,6 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
   }, []);
 
   const toggleCategoryFilter = useCallback((value: string) => {
-    // Selecting a concrete category should also drop the deep-link param so the
-    // URL doesn't keep re-seeding the selection on the next render.
     if (urlCategory) {
       const params = new URLSearchParams(searchParams);
       params.delete('category');
@@ -250,6 +259,26 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
       });
     }
   }, [urlCategory, searchParams, setSearchParams]);
+
+  const toggleProjectFilter = useCallback((value: string) => {
+    if (urlProject) {
+      const params = new URLSearchParams(searchParams);
+      params.delete('project');
+      setSearchParams(params, { replace: true });
+    }
+    if (value === 'all') {
+      setProjectFilter(['all']);
+    } else {
+      setProjectFilter(prev => {
+        const newFilters = prev.includes('all')
+          ? [value]
+          : prev.includes(value)
+            ? prev.filter(v => v !== value)
+            : [...prev, value];
+        return newFilters.length === 0 ? ['all'] : newFilters;
+      });
+    }
+  }, [urlProject, searchParams, setSearchParams]);
 
   const toggleHealthCenterFilter = useCallback((value: string) => {
     if (value === 'All Health Centers') {
@@ -281,11 +310,15 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
     }
   }, []);
 
-  // Distinct categories (project names) present across the current task set,
-  // sorted alphabetically — the options for the Category filter chip.
   const categoryOptions = useMemo(() => {
     const set = new Set<string>();
     tasks.forEach(t => { if (t.category) set.add(t.category); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [tasks]);
+
+  const projectOptions = useMemo(() => {
+    const set = new Set<string>();
+    tasks.forEach(t => { if (t.projectName) set.add(t.projectName); });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [tasks]);
 
@@ -339,9 +372,14 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
         if (!task.healthCenter || !healthCenterFilter.includes(task.healthCenter)) return false;
       }
 
-      // Category (project) multiselect filter
+      // Category multiselect filter
       if (!categoryFilter.includes('all')) {
         if (!task.category || !categoryFilter.includes(task.category)) return false;
+      }
+
+      // Project multiselect filter
+      if (!projectFilter.includes('all')) {
+        if (!task.projectName || !projectFilter.includes(task.projectName)) return false;
       }
 
       // Needs Attention filter
@@ -363,7 +401,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
 
       return true;
     });
-  }, [tasks, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery, categoryFilter]);
+  }, [tasks, statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, searchQuery, categoryFilter, projectFilter]);
 
   // Count active filters (memoized)
   const activeFilterCount = useMemo(() => {
@@ -374,6 +412,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
     if (!healthCenterFilter.includes('All Health Centers')) count++;
     if (!needsAttentionFilter.includes('all')) count++;
     if (!categoryFilter.includes('all')) count++;
+    if (!projectFilter.includes('all')) count++;
     // Don't count search query
     return count;
   }, [statusFilter, dueDateFilter, assignedToFilter, healthCenterFilter, needsAttentionFilter, categoryFilter]);
@@ -557,7 +596,41 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
                 </PopoverContent>
               </Popover>
 
-              {/* Category (Project) Chip */}
+              {/* Project Chip */}
+              <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+                <PopoverTrigger asChild>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !projectFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]' } text-[12px]`}>
+                    <FolderOpen className="h-3.5 w-3.5" />
+                    Project {!projectFilter.includes('all') && `(${projectFilter.length})`}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search projects..." />
+                    <CommandList>
+                      <CommandEmpty>No projects found.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem value="all" onSelect={() => { toggleProjectFilter('all'); setProjectOpen(false); }}>
+                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${ projectFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]' }`}>
+                            {projectFilter.includes('all') && <Check className="h-3 w-3" />}
+                          </div>
+                          All Projects
+                        </CommandItem>
+                        {projectOptions.map((project) => (
+                          <CommandItem key={project} value={project} onSelect={() => toggleProjectFilter(project)}>
+                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${ projectFilter.includes(project) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]' }`}>
+                              {projectFilter.includes(project) && <Check className="h-3 w-3" />}
+                            </div>
+                            {project}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Category Chip */}
               <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
                 <PopoverTrigger asChild>
                   <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !categoryFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]' } text-[12px]`}>

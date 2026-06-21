@@ -23,6 +23,7 @@ import { DueDateCell } from './cells/DueDateCell';
 import { AssignedToCell } from './cells/AssignedToCell';
 import { HealthCenterCell } from './cells/HealthCenterCell';
 import { CategoryCell } from './cells/CategoryCell';
+import { ProjectCell } from './cells/ProjectCell';
 import { AttentionCell } from './cells/AttentionCell';
 import { TaskTypeCell } from './cells/TaskTypeCell';
 import { SubtasksCell } from './cells/SubtasksCell';
@@ -176,6 +177,8 @@ export const TaskRow = memo(function TaskRow({
         return <HealthCenterCell key="healthCenter" task={task} col={col} />;
       case 'category':
         return <CategoryCell key="category" task={task} col={col} />;
+      case 'project':
+        return <ProjectCell key="project" task={task} col={col} />;
       case 'attention':
         return <AttentionCell key="attention" task={task} col={col} onClick={onClick} />;
       case 'taskType':

@@ -792,7 +792,7 @@ export default function App() {
     projects.forEach(project => {
       if (project.assignedHealthCenters && project.assignedHealthCenters.length > 0 && project.tasks.length > 0) {
         project.tasks.forEach(task => {
-          projectTasks.push({ ...task, category: project.name });
+          projectTasks.push({ ...task, projectId: project.id, projectName: project.name });
         });
       }
     });

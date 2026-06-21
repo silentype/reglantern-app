@@ -12,6 +12,7 @@ export type SortColumn =
   | 'assignedTo'
   | 'healthCenter'
   | 'category'
+  | 'project'
   | 'attention'
   | 'taskType'
   | 'subtasks';
@@ -105,6 +106,8 @@ export interface Task {
   createdBy?: { initials: string; name: string };
   taskType?: 'system' | 'custom'; // system = has uploads, read-only title/desc; custom = no uploads, editable title/desc
   category?: string;
+  projectId?: number;
+  projectName?: string;
   /**
    * When true, the completion checkbox bypasses the usual gate (assignee +
    * due date + no attention). Used by manually-toggled tasks such as the

@@ -556,7 +556,7 @@ function AdminDashboard({
                               onClick={() =>
                                 navigate(
                                   count > 0
-                                    ? `/tasks/my-tasks?category=${encodeURIComponent(p.name)}`
+                                    ? `/tasks/my-tasks?project=${encodeURIComponent(p.name)}`
                                     : `/admin/project-builder/${p.id}`,
                                 )
                               }
@@ -604,7 +604,7 @@ function AdminDashboard({
                             onClick={() =>
                               navigate(
                                 count > 0
-                                  ? `/tasks/my-tasks?category=${encodeURIComponent(p.name)}`
+                                  ? `/tasks/my-tasks?project=${encodeURIComponent(p.name)}`
                                   : `/admin/project-builder/${p.id}`,
                               )
                             }
