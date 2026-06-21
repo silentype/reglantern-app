@@ -149,7 +149,7 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
       }`}
     >
       {/* Top Section */}
-      <div>
+      <div className="min-h-0 overflow-y-auto">
         {/* Collapse/Expand Button */}
         <div className="flex flex-col gap-1 px-2 pt-2 pb-1">
           <button
@@ -203,7 +203,7 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
       </div>
 
       {/* Bottom Section */}
-      <div className="border-t border-[#cdd7e1] dark:border-[#2a2f3a]">
+      <div className="border-t border-[#cdd7e1] dark:border-[#2a2f3a] shrink-0">
         <div className="flex flex-col gap-1 px-2 py-2">
           <UtilityButton label="Invite Teammates" isExpanded={isOpen} />
           <UtilityButton label="Ask an Expert" isExpanded={isOpen} />
@@ -217,17 +217,15 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
               isOpen ? 'pl-3 pr-3 justify-between' : 'pl-[15px] pr-0'
             }`}
           >
-            <div className="flex items-center gap-0 overflow-hidden">
-              <div className="shrink-0 size-[20px] flex items-center justify-center">
-                {darkMode
-                  ? <Sun size={18} strokeWidth={2} className="text-[#18181b] dark:text-[#f4f4f5]" />
-                  : <Moon size={18} strokeWidth={2} className="text-[#18181b] dark:text-[#f4f4f5]" />
-                }
-              </div>
-              <span className={`ml-2 text-[#18181b] dark:text-[#f4f4f5] transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
-                {darkMode ? 'Light Mode' : 'Dark Mode'}
-              </span>
+            <div className="shrink-0 size-[20px] flex items-center justify-center">
+              {darkMode
+                ? <Sun size={18} strokeWidth={2} className="text-[#18181b] dark:text-[#f4f4f5]" />
+                : <Moon size={18} strokeWidth={2} className="text-[#18181b] dark:text-[#f4f4f5]" />
+              }
             </div>
+            <span className={`ml-2 text-[#18181b] dark:text-[#f4f4f5] transition-opacity duration-200 ${isOpen ? 'opacity-100' : 'opacity-0'}`}>
+              {darkMode ? 'Light Mode' : 'Dark Mode'}
+            </span>
             {isOpen && (
               <div className={`w-8 h-4 rounded-full relative flex-shrink-0 transition-colors duration-200 ${darkMode ? 'bg-[#fc6]' : 'bg-[#d4d4d8]'}`}>
                 <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-200 ${darkMode ? 'translate-x-4' : 'translate-x-0.5'}`} />
