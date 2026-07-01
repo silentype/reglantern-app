@@ -2,10 +2,11 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { parse, isBefore, isAfter, startOfDay, format } from 'date-fns';
 import {
-  Building2, Check, LayoutGrid, List,
-  ChevronUp, ChevronDown, ChevronsUpDown,
+  Building2, Check, LayoutGrid, List, X,
+  ChevronUp, ChevronDown, ChevronsUpDown, FolderOpen,
 } from 'lucide-react';
 import { Pill, type PillColor } from '../components/design-system/Pill';
+import { Button } from '../components/design-system/Button';
 
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import {
@@ -26,6 +27,7 @@ interface HomePageProps {
   projects: Project[];
   healthCenters: HealthCenter[];
   homeTab?: 'health-centers' | 'projects';
+  currentUserName?: string;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -38,6 +40,15 @@ function parseTaskDate(str: string | undefined): Date | null {
   } catch {
     return null;
   }
+}
+
+// A project is completed when all its tasks are done, unless it has been
+// explicitly reset to 'in_progress' (e.g. for a new compliance year).
+function getProjectEffectiveStatus(p: import('./AdminPage').Project): 'in_progress' | 'completed' {
+  if (p.status === 'in_progress') return 'in_progress'; // manual override wins
+  if (p.status === 'completed') return 'completed';     // manual override wins
+  // auto-derive: all tasks done → completed
+  return p.tasks.length > 0 && p.tasks.every(t => t.completed) ? 'completed' : 'in_progress';
 }
 
 function greeting(): string {
@@ -202,12 +213,14 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
             >
               <div className="flex items-start justify-between gap-2 mb-4">
                 <p className="text-sm font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-snug">{hc.name}</p>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`); }}
-                  className="text-xs text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] transition-colors shrink-0 mt-0.5"
+                  className="shrink-0"
                 >
                   Details →
-                </button>
+                </Button>
               </div>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -292,12 +305,13 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
                     : <span className="text-[#71717a]">—</span>}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={(e) => { e.stopPropagation(); navigate(`/admin/health-centers/${encodeURIComponent(hc.name)}`); }}
-                    className="text-xs font-medium text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] transition-colors"
                   >
                     View Details →
-                  </button>
+                  </Button>
                 </td>
               </tr>
             );
@@ -314,12 +328,13 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
 // ── Admin Dashboard ────────────────────────────────────────────────────────
 
 function AdminDashboard({
-  tasks, projects, healthCenters, homeTab,
+  tasks, projects, healthCenters, homeTab, currentUserName = 'Tim',
 }: {
   tasks: Task[];
   projects: Project[];
   healthCenters: HealthCenter[];
   homeTab?: 'health-centers' | 'projects';
+  currentUserName?: string;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -344,8 +359,20 @@ function AdminDashboard({
   const [hcView, setHcView] = useState<'grid' | 'list'>('list');
   const [hcSearch, setHcSearch] = useState<string>('');
   const [projectSearch, setProjectSearch] = useState<string>('');
+  const [projectStatusFilter, setProjectStatusFilter] = useState<'all' | 'in_progress' | 'completed'>('in_progress');
   const [projectHCFilter, setProjectHCFilter] = useState<string[]>(['All Health Centers']);
   const [projectHCOpen, setProjectHCOpen] = useState(false);
+  const [projectNameFilter, setProjectNameFilter] = useState<string[]>(['all']);
+  const [projectNameOpen, setProjectNameOpen] = useState(false);
+  const toggleProjectNameFilter = useCallback((v: string) => {
+    if (v === 'all') { setProjectNameFilter(['all']); return; }
+    setProjectNameFilter(prev => {
+      const next = prev.includes('all')
+        ? [v]
+        : prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v];
+      return next.length === 0 ? ['all'] : next;
+    });
+  }, []);
   const toggleProjectHCFilter = useCallback((v: string) => {
     if (v === 'All Health Centers') { setProjectHCFilter(['All Health Centers']); return; }
     setProjectHCFilter(prev => {
@@ -359,13 +386,17 @@ function AdminDashboard({
   const sortedProjects = useMemo(() => {
     const q = projectSearch.trim().toLowerCase();
     const allHC = projectHCFilter.includes('All Health Centers');
+    const allNames = projectNameFilter.includes('all');
     const scoped = projects.filter(p => {
       if (q && !p.name.toLowerCase().includes(q)) return false;
       if (!allHC && !p.assignedHealthCenters?.some(a => projectHCFilter.includes(a.name))) return false;
+      if (!allNames && !projectNameFilter.includes(p.name)) return false;
+      const effectiveStatus = getProjectEffectiveStatus(p);
+      if (projectStatusFilter !== 'all' && effectiveStatus !== projectStatusFilter) return false;
       return true;
     });
     return sortProjects(scoped, projectSort, projectSortDir);
-  }, [projects, projectSort, projectSortDir, projectSearch, projectHCFilter]);
+  }, [projects, projectSort, projectSortDir, projectSearch, projectHCFilter, projectNameFilter, projectStatusFilter]);
 
   // Clicking a list-view column header sorts by it; clicking the active column
   // toggles direction. New columns default to ascending.
@@ -435,10 +466,10 @@ function AdminDashboard({
           <div className="flex items-end justify-between gap-4 mb-1">
             <div>
               <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
-                {greeting()}, Tim
+                {greeting()}, {currentUserName.split(' ')[0]}
               </h1>
               <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
-                {format(new Date(), 'EEEE, MMMM d')}
+                Review your health centers and projects, or jump to any open tasks
               </p>
             </div>
           </div>
@@ -532,12 +563,63 @@ function AdminDashboard({
                     className="w-[200px]"
                   />
                   <div className="h-5 w-px bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+                  {/* Status chips */}
+                  {(['all', 'in_progress', 'completed'] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setProjectStatusFilter(s)}
+                      className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${
+                        projectStatusFilter === s
+                          ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]'
+                          : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'
+                      }`}
+                    >
+                      {s === 'in_progress' ? 'In Progress' : s === 'completed' ? 'Complete' : 'All'}
+                    </button>
+                  ))}
+                  <div className="h-5 w-px bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+
+                  {/* Project */}
+                  <Popover open={projectNameOpen} onOpenChange={setProjectNameOpen}>
+                    <PopoverTrigger asChild>
+                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
+                        !projectNameFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'
+                      }`}>
+                        <FolderOpen className="h-3.5 w-3.5" />
+                        Project {!projectNameFilter.includes('all') && `(${projectNameFilter.length})`}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[280px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search projects..." />
+                        <CommandList>
+                          <CommandEmpty>No projects found.</CommandEmpty>
+                          <CommandGroup>
+                            <CommandItem value="all" onSelect={() => { toggleProjectNameFilter('all'); setProjectNameOpen(false); }}>
+                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${projectNameFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                                {projectNameFilter.includes('all') && <Check className="h-3 w-3" />}
+                              </div>
+                              All Projects
+                            </CommandItem>
+                            {projects.map(p => (
+                              <CommandItem key={p.id} value={p.name} onSelect={() => toggleProjectNameFilter(p.name)}>
+                                <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${projectNameFilter.includes(p.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                                  {projectNameFilter.includes(p.name) && <Check className="h-3 w-3" />}
+                                </div>
+                                {p.name}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
 
                   {/* Health Center */}
                   <Popover open={projectHCOpen} onOpenChange={setProjectHCOpen}>
                     <PopoverTrigger asChild>
                       <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                        !projectHCFilter.includes('All Health Centers') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+                        !projectHCFilter.includes('All Health Centers') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'
                       }`}>
                         <Building2 className="h-3.5 w-3.5" />
                         Health Center {!projectHCFilter.includes('All Health Centers') && `(${projectHCFilter.length})`}
@@ -569,6 +651,25 @@ function AdminDashboard({
                     </PopoverContent>
                   </Popover>
 
+                  {/* Clear All — visible when any filter is non-default */}
+                  {(projectStatusFilter !== 'in_progress' || projectSearch || !projectNameFilter.includes('all') || !projectHCFilter.includes('All Health Centers')) && (
+                    <>
+                      <div className="h-5 w-px bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+                      <button
+                        onClick={() => {
+                          setProjectStatusFilter('in_progress');
+                          setProjectSearch('');
+                          setProjectNameFilter(['all']);
+                          setProjectHCFilter(['All Health Centers']);
+                        }}
+                        className="px-2.5 py-1 rounded-full text-[12px] font-medium flex items-center gap-1 shrink-0 text-[#3b82f6] bg-white dark:bg-[#1c1f26] hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] border border-[#e4e4e7] dark:border-[#2a2f3a] transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                        Clear
+                      </button>
+                    </>
+                  )}
+
                   <div className="ml-auto flex items-center gap-3">
                     {/* View toggle */}
                     <div className="flex items-center border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md overflow-hidden shrink-0">
@@ -594,7 +695,7 @@ function AdminDashboard({
                       <select
                         value={projectSort}
                         onChange={(e) => { setProjectSort(e.target.value as ProjectSort); setProjectSortDir(e.target.value === 'name' ? 'asc' : 'desc'); }}
-                        className="text-xs font-medium text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md px-2.5 py-1.5 cursor-pointer hover:border-[#fc6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+                        className="text-xs font-medium text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] h-8 px-2.5 cursor-pointer hover:border-[#fc6] focus:outline-none focus:border-[#fc6] transition-colors"
                       >
                         {PROJECT_SORT_OPTIONS.map(o => (
                           <option key={o.value} value={o.value}>{o.label}</option>
@@ -648,7 +749,12 @@ function AdminDashboard({
                               }
                               className="bg-white dark:bg-[#1e2129] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] p-5 text-left hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] transition-all"
                             >
-                              <p className="text-sm font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-3 truncate">{p.name}</p>
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                <p className="text-sm font-semibold text-[#18181b] dark:text-[#f4f4f5] truncate">{p.name}</p>
+                                {(getProjectEffectiveStatus(p)) === 'completed' && (
+                                  <Pill color="green" className="shrink-0">Complete</Pill>
+                                )}
+                              </div>
                               <ProgressBar done={done} total={total} color={status.bar} />
                               <div className="mt-3 flex items-center justify-between gap-2">
                                 <Pill color={status.pill}>{status.label}</Pill>
@@ -671,6 +777,7 @@ function AdminDashboard({
                         <SortHeader label="Progress"      col="progress" sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} className="w-[220px]" />
                         <SortHeader label="Health Center" col="centers"  sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
                         <SortHeader label="Tasks"         col="tasks"    sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} />
+                        <SortHeader label="Status"        col="name"     sort={projectSort} dir={projectSortDir} onSort={handleProjectHeaderSort} className="w-[120px]" />
                       </tr>
                     </thead>
                     <tbody>
@@ -700,6 +807,11 @@ function AdminDashboard({
                             <td className="px-4 py-3"><ProgressBar done={done} total={total} /></td>
                             <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{centerLabel}</td>
                             <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{done}/{total}</td>
+                            <td className="px-4 py-3">
+                              <Pill color={(getProjectEffectiveStatus(p)) === 'completed' ? 'green' : 'blue'}>
+                                {(getProjectEffectiveStatus(p)) === 'completed' ? 'Complete' : 'In Progress'}
+                              </Pill>
+                            </td>
                           </tr>
                         );
                       })}
@@ -727,6 +839,7 @@ export function HomePage(props: HomePageProps) {
       projects={props.projects}
       healthCenters={props.healthCenters}
       homeTab={props.homeTab}
+      currentUserName={props.currentUserName}
     />
   );
 }

@@ -26,9 +26,9 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           type="text"
           value={value}
           className={clsx(
-            'w-full rounded-md border border-[#e4e4e7] bg-[#f9fafb] text-[#18181b]',
-            'placeholder:text-[#71717a] transition-colors',
-            'hover:bg-white focus:outline-none focus:bg-white focus:border-[#fc6]',
+            'w-full rounded-md border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] text-[#18181b] dark:text-[#f4f4f5]',
+            'placeholder:text-[#71717a] dark:placeholder:text-[#52525b] transition-colors',
+            'hover:bg-white dark:hover:bg-[#2a2f3a] focus:outline-none focus:bg-white dark:focus:bg-[#2a2f3a] focus:border-[#fc6]',
             size === 'sm' ? 'h-8 pl-8 text-sm' : 'h-10 pl-10 text-sm',
             showClear ? 'pr-8' : 'pr-3',
           )}

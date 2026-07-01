@@ -68,7 +68,6 @@ export default function MultiFileUploadPanel({
   siblingTasks,
   currentProjectName,
   availableProjects,
-  relatedLink,
 }: {
   taskId: number | null;
   taskTitle: string;
@@ -84,6 +83,7 @@ export default function MultiFileUploadPanel({
       assignedTo?: { initials: string; name: string };
       collaborators?: Array<{ initials: string; name: string }>;
       healthCenter?: string;
+      comments?: Comment[];
     }
   ) => void;
   onUpdateFiles?: (taskId: number, files: Array<{
@@ -143,11 +143,6 @@ export default function MultiFileUploadPanel({
   currentProjectName?: string;
   /** Other projects in the system (cross-project anchor options). */
   availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
-  /**
-   * Optional contextual link shown near the top of the panel (e.g. "Open this
-   * row in Form 5A"). Lets a task deep-link to the place where its work lives.
-   */
-  relatedLink?: { label: string; onClick: () => void };
 }) {
   // Panel sub-state lives in URL search params so each view is paste-able:
   //   ?subtask=:subtaskId  -> drilled into subtask upload page (omit -> task overview)
@@ -264,7 +259,8 @@ export default function MultiFileUploadPanel({
         name: f.name,
         size: f.size,
         category: f.category
-      }))
+      })),
+      comments: comments.map(c => ({ id: c.id, text: c.text }))
     });
 
     if (isInitialRender.current) {
@@ -290,10 +286,11 @@ export default function MultiFileUploadPanel({
             dueDate,
             assignedTo,
             collaborators,
-            healthCenter: initialHealthCenter
+            healthCenter: initialHealthCenter,
+            comments
           });
         }
-        
+
         setSaveStatus('saved');
         hideStatusTimeoutRef.current = setTimeout(() => setSaveStatus('idle'), 3000);
       }, 1000);
@@ -303,7 +300,7 @@ export default function MultiFileUploadPanel({
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
       if (hideStatusTimeoutRef.current) clearTimeout(hideStatusTimeoutRef.current);
     };
-  }, [editableTitle, editableDescription, taskStatus, dueDate, assignedTo, collaborators, subtasks, uploadedFiles, taskId, onUpdateTaskDetails, onUpdateFiles, initialHealthCenter, isCreatingNew]);
+  }, [editableTitle, editableDescription, taskStatus, dueDate, assignedTo, collaborators, subtasks, uploadedFiles, comments, taskId, onUpdateTaskDetails, onUpdateFiles, initialHealthCenter, isCreatingNew]);
 
   const handleClose = () => {
     if (!isCreatingNew && onUpdateTaskDetails && onUpdateFiles) {
@@ -314,7 +311,8 @@ export default function MultiFileUploadPanel({
         dueDate,
         assignedTo,
         collaborators,
-        healthCenter: initialHealthCenter
+        healthCenter: initialHealthCenter,
+        comments
       });
     }
     onClose();
@@ -565,33 +563,33 @@ export default function MultiFileUploadPanel({
   if (previewFile) {
     const previewFileType = getFileType(previewFile.name);
     return (
-      <div className="h-full flex flex-col bg-white">
+      <div className="h-full flex flex-col bg-card">
         {/* Header */}
         <div className="px-6 py-6 border-b border-[#e5e7eb] flex items-center justify-between">
           <BackButton onClick={handleClosePreview}>Back</BackButton>
-          <button onClick={handleClose} className="p-1 hover:bg-[#f4f4f5] rounded transition-colors">
-            <X size={24} className="text-[#18181b]" />
+          <button onClick={handleClose} className="p-1 hover:bg-muted rounded transition-colors">
+            <X size={24} className="text-foreground" />
           </button>
         </div>
 
         {/* File info bar */}
-        <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-[#e4e4e7] bg-white">
+        <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-border bg-card">
           <div className="min-w-0 flex-1 mr-3">
             <p className="text-[13px] font-medium text-[#09090b] truncate">{previewFile.name}</p>
-            <p className="text-[11px] text-[#71717a]">
+            <p className="text-[11px] text-muted-foreground">
               {previewFile.category} · {(previewFile.size / 1_000_000).toFixed(1)} MB
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => handleDownload(previewFile)}
-              className="bg-white h-[32px] px-3 rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-medium text-[12px] hover:bg-[#f9fafb] transition-colors"
+              className="bg-card h-[32px] px-3 rounded-[6px] border border-border text-foreground font-medium text-[12px] hover:bg-[var(--app-background)] transition-colors"
             >
               Download
             </button>
             <button
               onClick={() => handleOpenInNew(previewFile)}
-              className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
+              className="bg-card h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-border text-muted-foreground hover:bg-[var(--app-background)] hover:text-foreground transition-colors"
               title="Open in new window"
             >
               <ExternalLink size={14} strokeWidth={2} />
@@ -600,14 +598,14 @@ export default function MultiFileUploadPanel({
         </div>
 
         {/* Preview content */}
-        <div className="flex-1 overflow-auto p-6 bg-[#f9fafb]">
+        <div className="flex-1 overflow-auto p-6 bg-[var(--app-background)]">
           <div className="flex items-start justify-center min-h-full">
             {previewFileType === 'pdf' ? (
-              <div className="w-full max-w-[640px] bg-white rounded-lg shadow-lg p-8">
+              <div className="w-full max-w-[640px] bg-card rounded-lg shadow-lg p-8">
                 <div className="space-y-6">
-                  <div className="text-center border-b border-[#e4e4e7] pb-4">
+                  <div className="text-center border-b border-border pb-4">
                     <h1 className="text-2xl font-bold text-[#09090b] mb-2">Document Preview</h1>
-                    <p className="text-sm text-[#71717a]">{previewFile.name}</p>
+                    <p className="text-sm text-muted-foreground">{previewFile.name}</p>
                   </div>
                   <div className="w-full h-48 bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] rounded-lg flex items-center justify-center">
                     <div className="text-center">
@@ -643,7 +641,7 @@ export default function MultiFileUploadPanel({
                     <h2 className="text-xl font-semibold text-[#09090b]">Section 3: Summary</h2>
                     <p className="text-[15px] text-[#404040] leading-relaxed">In conclusion, this document provides comprehensive information regarding the subject matter. All relevant details have been included for review and approval.</p>
                   </div>
-                  <div className="text-center border-t border-[#e4e4e7] pt-4 mt-8">
+                  <div className="text-center border-t border-border pt-4 mt-8">
                     <p className="text-xs text-[#9ca3af]">Page 1 of 1 · {previewFile.category} · {new Date().toLocaleDateString()}</p>
                   </div>
                 </div>
@@ -655,7 +653,7 @@ export default function MultiFileUploadPanel({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   <p className="text-lg font-medium text-[#09090b] mt-4">{previewFile.name}</p>
-                  <p className="text-sm text-[#71717a] mt-2">Sample Image Preview</p>
+                  <p className="text-sm text-muted-foreground mt-2">Sample Image Preview</p>
                 </div>
               </div>
             ) : (
@@ -668,7 +666,7 @@ export default function MultiFileUploadPanel({
                   </svg>
                 </div>
                 <p className="text-lg font-medium text-[#09090b] mb-2">{previewFile.name}</p>
-                <p className="text-sm text-[#71717a]">Preview not available for this file type</p>
+                <p className="text-sm text-muted-foreground">Preview not available for this file type</p>
               </div>
             )}
           </div>
@@ -684,16 +682,16 @@ export default function MultiFileUploadPanel({
 
     return (
       <>
-        <div className="h-full flex flex-col bg-white">
+        <div className="h-full flex flex-col bg-card">
         {/* Header */}
-        <div className="border-b border-[#e4e4e7] px-6 py-3">
+        <div className="border-b border-border px-6 py-3">
           <div className="flex items-center justify-between">
             {/* Back Button */}
             <BackButton onClick={handleBackToTask}>Back</BackButton>
 
             {/* Close Button */}
-            <button onClick={handleClose} className="p-1 hover:bg-[#f4f4f5] rounded transition-colors">
-              <X size={24} className="text-[#18181b]" />
+            <button onClick={handleClose} className="p-1 hover:bg-muted rounded transition-colors">
+              <X size={24} className="text-foreground" />
             </button>
           </div>
         </div>
@@ -712,24 +710,24 @@ export default function MultiFileUploadPanel({
             </p>
 
             {/* Not Applicable Checkbox */}
-            <label className="bg-[#f5f5f5] border border-[#e4e4e7] rounded-lg px-4 py-2.5 flex items-center gap-3 cursor-pointer">
+            <label className="bg-secondary border border-border rounded-lg px-4 py-2.5 flex items-center gap-3 cursor-pointer">
               <div className="relative">
                 <input
                   type="checkbox"
                   checked={currentSubtask.notApplicable || false}
                   onChange={() => toggleNotApplicable(currentSubtask.id)}
-                  className="size-5 border-2 border-[#71717a] rounded bg-white checked:border-[#71717a] cursor-pointer focus:outline-none focus:border-[#fc6] transition-colors"
+                  className="size-5 border-2 border-[#71717a] rounded bg-card checked:border-[#71717a] cursor-pointer focus:outline-none focus:border-[#fc6] transition-colors"
                   style={{
                     appearance: 'none',
                     WebkitAppearance: 'none',
                   }}
                 />
                 {currentSubtask.notApplicable && (
-                  <Check className="absolute left-0.5 top-[3px] size-4 text-[#71717a] pointer-events-none" strokeWidth={3} />
+                  <Check className="absolute left-0.5 top-[3px] size-4 text-muted-foreground pointer-events-none" strokeWidth={3} />
                 )}
               </div>
               <div className="flex-1">
-                <div className="text-sm font-medium text-[#18181b]">Mark as not applicable</div>
+                <div className="text-sm font-medium text-foreground">Mark as not applicable</div>
                 
               </div>
             </label>
@@ -755,7 +753,7 @@ export default function MultiFileUploadPanel({
               <p className="text-sm text-[#0d062d]">Drag & drop file here</p>
               <button 
                 onClick={handleBrowseClick}
-                className="bg-white border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-[#18181b] hover:bg-[#f9fafb] transition-colors"
+                className="bg-card border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-[var(--app-background)] transition-colors"
               >
                 Browse Files
               </button>
@@ -771,7 +769,7 @@ export default function MultiFileUploadPanel({
             {/* File Status */}
             <div className={`flex items-center justify-between text-sm ${currentSubtask.notApplicable ? 'opacity-40' : ''}`}>
               <div>
-                <span className="text-[#18181b]">Status: </span>
+                <span className="text-foreground">Status: </span>
                 <span className={currentFiles.length > 0 ? 'text-[#00bc06]' : 'text-[#dc2626]'}>
                   {currentFiles.length > 0 ? `${currentFiles.length} files uploaded` : 'Missing files'}
                 </span>
@@ -785,7 +783,7 @@ export default function MultiFileUploadPanel({
                 return (
                   <div
                     key={file.id}
-                    className="bg-white border border-[#3b82f6] rounded-md h-[60px] flex items-center gap-3 px-4 relative overflow-hidden"
+                    className="bg-card border border-[#3b82f6] rounded-md h-[60px] flex items-center gap-3 px-4 relative overflow-hidden"
                   >
                     <div
                       className="absolute inset-0 bg-[#dbeafe] transition-all duration-300 ease-out"
@@ -795,8 +793,8 @@ export default function MultiFileUploadPanel({
                       <Upload className="size-5 text-[#3b82f6] animate-pulse" />
                     </div>
                     <div className="flex-1 min-w-0 z-10">
-                      <p className="text-[14px] font-medium text-[#18181b] truncate">{file.name}</p>
-                      <p className="text-[12px] text-[#71717a]">{file.category}</p>
+                      <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
+                      <p className="text-[12px] text-muted-foreground">{file.category}</p>
                     </div>
                     <span className="text-xs font-medium text-[#3b82f6] z-10">
                       {Math.round(file.progress)}%
@@ -821,15 +819,15 @@ export default function MultiFileUploadPanel({
         </div>
         {deleteConfirmFile && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
-            <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-card rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
               <h3 className="text-lg font-semibold text-[#09090b] mb-2">Delete File</h3>
-              <p className="text-[14px] text-[#71717a] mb-6">
+              <p className="text-[14px] text-muted-foreground mb-6">
                 Are you sure you want to delete this file? This action cannot be undone.
               </p>
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={handleCancelDelete}
-                  className="px-4 py-2 text-sm font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md hover:bg-[#f9fafb] transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-[var(--app-background)] transition-colors"
                 >
                   Cancel
                 </button>
@@ -857,7 +855,7 @@ export default function MultiFileUploadPanel({
 
   return (
     <>
-      <div className="h-full flex flex-col bg-white">
+      <div className="h-full flex flex-col bg-card">
       {/* Header */}
       <div className="px-6 py-3 border-b border-[#e5e7eb] flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -880,8 +878,8 @@ export default function MultiFileUploadPanel({
         <div className="flex items-center gap-4">
           {!isCreatingNew && <SaveIndicator status={saveStatus} />}
           
-          <button onClick={handleClose} className="p-1 hover:bg-[#f4f4f5] rounded transition-colors">
-            <X size={24} className="text-[#18181b]" />
+          <button onClick={handleClose} className="p-1 hover:bg-muted rounded transition-colors">
+            <X size={24} className="text-foreground" />
           </button>
         </div>
       </div>
@@ -901,8 +899,8 @@ export default function MultiFileUploadPanel({
                       setShowValidationError(false);
                     }
                   }}
-                  className={`w-full text-lg font-normal text-[#18181b] tracking-[0.4px] bg-[#f9fafb] border rounded-md px-2 py-1.5 focus:bg-white focus:border-[#fc6] focus:outline-none resize-none transition-colors ${
-                    showValidationError && !editableTitle.trim() ? 'border-[#dc2626]' : 'border-[#e4e4e7]'
+                  className={`w-full text-lg font-normal text-foreground tracking-[0.4px] bg-[var(--app-background)] border rounded-md px-2 py-1.5 focus:bg-card focus:border-[#fc6] focus:outline-none resize-none transition-colors ${
+                    showValidationError && !editableTitle.trim() ? 'border-[#dc2626]' : 'border-border'
                   }`}
                   placeholder="Task Name"
                   rows={2}
@@ -914,7 +912,7 @@ export default function MultiFileUploadPanel({
               <textarea
                 value={editableDescription}
                 onChange={(e) => setEditableDescription(e.target.value)}
-                className="w-full text-[#52525b] tracking-[0.4px] bg-[#f9fafb] border border-[#e4e4e7] rounded-md px-3 py-2 focus:bg-white focus:border-[#fc6] focus:outline-none resize-none transition-colors text-[15px]"
+                className="w-full text-[#52525b] tracking-[0.4px] bg-[var(--app-background)] border border-border rounded-md px-3 py-2 focus:bg-card focus:border-[#fc6] focus:outline-none resize-none transition-colors text-[15px]"
                 placeholder="Description"
                 rows={2}
               />
@@ -932,9 +930,9 @@ export default function MultiFileUploadPanel({
           {hasSubtasks && (
             <div className="space-y-3 pt-3">
               {/* Always Visible Subtasks List */}
-              <div className="border border-[#e4e4e7] rounded-[10px] overflow-hidden">
+              <div className="border border-border rounded-[10px] overflow-hidden">
                 {/* Header */}
-                <div className="bg-[#f9fafb] border-b border-[#e4e4e7] h-[33px] px-4 flex items-center">
+                <div className="bg-[var(--app-background)] border-b border-border h-[33px] px-4 flex items-center">
                   <div className="flex-1">
                     <p className="text-[12px] font-semibold text-[#6b7280] uppercase tracking-[0.3px]">Subtask</p>
                   </div>
@@ -959,12 +957,12 @@ export default function MultiFileUploadPanel({
                       <button
                         key={subtask.id}
                         onClick={() => handleSubtaskClick(subtask)}
-                        className={`w-full h-[49px] px-4 flex items-center justify-between hover:bg-[#f9fafb] transition-colors text-left border-b border-[#e4e4e7] last:border-b-0 ${
-                          isActive ? 'bg-[#f9fafb]' : ''
+                        className={`w-full h-[49px] px-4 flex items-center justify-between hover:bg-[var(--app-background)] transition-colors text-left border-b border-border last:border-b-0 ${
+                          isActive ? 'bg-[var(--app-background)]' : ''
                         }`}
                       >
                         <div className="flex-1 min-w-0 pr-4">
-                          <p className="text-[14px] font-medium text-[#18181b] truncate leading-[20px]">{subtask.title}</p>
+                          <p className="text-[14px] font-medium text-foreground truncate leading-[20px]">{subtask.title}</p>
                         </div>
                         <div className="w-[140px] flex items-center justify-between">
                           <span className={`text-[12px] font-medium leading-[16px] ${statusColor}`}>
@@ -1008,7 +1006,7 @@ export default function MultiFileUploadPanel({
                     <p className="text-sm text-[#0d062d]">Drag & drop file here</p>
                     <button 
                       onClick={handleBrowseClick}
-                      className="bg-white border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-[#18181b] hover:bg-[#f9fafb] transition-colors"
+                      className="bg-card border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-[var(--app-background)] transition-colors"
                     >
                       Browse Files
                     </button>
@@ -1024,7 +1022,7 @@ export default function MultiFileUploadPanel({
                   {/* File Status */}
                   <div className={`flex items-center justify-between text-sm ${currentSubtask.notApplicable ? 'opacity-40' : ''}`}>
                     <div>
-                      <span className="text-[#18181b]">Status: </span>
+                      <span className="text-foreground">Status: </span>
                       <span className={currentSubtask.notApplicable ? 'text-[#6b7280]' : currentFiles.length > 0 ? 'text-[#00bc06]' : 'text-[#dc2626]'}>
                         {currentSubtask.notApplicable ? 'Not applicable' : currentFiles.length > 0 ? `${currentFiles.length} files uploaded` : 'Missing files'}
                       </span>
@@ -1038,7 +1036,7 @@ export default function MultiFileUploadPanel({
                     return (
                       <div
                         key={file.id}
-                        className={`bg-white border rounded-lg h-[60px] flex items-center gap-3 px-4 relative overflow-hidden transition-all duration-300 ${borderColor}`}
+                        className={`bg-card border rounded-lg h-[60px] flex items-center gap-3 px-4 relative overflow-hidden transition-all duration-300 ${borderColor}`}
                       >
                         {file.isUploading && typeof file.progress === 'number' && (
                           <div
@@ -1078,13 +1076,13 @@ export default function MultiFileUploadPanel({
                           <div className="flex items-center gap-2 z-10">
                             <button
                               onClick={() => handlePreviewClick(file)}
-                              className="px-3 py-1.5 text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded hover:bg-[#f9fafb] transition-colors"
+                              className="px-3 py-1.5 text-xs font-medium text-foreground bg-card border border-border rounded hover:bg-[var(--app-background)] transition-colors"
                             >
                               Preview
                             </button>
                             <button
                               onClick={() => handleDownload(file)}
-                              className="px-3 py-1.5 text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded hover:bg-[#f9fafb] transition-colors"
+                              className="px-3 py-1.5 text-xs font-medium text-foreground bg-card border border-border rounded hover:bg-[var(--app-background)] transition-colors"
                             >
                               Download
                             </button>
@@ -1112,18 +1110,18 @@ export default function MultiFileUploadPanel({
                         type="checkbox"
                         checked={currentSubtask.notApplicable || false}
                         onChange={() => toggleNotApplicable(currentSubtask.id)}
-                        className="size-5 border-2 border-[#71717a] rounded bg-white checked:border-[#71717a] cursor-pointer focus:outline-none focus:border-[#fc6] transition-colors"
+                        className="size-5 border-2 border-[#71717a] rounded bg-card checked:border-[#71717a] cursor-pointer focus:outline-none focus:border-[#fc6] transition-colors"
                         style={{
                           appearance: 'none',
                           WebkitAppearance: 'none',
                         }}
                       />
                       {currentSubtask.notApplicable && (
-                        <Check className="absolute left-0.5 top-[3px] size-4 text-[#71717a] pointer-events-none" strokeWidth={3} />
+                        <Check className="absolute left-0.5 top-[3px] size-4 text-muted-foreground pointer-events-none" strokeWidth={3} />
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-[#18181b]">Mark as not applicable</div>
+                      <div className="text-sm font-medium text-foreground">Mark as not applicable</div>
                     </div>
                   </label>
                 </div>
@@ -1151,7 +1149,7 @@ export default function MultiFileUploadPanel({
                 <p className="text-sm text-[#0d062d]">Drag & drop file here</p>
                 <button 
                   onClick={handleBrowseClick}
-                  className="bg-white border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-[#18181b] hover:bg-[#f9fafb] transition-colors"
+                  className="bg-card border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-[var(--app-background)] transition-colors"
                 >
                   Browse Files
                 </button>
@@ -1167,7 +1165,7 @@ export default function MultiFileUploadPanel({
               {/* File Status */}
               <div className="flex items-center justify-between text-sm">
                 <div>
-                  <span className="text-[#18181b]">Status: </span>
+                  <span className="text-foreground">Status: </span>
                   <span className={uploadedFiles.length > 0 ? 'text-[#00bc06]' : 'text-[#dc2626]'}>
                     {uploadedFiles.length > 0 ? `${uploadedFiles.length} files uploaded` : 'Missing files'}
                   </span>
@@ -1181,7 +1179,7 @@ export default function MultiFileUploadPanel({
                 return (
                   <div
                     key={file.id}
-                    className={`bg-white border rounded-lg h-[60px] flex items-center gap-3 px-4 relative overflow-hidden transition-all duration-300 ${borderColor}`}
+                    className={`bg-card border rounded-lg h-[60px] flex items-center gap-3 px-4 relative overflow-hidden transition-all duration-300 ${borderColor}`}
                   >
                     {file.isUploading && typeof file.progress === 'number' && (
                       <div
@@ -1226,13 +1224,13 @@ export default function MultiFileUploadPanel({
                       <div className="flex items-center gap-2 z-10">
                         <button
                           onClick={() => handlePreviewClick(file)}
-                          className="px-3 py-1.5 text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded hover:bg-[#f9fafb] transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium text-foreground bg-card border border-border rounded hover:bg-[var(--app-background)] transition-colors"
                         >
                           Preview
                         </button>
                         <button
                           onClick={() => handleDownload(file)}
-                          className="px-3 py-1.5 text-xs font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded hover:bg-[#f9fafb] transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium text-foreground bg-card border border-border rounded hover:bg-[var(--app-background)] transition-colors"
                         >
                           Download
                         </button>
@@ -1257,16 +1255,7 @@ export default function MultiFileUploadPanel({
         </div>
 
         {/* Tabs and Details */}
-        <div className="px-6 pt-4 pb-8 bg-white border-t-2 border-[#E4E4E7]">
-          {relatedLink && (
-            <button
-              onClick={relatedLink.onClick}
-              className="w-full mb-4 flex items-center justify-between gap-2 rounded-md border border-[#fc6] bg-[#fff7e0] px-3 py-2.5 text-left hover:bg-[#fff2cc] transition-colors"
-            >
-              <span className="text-[13px] font-medium text-[#18181b]">{relatedLink.label}</span>
-              <ExternalLink size={16} className="text-[#71717a] shrink-0" />
-            </button>
-          )}
+        <div className="px-6 pt-4 pb-8 bg-card border-t-2 border-border">
           <TabStrip className="mb-6">
             <Tab active={activeTab === 'details'} onClick={() => setActiveTab('details')}>Details</Tab>
             <Tab active={activeTab === 'comments'} onClick={() => setActiveTab('comments')}>Comments</Tab>
@@ -1284,7 +1273,7 @@ export default function MultiFileUploadPanel({
                   onSelect={(date) => setDueDate(date)}
                   displayValue={getDisplayValueForDate(dueDate)}
                   placeholder="Select Date"
-                  triggerClassName="flex-1 max-w-[240px] bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[#f9fafb] transition-colors"
+                  triggerClassName="flex-1 max-w-[240px] bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[var(--app-background)] transition-colors"
                   align="start"
                   showToast={false}
                   urlParam="datePicker"
@@ -1315,7 +1304,7 @@ export default function MultiFileUploadPanel({
                 <span className="text-sm text-[#09090b] w-[104px]">Assigned to</span>
                 <Popover open={assignedOpen} onOpenChange={setAssignedOpen}>
                   <PopoverTrigger asChild>
-                    <button className="flex-1 max-w-[240px] bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[#f9fafb] transition-colors">
+                    <button className="flex-1 max-w-[240px] bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[var(--app-background)] transition-colors">
                       {assignedTo ? (
                         <UserAvatar user={assignedTo} />
                       ) : (
@@ -1365,7 +1354,7 @@ export default function MultiFileUploadPanel({
                 <div className="flex-1 max-w-[240px] space-y-2">
                   <Popover open={collaboratorsOpen} onOpenChange={setCollaboratorsOpen}>
                     <PopoverTrigger asChild>
-                      <button className="w-full bg-white border border-[#e4e4e7] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[#f9fafb] transition-colors">
+                      <button className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[var(--app-background)] transition-colors">
                         <span className="text-[#6b7280]">
                           {collaborators.length > 0 ? `${collaborators.length} selected` : 'Select Collaborators'}
                         </span>
@@ -1409,7 +1398,7 @@ export default function MultiFileUploadPanel({
                       {collaborators.map((collab) => (
                         <div
                           key={collab.name}
-                          className="bg-[#f5f5f5] px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-[#e5e7eb] transition-colors"
+                          className="bg-secondary px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-[#e5e7eb] transition-colors"
                         >
                           <UserAvatar user={collab} />
                           <button
@@ -1434,13 +1423,13 @@ export default function MultiFileUploadPanel({
                   <Copy size={20} className="text-[#09090b] mt-1" />
                   <span className="text-sm text-[#09090b] w-[104px] mt-1">Duplicated in</span>
                   <div className="flex-1 space-y-2">
-                    <div className="bg-[#f5f5f5] px-2 py-1 rounded-lg inline-block">
+                    <div className="bg-secondary px-2 py-1 rounded-lg inline-block">
                       <span className="text-sm text-[#09090b]">OSV 2025: Accessible Locations</span>
                     </div>
-                    <div className="bg-[#f5f5f5] px-2 py-1 rounded-lg inline-block">
+                    <div className="bg-secondary px-2 py-1 rounded-lg inline-block">
                       <span className="text-sm text-[#09090b]">OSV 2025: Hours of Operation</span>
                     </div>
-                    <div className="bg-[#f5f5f5] px-2 py-1 rounded-lg inline-block">
+                    <div className="bg-secondary px-2 py-1 rounded-lg inline-block">
                       <span className="text-sm text-[#09090b]">OSV 2025: Collaborative Relationships</span>
                     </div>
                   </div>
@@ -1461,7 +1450,7 @@ export default function MultiFileUploadPanel({
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full text-base text-[#52525b] tracking-[0.4px] bg-[#f9fafb] border border-[#e4e4e7] rounded-md px-3 py-2 focus:bg-white focus:border-[#fc6] focus:outline-none resize-none transition-colors"
+                className="w-full text-base text-[#52525b] tracking-[0.4px] bg-[var(--app-background)] border border-border rounded-md px-3 py-2 focus:bg-card focus:border-[#fc6] focus:outline-none resize-none transition-colors"
                 placeholder="Add a comment..."
                 rows={2}
               />
@@ -1471,13 +1460,13 @@ export default function MultiFileUploadPanel({
               </div>
 
               {comments.length === 0 ? (
-                <div className="text-center py-12 text-[#6b7280] border border-[#e4e4e7] rounded-lg bg-[#fafafa]">
+                <div className="text-center py-12 text-[#6b7280] border border-border rounded-lg bg-[#fafafa]">
                   <p>No comments yet. Be the first to comment!</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {comments.map(comment => (
-                    <div key={comment.id} className="bg-[#f5f5f5] p-4 rounded-lg">
+                    <div key={comment.id} className="bg-secondary p-4 rounded-lg">
                       <div className="flex items-start gap-3">
                         <Avatar
                           initials={comment.user.initials}
@@ -1487,7 +1476,7 @@ export default function MultiFileUploadPanel({
                         />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm font-medium text-[#18181b]">{comment.user.name}</span>
+                            <span className="text-sm font-medium text-foreground">{comment.user.name}</span>
                             <span className="text-xs text-[#6b7280]">{formatCommentTimestamp(comment.timestamp)}</span>
                           </div>
                           <p className="text-sm text-[#09090b] whitespace-pre-wrap">{comment.text}</p>
@@ -1516,15 +1505,15 @@ export default function MultiFileUploadPanel({
       </div>
       {deleteConfirmFile && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
-          <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-[#09090b] mb-2">Delete File</h3>
-            <p className="text-[14px] text-[#71717a] mb-6">
+            <p className="text-[14px] text-muted-foreground mb-6">
               Are you sure you want to delete this file? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={handleCancelDelete}
-                className="px-4 py-2 text-sm font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md hover:bg-[#f9fafb] transition-colors"
+                className="px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-[var(--app-background)] transition-colors"
               >
                 Cancel
               </button>

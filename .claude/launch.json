@@ -3,9 +3,11 @@
   "configurations": [
     {
       "name": "reglantern-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "5180", "--strictPort"],
-      "port": 5180
+      "runtimeExecutable": "/Users/tf46551/Documents/My Projects/Reglantern/node_modules/.bin/vite",
+      "runtimeArgs": [],
+      "cwd": "/Users/tf46551/Documents/My Projects/Reglantern",
+      "port": 5180,
+      "autoPort": true
     },
     {
       "name": "worktree-dev",

@@ -52,13 +52,13 @@ export function FileUploadDropzone({
         'flex flex-col items-center justify-center gap-3 rounded-md border-2 border-dashed py-10 px-6 text-center transition-colors',
         disabled && 'opacity-60 cursor-not-allowed',
         !disabled && (isDragging
-          ? 'border-[#fc6] bg-[#fffbe5]'
-          : 'border-[#cdd7e1] bg-white hover:bg-[#fafafa]'),
+          ? 'border-[#fc6] bg-[#fffbe5] dark:bg-[#fc6]/10'
+          : 'border-border bg-card hover:bg-muted/50'),
         className
       )}
     >
-      <Upload className="size-6 text-[#71717a]" />
-      <div className="text-[14px] font-medium text-[#18181b]">{title}</div>
+      <Upload className="size-6 text-muted-foreground" />
+      <div className="text-[14px] font-medium text-foreground">{title}</div>
       <Button
         variant="secondary"
         size="sm"
@@ -67,7 +67,7 @@ export function FileUploadDropzone({
       >
         Browse Files
       </Button>
-      <div className="text-[12px] text-[#71717a]">{hint}</div>
+      <div className="text-[12px] text-muted-foreground">{hint}</div>
       <input
         ref={inputRef}
         type="file"

@@ -17,15 +17,15 @@ export const ProjectCell = memo(function ProjectCell({ task, col }: ProjectCellP
     >
       <div
         aria-hidden="true"
-        className="absolute border-[#cdd7e1] border-r border-solid inset-0 pointer-events-none"
+        className="absolute border-[#cdd7e1] dark:border-[#2a2f3a] border-r border-solid inset-0 pointer-events-none"
       />
       {name ? (
         <div className="flex items-center gap-1.5 min-w-0">
-          <FolderOpen size={13} className="text-[#71717a] shrink-0" strokeWidth={2} />
-          <span className="text-[13px] text-[#18181b] truncate" title={name}>{name}</span>
+          <FolderOpen size={13} className="text-[#71717a] dark:text-[#a1a1aa] shrink-0" strokeWidth={2} />
+          <span className="text-[13px] text-[#18181b] dark:text-[#f4f4f5] truncate" title={name}>{name}</span>
         </div>
       ) : (
-        <span className="text-[13px] text-[#9ca3af] italic">—</span>
+        <span className="text-[13px] text-[#9ca3af] dark:text-[#52525b] italic">—</span>
       )}
     </div>
   );

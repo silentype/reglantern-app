@@ -33,7 +33,7 @@ import type { Task } from '../components/task-table/types';
 // Bumped to v8 when the seed was doubled (more projects per center, more tasks
 // per project, rotating completion profiles). Older payloads predate the new
 // shape, so the key bump forces a clean reseed.
-export const PROJECTS_STORAGE_KEY = 'reglantern.projects.v9';
+export const PROJECTS_STORAGE_KEY = 'reglantern.projects.v10';
 
 // ── Date helpers ─────────────────────────────────────────────────────────────
 

@@ -22,7 +22,6 @@ import {
 import { PROJECTS_STORAGE_KEY, loadProjects } from './data/initialProjects';
 import {
   type Form5AForm,
-  FORM_5A_SERVICE_CATALOG,
   loadAllForm5A,
   saveAllForm5A,
   makeEmptyForm,
@@ -161,6 +160,7 @@ const NAV_ITEM_TO_URL: Record<string, string> = {
   'Home': '/home',
   'My Tasks': '/tasks/my-tasks',
   'Form 5A': '/checklists/form-5a',
+  'Form 5A — Focus View': '/checklists/form-5a-focus',
   'Site Visit Protocol Checklist': '/checklists/site-visit-protocol',
   'Ryan White Part C/D': '/checklists/ryan-white-c-d',
   'FTCA Site Visit Protocol': '/checklists/ftca-site-visit-protocol',
@@ -173,6 +173,7 @@ const NAV_ITEM_TO_URL: Record<string, string> = {
 const URL_TO_NAV_ITEM: Record<string, string> = {
   'my-tasks': 'My Tasks',
   'form-5a': 'Form 5A',
+  'form-5a-focus': 'Form 5A — Focus View',
   'site-visit-protocol': 'Site Visit Protocol Checklist',
   'ryan-white-c-d': 'Ryan White Part C/D',
   'ftca-site-visit-protocol': 'FTCA Site Visit Protocol',
@@ -229,6 +230,7 @@ export default function App() {
   const selectedNavItem = URL_TO_NAV_ITEM[itemSeg ?? ''] ?? (
     currentPage === 'tasks' ? 'My Tasks' :
     currentPage === 'admin' ? 'Project Builder' :
+    currentPage === 'checklists' ? '' :
     'Site Visit Protocol Checklist'
   );
 
@@ -262,8 +264,8 @@ export default function App() {
         if (Number.isInteger(tid)) selectedTaskId = tid;
       }
     }
-  } else if (currentPage === 'checklists' && itemSeg === 'form-5a') {
-    // Form 5A rows open the shared task panel over the form via ?task=<id>.
+  } else if (currentPage === 'checklists' && (itemSeg === 'form-5a' || itemSeg === 'form-5a-focus')) {
+    // Form 5A rows (grid or Focus View) open the shared task panel via ?task=<id>.
     const tq = Number(new URLSearchParams(location.search).get('task'));
     if (Number.isInteger(tq) && tq > 0) selectedTaskId = tq;
   }
@@ -276,8 +278,6 @@ export default function App() {
       navigate('/home/projects', { replace: true });
     } else if (location.pathname === '/tasks') {
       navigate('/tasks/my-tasks', { replace: true });
-    } else if (location.pathname === '/checklists') {
-      navigate('/checklists/site-visit-protocol', { replace: true });
     } else if (location.pathname === '/admin') {
       navigate('/admin/project-builder', { replace: true });
     }
@@ -363,7 +363,7 @@ export default function App() {
 
   // Seed a health center's Form 5A the first time its workspace is opened.
   useEffect(() => {
-    if (currentPage === 'checklists' && itemSeg === 'form-5a' && effectiveHC) {
+    if (currentPage === 'checklists' && (itemSeg === 'form-5a' || itemSeg === 'form-5a-focus') && effectiveHC) {
       setForm5aByHC((prev) => (prev[effectiveHC!] ? prev : { ...prev, [effectiveHC!]: makeEmptyForm(effectiveHC!) }));
     }
   }, [currentPage, itemSeg, effectiveHC]);
@@ -515,26 +515,6 @@ export default function App() {
     navigate(`/tasks/my-tasks/${taskId}`);
   }, [navigate]);
 
-  // For a Form 5A task open in the panel, a link that jumps to that row in the
-  // Form 5A workspace (expanded + scrolled into view).
-  const form5aRelatedLink = useMemo(() => {
-    if (selectedTaskId === null || !isForm5ATaskId(selectedTaskId)) return undefined;
-    const { hcIndex, serviceIndex } = decodeForm5ATaskId(selectedTaskId);
-    const hc = HEALTH_CENTERS[hcIndex];
-    const svc = FORM_5A_SERVICE_CATALOG[serviceIndex];
-    if (!hc || !svc) return undefined;
-    const slug = svc.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    return {
-      label: `Open “${svc.name}” in Form 5A`,
-      onClick: () => {
-        const params = new URLSearchParams();
-        params.set('hc', hc);
-        params.set('service', slug);
-        navigate(`/checklists/form-5a?${params}`);
-      },
-    };
-  }, [selectedTaskId, navigate]);
-
   const handleClosePanel = useCallback(() => {
     setNewTaskTitle('');
     if (currentPage === 'test') {
@@ -683,6 +663,14 @@ export default function App() {
           next.completed = updates.status === 'Complete';
           next.completedAt = next.completed ? new Date().toISOString() : undefined;
         }
+        if (updates.comments !== undefined) {
+          next.comments = updates.comments.map((c) => ({
+            id: c.id,
+            user: c.user,
+            text: c.text,
+            timestamp: c.timestamp instanceof Date ? c.timestamp.toISOString() : c.timestamp,
+          }));
+        }
         return next;
       });
       return;
@@ -751,7 +739,7 @@ export default function App() {
     else if (page === 'tasks') navigate('/tasks/my-tasks');
     else if (page === 'admin') navigate('/admin/project-builder');
     else if (page === 'settings') navigate('/settings');
-    else navigate('/checklists/site-visit-protocol');
+    else navigate('/checklists');
   }, [navigate]);
 
   const handleSideNavItemSelect = useCallback((item: string) => {
@@ -901,6 +889,7 @@ export default function App() {
               projects={visibleProjects}
               healthCenters={effectiveHC ? healthCenters.filter(hc => hc.name === effectiveHC) : healthCenters}
               homeTab={homeTab === 'tasks' ? 'projects' : homeTab}
+              currentUserName={currentUser.name}
             />
           ) : currentPage === 'tasks' ? (
             <TasksPage
@@ -936,7 +925,7 @@ export default function App() {
             <HealthCenterAdminPage
               onToggleSideNav={toggleSideNav}
               sideNavOpen={sideNavOpen}
-              healthCenters={healthCenters}
+              healthCenters={effectiveHC ? healthCenters.filter(hc => hc.name === effectiveHC) : healthCenters}
               setHealthCenters={setHealthCenters}
               fieldDefs={healthCenterFieldDefs}
               selectedCenterName={healthCenterDetail}
@@ -1046,7 +1035,6 @@ export default function App() {
               availableProjects={projects
                 .filter((p) => p.id !== currentProject?.id)
                 .map((p) => ({ id: p.id, name: p.name, startDate: p.startDate, endDate: p.endDate }))}
-              relatedLink={form5aRelatedLink}
             />
           ) : null}
           </Suspense>

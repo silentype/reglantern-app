@@ -440,17 +440,17 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Status Chips */}
               <button
                 onClick={() => toggleStatusFilter('all')}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
+                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
               >
                 All Tasks
               </button>
               <button
                 onClick={() => toggleStatusFilter('incomplete')}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('incomplete') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
+                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('incomplete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
               >Incomplete</button>
               <button
                 onClick={() => toggleStatusFilter('complete')}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('complete') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
+                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('complete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
               >
                 Complete
               </button>
@@ -461,7 +461,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Date Filter Chip */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ dueDateFilter ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ dueDateFilter ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
                     <CalendarIcon className="h-3.5 w-3.5" />
                     {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
                   </button>
@@ -534,7 +534,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Assigned To Chip */}
               <Popover open={assignedToOpen} onOpenChange={setAssignedToOpen}>
                 <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !assignedToFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !assignedToFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
                     <User className="h-3.5 w-3.5" />
                     Assigned {!assignedToFilter.includes('all') && `(${assignedToFilter.length})`}
                   </button>
@@ -599,7 +599,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Project Chip */}
               <Popover open={projectOpen} onOpenChange={setProjectOpen}>
                 <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !projectFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !projectFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
                     <FolderOpen className="h-3.5 w-3.5" />
                     Project {!projectFilter.includes('all') && `(${projectFilter.length})`}
                   </button>
@@ -633,7 +633,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Category Chip */}
               <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
                 <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !categoryFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !categoryFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
                     <Tag className="h-3.5 w-3.5" />
                     Category {!categoryFilter.includes('all') && `(${categoryFilter.length})`}
                   </button>
@@ -685,7 +685,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Health Center Chip */}
               <Popover open={healthCenterOpen} onOpenChange={setHealthCenterOpen}>
                 <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !healthCenterFilter.includes('All Health Centers') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
                     <Building2 className="h-3.5 w-3.5" />
                     Health Center {!healthCenterFilter.includes('All Health Centers') && `(${healthCenterFilter.length})`}
                   </button>
@@ -737,7 +737,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Needs Attention Chip */}
               <Popover open={needsAttentionOpenChip} onOpenChange={setNeedsAttentionOpenChip}>
                 <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !needsAttentionFilter.includes('all') ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
+                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !needsAttentionFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
                     <AlertCircle className="h-3.5 w-3.5" />
                     Needs Attention {!needsAttentionFilter.includes('all') && `(${needsAttentionFilter.length})`}
                   </button>
@@ -818,7 +818,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Columns Button */}
               <Popover open={columnVisibilityOpenFilterBar} onOpenChange={setColumnVisibilityOpenFilterBar}>
                 <PopoverTrigger asChild>
-                  <button className="px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] text-[12px] ml-auto">
+                  <button className="px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] text-[12px] ml-auto">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
                       <path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
