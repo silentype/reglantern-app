@@ -78,6 +78,7 @@ export interface Project {
    * list (see App.tsx's allTasksIncludingProjects merge).
    */
   assignedHealthCenters?: Array<{ name: string; assignedAt: string /* MM/dd/yyyy */ }>;
+  status?: 'in_progress' | 'completed';
 }
 
 export function AdminPage({
@@ -140,7 +141,7 @@ export function AdminPage({
   // while open. `null` = modal closed. Discarded on Cancel, written
   // back to the project on Save.
   const [editProjectDraft, setEditProjectDraft] = useState<
-    { name: string; description: string } | null
+    { name: string; description: string; status: 'in_progress' | 'completed' } | null
   >(null);
   // selectedProject is derived from URL (selectedProjectId prop) so it survives
   // refresh and is shareable. Mutations to the projects array auto-flow through.
@@ -289,6 +290,7 @@ export function AdminPage({
     setEditProjectDraft({
       name: selectedProject.name,
       description: selectedProject.description,
+      status: selectedProject.status ?? 'in_progress',
     });
     setEditProjectOpen(true);
   }, [selectedProject, setEditProjectOpen]);
@@ -307,6 +309,7 @@ export function AdminPage({
       setEditProjectDraft({
         name: selectedProject.name,
         description: selectedProject.description,
+        status: selectedProject.status ?? 'in_progress',
       });
     }
     if (!editProjectOpen && editProjectDraft) {
@@ -327,6 +330,7 @@ export function AdminPage({
               ...p,
               name: editProjectDraft.name.trim(),
               description: editProjectDraft.description,
+              status: editProjectDraft.status,
             }
           : p
       )
@@ -429,17 +433,17 @@ export function AdminPage({
         {/* Sticky Top Section - Header. No bottom border here -- the
             table section runs straight into the header on the same
             page background. */}
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+        <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
           <div className="mb-1 flex items-end justify-between gap-4">
             <div className="flex-1 min-w-0">
               <BackButton onClick={() => { onSelectProject(null); setTaskSearch(''); }} className="mb-3">
                 Project Builder
               </BackButton>
-              <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
+              <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
                 {selectedProject.name}
               </h1>
               {selectedProject.description && (
-                <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+                <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
                   {selectedProject.description}
                 </p>
               )}
@@ -449,7 +453,7 @@ export function AdminPage({
                 <SaveIndicator status={tableSaveStatus} />
                 <button
                   onClick={handleOpenEditProject}
-                  className="h-[32px] px-[10px] flex items-center justify-center gap-2 rounded-[6px] border border-[#e4e4e7] bg-white text-[#18181b] text-[13px] font-medium hover:bg-[#f9fafb] transition-colors"
+                  className="h-[32px] px-[10px] flex items-center justify-center gap-2 rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5] text-[13px] font-medium hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a] transition-colors"
                   aria-label="Edit project"
                   title="Edit project"
                 >
@@ -458,7 +462,7 @@ export function AdminPage({
                 </button>
                 <button
                   onClick={() => setConfirmDeleteProjectOpen(true)}
-                  className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] bg-white text-[#71717a] hover:bg-[#fef2f2] hover:text-[#b91c1c] hover:border-[#fecaca] transition-colors"
+                  className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1e2129] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#fef2f2] dark:hover:bg-[#2d1010] hover:text-[#b91c1c] hover:border-[#fecaca] dark:hover:border-[#7f1d1d] transition-colors"
                   aria-label="Delete project"
                   title="Delete project"
                 >
@@ -493,15 +497,15 @@ export function AdminPage({
             onClick={handleCloseEditProject}
           >
             <div
-              className="bg-white rounded-[8px] shadow-xl max-w-[480px] w-full p-5"
+              className="bg-white dark:bg-[#1e2129] rounded-[8px] shadow-xl max-w-[480px] w-full p-5"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-[18px] font-semibold text-[#18181b] mb-4">
+              <h2 className="text-[18px] font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-4">
                 Edit project
               </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
                     Project name <span className="text-[#dc2626]">*</span>
                   </label>
                   <input
@@ -510,13 +514,13 @@ export function AdminPage({
                     onChange={(e) =>
                       setEditProjectDraft((prev) => (prev ? { ...prev, name: e.target.value } : prev))
                     }
-                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
                     placeholder="Project name"
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
                     Description
                   </label>
                   <textarea
@@ -524,10 +528,31 @@ export function AdminPage({
                     onChange={(e) =>
                       setEditProjectDraft((prev) => (prev ? { ...prev, description: e.target.value } : prev))
                     }
-                    className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    className="w-full px-3 py-2 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
                     placeholder="Add a description"
                     rows={3}
                   />
+                </div>
+                <div>
+                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
+                    Status
+                  </label>
+                  <div className="flex gap-2">
+                    {(['in_progress', 'completed'] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setEditProjectDraft((prev) => prev ? { ...prev, status: s } : prev)}
+                        className={`flex-1 h-[36px] rounded-[6px] border text-[13px] font-medium transition-colors ${
+                          editProjectDraft.status === s
+                            ? 'border-[#fc6] bg-[#fc6] text-[#18181b]'
+                            : 'border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a]'
+                        }`}
+                      >
+                        {s === 'in_progress' ? 'In Progress' : 'Completed'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-5">
@@ -547,13 +572,13 @@ export function AdminPage({
             onClick={() => setConfirmDeleteProjectOpen(false)}
           >
             <div
-              className="bg-white rounded-[8px] shadow-xl max-w-[420px] w-full p-5"
+              className="bg-white dark:bg-[#1e2129] rounded-[8px] shadow-xl max-w-[420px] w-full p-5"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-[18px] font-semibold text-[#18181b] mb-2">
+              <h2 className="text-[18px] font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">
                 Delete this project?
               </h2>
-              <p className="text-[14px] text-[#52525b] mb-5">
+              <p className="text-[14px] text-[#52525b] dark:text-[#a1a1aa] mb-5">
                 <span className="font-medium text-[#18181b]">"{selectedProject.name}"</span>{' '}
                 and its {selectedProject.tasks.length} task
                 {selectedProject.tasks.length === 1 ? '' : 's'} will be permanently removed. This can't be undone.
@@ -586,8 +611,8 @@ export function AdminPage({
           {resolvedProjectTasks.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <p className="text-[#71717a] text-[14px]">No tasks added to this project yet.</p>
-                <p className="text-[#71717a] text-[14px] mt-1">Click "Add Task" to create your first custom task.</p>
+                <p className="text-[#71717a] dark:text-[#a1a1aa] text-[14px]">No tasks added to this project yet.</p>
+                <p className="text-[#71717a] dark:text-[#a1a1aa] text-[14px] mt-1">Click "Add Task" to create your first custom task.</p>
               </div>
             </div>
           ) : filteredProjectTasks.length === 0 ? (
@@ -621,12 +646,12 @@ export function AdminPage({
 
         {pendingDelete && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setPendingDelete(null)}>
-            <div className="bg-white rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold text-[#09090b] mb-2">Delete task with dependents</h3>
-              <p className="text-[14px] text-[#71717a] mb-3">
-                <span className="font-medium text-[#18181b]">{pendingDelete.task.title}</span> is the anchor for {pendingDelete.dependents.length} other task{pendingDelete.dependents.length === 1 ? '' : 's'}. Deleting it will clear those due-date rules.
+            <div className="bg-white dark:bg-[#1e2129] rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-semibold text-[#09090b] dark:text-[#f4f4f5] mb-2">Delete task with dependents</h3>
+              <p className="text-[14px] text-[#71717a] dark:text-[#a1a1aa] mb-3">
+                <span className="font-medium text-[#18181b] dark:text-[#f4f4f5]">{pendingDelete.task.title}</span> is the anchor for {pendingDelete.dependents.length} other task{pendingDelete.dependents.length === 1 ? '' : 's'}. Deleting it will clear those due-date rules.
               </p>
-              <ul className="text-[13px] text-[#18181b] mb-6 list-disc pl-5 space-y-0.5 max-h-40 overflow-y-auto">
+              <ul className="text-[13px] text-[#18181b] dark:text-[#f4f4f5] mb-6 list-disc pl-5 space-y-0.5 max-h-40 overflow-y-auto">
                 {pendingDelete.dependents.map((d) => (
                   <li key={d.id}>{d.title}</li>
                 ))}
@@ -634,7 +659,7 @@ export function AdminPage({
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setPendingDelete(null)}
-                  className="px-4 py-2 text-sm font-medium text-[#18181b] bg-white border border-[#e4e4e7] rounded-md hover:bg-[#f9fafb] transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a] transition-colors"
                 >
                   Cancel
                 </button>
@@ -658,11 +683,11 @@ export function AdminPage({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
         <div className="flex items-end justify-between gap-4 mb-1">
           <div>
-            <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">Project Builder</h1>
-            <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+            <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">Project Builder</h1>
+            <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
               Create and manage projects with custom tasks
             </p>
           </div>
@@ -702,32 +727,32 @@ export function AdminPage({
             }}
           >
             <div
-              className="bg-white rounded-[8px] shadow-xl max-w-[480px] w-full p-5"
+              className="bg-white dark:bg-[#1e2129] rounded-[8px] shadow-xl max-w-[480px] w-full p-5"
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 className="text-[18px] font-semibold text-[#18181b] mb-4">Create Project</h2>
+              <h2 className="text-[18px] font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-4">Create Project</h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
                     Project name <span className="text-[#dc2626]">*</span>
                   </label>
                   <input
                     type="text"
                     value={newProject.name}
                     onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
                     placeholder="Project name"
                     autoFocus
                   />
                 </div>
                 <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] mb-1.5">
+                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
                     Description
                   </label>
                   <textarea
                     value={newProject.description}
                     onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
+                    className="w-full px-3 py-2 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
                     placeholder="Add a description"
                     rows={3}
                   />
@@ -772,14 +797,14 @@ export function AdminPage({
                       openProject();
                     }
                   }}
-                  className="p-5 border border-[#e4e4e7] rounded-[6px] bg-white cursor-pointer hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-all text-left"
+                  className="p-5 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1e2129] cursor-pointer hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-all text-left"
                 >
                   <div className="mb-3">
-                    <h3 className="font-semibold text-[#18181b] text-[16px] leading-[24px]">
+                    <h3 className="font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[16px] leading-[24px]">
                       {project.name}
                     </h3>
                   </div>
-                  <p className="text-[14px] text-[#71717a] mb-4 line-clamp-2 leading-[20px]">
+                  <p className="text-[14px] text-[#71717a] dark:text-[#a1a1aa] mb-4 line-clamp-2 leading-[20px]">
                     {project.description}
                   </p>
 
@@ -812,7 +837,7 @@ export function AdminPage({
                           <PopoverTrigger asChild>
                             <button
                               onClick={(e) => e.stopPropagation()}
-                              className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border border-[#e4e4e7] rounded-[6px] text-[12px] hover:border-[#d4d4d8] transition-colors h-[36px]"
+                              className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] text-[12px] hover:border-[#d4d4d8] dark:hover:border-[#3f4756] transition-colors h-[36px]"
                             >
                               <div className="flex items-center gap-2 flex-1 min-w-0">
                                 <Building2 className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
@@ -953,7 +978,7 @@ export function AdminPage({
                     );
                   })()}
 
-                  <div className="flex items-center justify-between text-[12px] text-[#71717a] pt-3 border-t border-[#f4f4f5]">
+                  <div className="flex items-center justify-between text-[12px] text-[#71717a] dark:text-[#a1a1aa] pt-3 border-t border-[#f4f4f5] dark:border-[#2a2f3a]">
                     <span className="font-medium">
                       {project.tasks.length} {project.tasks.length === 1 ? 'task' : 'tasks'}
                     </span>
@@ -976,8 +1001,8 @@ export function AdminPage({
 
         {projects.length === 0 && !creatingNewProject && (
           <div className="text-center py-16">
-            <p className="text-[#71717a] text-[14px]">No projects yet.</p>
-            <p className="text-[#71717a] text-[14px] mt-1">Click "Create New Project" to get started.</p>
+            <p className="text-[#71717a] dark:text-[#a1a1aa] text-[14px]">No projects yet.</p>
+            <p className="text-[#71717a] dark:text-[#a1a1aa] text-[14px] mt-1">Click "Create New Project" to get started.</p>
           </div>
         )}
       </div>

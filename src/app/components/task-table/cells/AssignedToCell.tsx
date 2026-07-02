@@ -37,11 +37,11 @@ export const AssignedToCell = memo(function AssignedToCell({
     >
       <div
         aria-hidden="true"
-        className="absolute border-[#cdd7e1] border-r border-solid inset-0 pointer-events-none"
+        className="absolute border-[#cdd7e1] dark:border-[#2a2f3a] border-r border-solid inset-0 pointer-events-none"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-transparent group-hover/assigned:bg-[#f5f5f5] transition-colors"
+        className="absolute inset-0 bg-transparent group-hover/assigned:bg-[#f5f5f5] dark:group-hover/assigned:bg-[#2a2f3a] transition-colors"
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -58,7 +58,7 @@ export const AssignedToCell = memo(function AssignedToCell({
                   Assign User
                 </span>
               )}
-              <ChevronDown className="size-[16px] text-[#18181B]" />
+              <ChevronDown className="size-[16px] text-[#18181B] dark:text-[#f4f4f5]" />
             </div>
           </button>
         </DropdownMenuTrigger>

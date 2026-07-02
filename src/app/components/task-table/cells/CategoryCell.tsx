@@ -28,7 +28,7 @@ export const CategoryCell = memo(function CategoryCell({
     >
       <div
         aria-hidden="true"
-        className="absolute border-[#cdd7e1] border-r border-solid inset-0 pointer-events-none"
+        className="absolute border-[#cdd7e1] dark:border-[#2a2f3a] border-r border-solid inset-0 pointer-events-none"
       />
       {category ? (
         <span
@@ -39,7 +39,7 @@ export const CategoryCell = memo(function CategoryCell({
           {category}
         </span>
       ) : (
-        <span className="text-[13px] text-[#9ca3af] italic">—</span>
+        <span className="text-[13px] text-[#9ca3af] dark:text-[#52525b] italic">—</span>
       )}
     </div>
   );

@@ -6,7 +6,8 @@
  */
 
 import { useRef, useState, useEffect } from 'react';
-import { ChevronDown, Check, Lock } from 'lucide-react';
+import { ChevronDown, Check, Building2 } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 import reglanternLogo from 'figma:asset/5c768d7f259dcbb31703dfef4853e9bbf108c1dc.png';
 import { TopNavButton } from './design-system/TopNavButton';
@@ -43,6 +44,7 @@ export function TopNav({
   users = [],
   onUserChange,
 }: TopNavProps) {
+  const navigate = useNavigate();
   const [hcDropOpen, setHcDropOpen] = useState(false);
   const [avatarDropOpen, setAvatarDropOpen] = useState(false);
   const hcRef = useRef<HTMLDivElement>(null);
@@ -122,12 +124,15 @@ export function TopNav({
             </>
           ) : (
             /* Locked — member can only see their assigned HC */
-            <div className="border border-[#fc6]/40 rounded-md w-[240px] px-4 py-2 flex items-center justify-between gap-2">
-              <span className="text-[#fc6]/80 text-sm font-medium whitespace-nowrap truncate">
+            <button
+              onClick={() => selectedHC && navigate(`/admin/health-centers/${encodeURIComponent(selectedHC)}`)}
+              className="border border-[#fc6]/40 rounded-md w-[240px] px-4 py-2 flex items-center gap-2 hover:border-[#fc6] hover:bg-[#fc6]/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+            >
+              <Building2 size={14} className="text-[#fc6]/70 shrink-0" />
+              <span className="text-[#fc6]/80 text-sm font-medium whitespace-nowrap truncate flex-1 text-left">
                 {hcLabel}
               </span>
-              <Lock size={14} className="text-[#fc6]/50 shrink-0" />
-            </div>
+            </button>
           )}
         </div>
 

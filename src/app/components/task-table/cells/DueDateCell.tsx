@@ -157,11 +157,11 @@ export const DueDateCell = memo(function DueDateCell({
     >
       <div
         aria-hidden="true"
-        className="absolute border-[#cdd7e1] border-r border-solid inset-0 pointer-events-none"
+        className="absolute border-[#cdd7e1] dark:border-[#2a2f3a] border-r border-solid inset-0 pointer-events-none"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-transparent group-hover/date:bg-[#f5f5f5] transition-colors"
+        className="absolute inset-0 bg-transparent group-hover/date:bg-[#f5f5f5] dark:group-hover/date:bg-[#2a2f3a] transition-colors"
       />
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         {/* Relative-date rules ("reference date types") are a Project Builder
@@ -208,9 +208,9 @@ export const DueDateCell = memo(function DueDateCell({
                 onBlur={commitInlineDueDate}
                 placeholder="Select due date"
                 maxLength={10}
-                className="flex-1 min-w-0 bg-transparent border-0 outline-none font-['Geist:Regular',sans-serif] font-normal text-[#18181b] placeholder:text-[#999] text-[14px]"
+                className="flex-1 min-w-0 bg-transparent border-0 outline-none font-['Geist:Regular',sans-serif] font-normal text-[#18181b] dark:text-[#f4f4f5] placeholder:text-[#999] dark:placeholder:text-[#52525b] text-[14px]"
               />
-              <ChevronDown className="size-[16px] text-[#18181B] shrink-0 ml-1" />
+              <ChevronDown className="size-[16px] text-[#18181B] dark:text-[#f4f4f5] shrink-0 ml-1" />
             </div>
           </PopoverTrigger>
         )}
@@ -220,7 +220,7 @@ export const DueDateCell = memo(function DueDateCell({
           collisionPadding={16}
         >
           {enableRelativeDates && (
-            <div className="sticky top-0 z-10 bg-white px-3 pt-3 pb-2 border-b border-[#e4e4e7]">
+            <div className="sticky top-0 z-10 bg-white dark:bg-[#1e2129] px-3 pt-3 pb-2 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
               <TabStrip>
                 <Tab active={dateMode === 'relative'} onClick={() => setDateMode('relative')}>
                   Relative to
@@ -234,8 +234,8 @@ export const DueDateCell = memo(function DueDateCell({
 
           {(!enableRelativeDates || dateMode === 'specific') && (
             <div className="flex">
-              <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
-                <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
+              <div className="p-3 border-r border-[#e4e4e7] dark:border-[#2a2f3a] w-[180px]">
+                <div className="text-xs font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Quick Select</div>
                 <div className="flex flex-col gap-1">
                   {QUICK_DATE_OPTIONS.map((option, idx) => (
                     <QuickDateButton
@@ -247,8 +247,8 @@ export const DueDateCell = memo(function DueDateCell({
                 </div>
               </div>
               <div className="flex flex-col">
-                <div className="p-3 border-b border-[#e4e4e7]">
-                  <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
+                <div className="p-3 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+                  <div className="text-xs font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Custom Date</div>
                   <input
                     type="text"
                     value={inputValue}
@@ -264,7 +264,7 @@ export const DueDateCell = memo(function DueDateCell({
                     }}
                     placeholder="mm/dd/yyyy"
                     maxLength={10}
-                    className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
+                    className="w-full px-3 py-2 text-sm border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded focus:outline-none focus:border-[#fc6]"
                   />
                 </div>
                 <Calendar

@@ -77,6 +77,9 @@ export interface Form5AService {
   dueDate?: string;
   assignedTo?: { initials: string; name: string };
   comments?: Form5AComment[];
+  /** Overrides for the derived task's title/description, set via the shared task panel. */
+  taskTitle?: string;
+  taskDescription?: string;
 }
 
 export interface Form5AForm {

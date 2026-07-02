@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react';
-import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, FileCheck2, Settings2, UserPlus, HelpCircle, Info, PanelLeftClose, PanelLeftOpen, Pin, Sun, Moon } from 'lucide-react';
+import { type LucideIcon, CheckSquare, FolderKanban, ClipboardCheck, Building2, ClipboardList, FileCheck2, LayoutList, MapPin, HeartPulse, ShieldCheck, Settings2, UserPlus, HelpCircle, Info, PanelLeftClose, PanelLeftOpen, Pin, Sun, Moon } from 'lucide-react';
 
 interface SideNavigationProps {
   pageType: 'tasks' | 'checklists' | 'admin' | 'settings';
@@ -13,7 +13,8 @@ interface SideNavigationProps {
 
 const TASKS_ITEMS = ['My Tasks'] as const;
 const CHECKLISTS_ITEMS = [
-  'Form 5A',
+  'Form 5A - Column View',
+  'Form 5A - Focus View',
   'Site Visit Protocol Checklist',
   'Ryan White Part C/D',
   'FTCA Site Visit Protocol',
@@ -27,10 +28,11 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   'Compliance Review': ClipboardCheck,
   'Compliance Tasks': ClipboardList,
   'Health Centers': Building2,
-  'Form 5A': FileCheck2,
-  'Site Visit Protocol Checklist': ClipboardList,
-  'Ryan White Part C/D': ClipboardList,
-  'FTCA Site Visit Protocol': ClipboardList,
+  'Form 5A - Column View': FileCheck2,
+  'Form 5A - Focus View': LayoutList,
+  'Site Visit Protocol Checklist': MapPin,
+  'Ryan White Part C/D': HeartPulse,
+  'FTCA Site Visit Protocol': ShieldCheck,
   'Health Center Fields': Settings2,
 };
 
@@ -159,8 +161,8 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
           >
             <div className="shrink-0 size-[20px] flex items-center justify-center">
               {isOpen
-                ? <PanelLeftClose size={18} strokeWidth={2} className="text-[#18181b]" />
-                : <PanelLeftOpen size={18} strokeWidth={2} className="text-[#18181b]" />
+                ? <PanelLeftClose size={18} strokeWidth={2} className="text-[#18181b] dark:text-[#f4f4f5]" />
+                : <PanelLeftOpen size={18} strokeWidth={2} className="text-[#18181b] dark:text-[#f4f4f5]" />
               }
             </div>
           </button>

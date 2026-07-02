@@ -125,7 +125,7 @@ type CenterTypeFilter = 'all' | 'regPathway' | 'ryanWhite' | 'ftca';
 
 function chip(active: boolean, extra?: string) {
   return `px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${extra ?? ''} ${
-    active ? 'bg-[#fc6] text-[#18181b]' : 'bg-[#f5f5f5] text-[#71717a] hover:bg-[#e5e5e5]'
+    active ? 'bg-[#fc6] text-foreground' : 'bg-[#f5f5f5] text-muted-foreground hover:bg-[#e5e5e5]'
   }`;
 }
 
@@ -142,7 +142,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 function FieldValue({ children }: { children: React.ReactNode }) {
   const isEmpty = children === '' || children === null || children === undefined;
   return (
-    <div className={`text-[14px] ${isEmpty ? 'text-[#a1a1aa] italic' : 'text-[#18181b]'}`}>
+    <div className={`text-[14px] ${isEmpty ? 'text-[#a1a1aa] italic' : 'text-foreground'}`}>
       {isEmpty ? '—' : children}
     </div>
   );
@@ -157,7 +157,7 @@ function TextInput({ value, onChange, placeholder }: {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? ''}
-      className="w-full h-[36px] px-3 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white"
+      className="w-full h-[36px] px-3 border border-border rounded-[6px] text-[14px] text-foreground placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-card"
     />
   );
 }
@@ -178,9 +178,9 @@ function DatePickerField({ value, onChange }: { value: string; onChange: (v: str
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="inline-flex items-center gap-1.5 h-[36px] px-3 rounded-[6px] border border-[#e4e4e7] bg-white text-[13px] hover:border-[#cdd7e1] transition-colors w-full">
-          <CalendarIcon className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
-          <span className={parsed && isValid(parsed) ? 'text-[#18181b]' : 'text-[#a1a1aa]'}>{display}</span>
+        <button className="inline-flex items-center gap-1.5 h-[36px] px-3 rounded-[6px] border border-border bg-card text-[13px] hover:border-[#cdd7e1] transition-colors w-full">
+          <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          <span className={parsed && isValid(parsed) ? 'text-foreground' : 'text-[#a1a1aa]'}>{display}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -191,7 +191,7 @@ function DatePickerField({ value, onChange }: { value: string; onChange: (v: str
           initialFocus
         />
         {value && (
-          <div className="border-t border-[#e4e4e7] p-2">
+          <div className="border-t border-border p-2">
             <Button size="sm" variant="secondary" onClick={() => onChange('')}>Clear date</Button>
           </div>
         )}
@@ -202,10 +202,10 @@ function DatePickerField({ value, onChange }: { value: string; onChange: (v: str
 
 function SectionCard({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
-    <div className="border border-[#e4e4e7] rounded-[6px] bg-white mb-4">
+    <div className="border border-border rounded-[6px] bg-card mb-4">
       {title && (
-        <div className="px-5 py-3 border-b border-[#e4e4e7]">
-          <h3 className="text-[14px] font-semibold text-[#18181b]">{title}</h3>
+        <div className="px-5 py-3 border-b border-border">
+          <h3 className="text-[14px] font-semibold text-foreground">{title}</h3>
         </div>
       )}
       <div className="px-5 py-5">{children}</div>
@@ -248,8 +248,8 @@ function SpPopulationsField({ value, onChange }: { value: string[]; onChange: (v
           onClick={() => toggle(opt)}
           className={`h-[28px] px-3 rounded-full text-[12px] font-medium border transition-colors ${
             value.includes(opt)
-              ? 'bg-[#fc6] border-[#fc6] text-[#18181b]'
-              : 'bg-white border-[#e4e4e7] text-[#52525b] hover:border-[#cdd7e1]'
+              ? 'bg-[#fc6] border-[#fc6] text-foreground'
+              : 'bg-card border-border text-[#52525b] hover:border-[#cdd7e1]'
           }`}
         >
           {opt}
@@ -286,8 +286,8 @@ function OverviewTab({ center, data, onChange }: {
       </SectionCard>
       <SectionCard title="Configuration">
         <div className="flex items-center gap-3">
-          <input id="is-test-hc" type="checkbox" checked={data.isTestHc} onChange={(e) => onChange({ isTestHc: e.target.checked })} className="w-4 h-4 rounded border-[#e4e4e7] accent-[#fc6] cursor-pointer" />
-          <label htmlFor="is-test-hc" className="text-[14px] text-[#18181b] cursor-pointer">Test Health Center</label>
+          <input id="is-test-hc" type="checkbox" checked={data.isTestHc} onChange={(e) => onChange({ isTestHc: e.target.checked })} className="w-4 h-4 rounded border-border accent-[#fc6] cursor-pointer" />
+          <label htmlFor="is-test-hc" className="text-[14px] text-foreground cursor-pointer">Test Health Center</label>
         </div>
       </SectionCard>
     </>
@@ -330,9 +330,9 @@ function ProjectsTab({ center, assignedProjects, setProjects, onOpenProject }: {
 
   if (assignedProjects.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-2 text-[#71717a]">
+      <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
         <FolderOpen className="w-10 h-10 text-[#e4e4e7]" />
-        <p className="text-[14px] font-medium text-[#18181b]">No projects assigned</p>
+        <p className="text-[14px] font-medium text-foreground">No projects assigned</p>
         <p className="text-[13px]">Assign this health center to a project in the Project Builder.</p>
       </div>
     );
@@ -346,21 +346,21 @@ function ProjectsTab({ center, assignedProjects, setProjects, onOpenProject }: {
         const isCollapsed = collapsed.has(project.id);
 
         return (
-          <div key={project.id} className="border border-[#e4e4e7] rounded-[6px] overflow-hidden">
+          <div key={project.id} className="border border-border rounded-[6px] overflow-hidden">
             {/* Project header */}
-            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[#f9fafb] border-b border-[#e4e4e7]">
+            <div className="flex items-center justify-between gap-3 px-4 py-3 bg-[var(--app-background)] border-b border-border">
               <div className="flex items-center gap-2 min-w-0">
                 <button
                   onClick={() => toggleCollapse(project.id)}
                   className="shrink-0 p-0.5 rounded hover:bg-[#e4e4e7] transition-colors"
                 >
                   <ChevronDown
-                    className={`w-4 h-4 text-[#71717a] transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
+                    className={`w-4 h-4 text-muted-foreground transition-transform ${isCollapsed ? '-rotate-90' : ''}`}
                   />
                 </button>
                 <div className="min-w-0">
-                  <p className="text-[14px] font-semibold text-[#18181b] truncate">{project.name}</p>
-                  <p className="text-[12px] text-[#71717a]">
+                  <p className="text-[14px] font-semibold text-foreground truncate">{project.name}</p>
+                  <p className="text-[12px] text-muted-foreground">
                     {completedCount}/{project.tasks.length} tasks complete
                     {assignment && <> · Assigned {assignment.assignedAt}</>}
                   </p>
@@ -368,7 +368,7 @@ function ProjectsTab({ center, assignedProjects, setProjects, onOpenProject }: {
               </div>
               <button
                 onClick={() => onOpenProject(project.id)}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-[#71717a] hover:text-[#18181b] rounded-md hover:bg-[#e4e4e7] transition-colors"
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground rounded-md hover:bg-[#e4e4e7] transition-colors"
               >
                 Open in Builder
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -378,21 +378,21 @@ function ProjectsTab({ center, assignedProjects, setProjects, onOpenProject }: {
             {/* Task list */}
             {!isCollapsed && (
               project.tasks.length === 0 ? (
-                <p className="px-5 py-4 text-[13px] text-[#71717a]">No tasks in this project yet.</p>
+                <p className="px-5 py-4 text-[13px] text-muted-foreground">No tasks in this project yet.</p>
               ) : (
                 <div>
                   {/* Column headers */}
-                  <div className="grid grid-cols-[32px_1fr_140px_180px_130px] gap-2 px-4 py-2 border-b border-[#e4e4e7] bg-white">
+                  <div className="grid grid-cols-[32px_1fr_140px_180px_130px] gap-2 px-4 py-2 border-b border-border bg-card">
                     <div />
-                    <span className="text-[12px] font-medium text-[#71717a]">Task</span>
-                    <span className="text-[12px] font-medium text-[#71717a]">Due Date</span>
-                    <span className="text-[12px] font-medium text-[#71717a]">Assigned To</span>
-                    <span className="text-[12px] font-medium text-[#71717a]">Status</span>
+                    <span className="text-[12px] font-medium text-muted-foreground">Task</span>
+                    <span className="text-[12px] font-medium text-muted-foreground">Due Date</span>
+                    <span className="text-[12px] font-medium text-muted-foreground">Assigned To</span>
+                    <span className="text-[12px] font-medium text-muted-foreground">Status</span>
                   </div>
                   {project.tasks.map((task) => (
                     <div
                       key={task.id}
-                      className="grid grid-cols-[32px_1fr_140px_180px_130px] gap-2 items-center px-4 py-2.5 border-b border-[#f4f4f5] hover:bg-[#f9fafb] transition-colors group/row"
+                      className="grid grid-cols-[32px_1fr_140px_180px_130px] gap-2 items-center px-4 py-2.5 border-b border-[#f4f4f5] hover:bg-[var(--app-background)] transition-colors group/row"
                     >
                       {/* Checkbox */}
                       <button
@@ -406,7 +406,7 @@ function ProjectsTab({ center, assignedProjects, setProjects, onOpenProject }: {
                       <div className="min-w-0">
                         <button
                           onClick={() => navigate(`/admin/project-builder/${project.id}/${task.id}`)}
-                          className={`text-[13px] font-medium text-left truncate w-full hover:underline ${task.completed ? 'line-through text-[#71717a]' : 'text-[#18181b]'}`}
+                          className={`text-[13px] font-medium text-left truncate w-full hover:underline ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}
                         >
                           {task.title}
                         </button>
@@ -418,7 +418,7 @@ function ProjectsTab({ center, assignedProjects, setProjects, onOpenProject }: {
                       </div>
 
                       {/* Due date */}
-                      <span className="text-[13px] text-[#71717a]">
+                      <span className="text-[13px] text-muted-foreground">
                         {task.dueDate ?? <span className="text-[#d4d4d8]">—</span>}
                       </span>
 
@@ -552,7 +552,7 @@ function TechnologyTab({ data, onChange }: {
         </FieldGrid>
         <div className="mt-4">
           <Field label="LMS Notes">
-            <textarea value={data.lmsNotes} onChange={(e) => onChange({ lmsNotes: e.target.value })} rows={3} className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white resize-none" />
+            <textarea value={data.lmsNotes} onChange={(e) => onChange({ lmsNotes: e.target.value })} rows={3} className="w-full px-3 py-2 border border-border rounded-[6px] text-[14px] text-foreground placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-card resize-none" />
           </Field>
         </div>
       </SectionCard>
@@ -591,7 +591,7 @@ function SalesTab({ data, onChange }: {
         </FieldGrid>
       </SectionCard>
       <SectionCard title="Marketing Notes">
-        <textarea value={data.marketingNotes} onChange={(e) => onChange({ marketingNotes: e.target.value })} rows={4} placeholder="Notes visible to marketing team…" className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white resize-none" />
+        <textarea value={data.marketingNotes} onChange={(e) => onChange({ marketingNotes: e.target.value })} rows={4} placeholder="Notes visible to marketing team…" className="w-full px-3 py-2 border border-border rounded-[6px] text-[14px] text-foreground placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-card resize-none" />
       </SectionCard>
     </>
   );
@@ -604,7 +604,7 @@ function DatesTab({ center, fieldDefs, onSetFieldValue }: {
   if (fieldDefs.length === 0) {
     return (
       <SectionCard>
-        <div className="py-6 text-center text-[#71717a] text-[14px]">
+        <div className="py-6 text-center text-muted-foreground text-[14px]">
           No date fields configured yet. Add fields in Settings → Health Center Fields.
         </div>
       </SectionCard>
@@ -752,17 +752,17 @@ export function HealthCenterAdminPage({
   if (selectedCenter) {
     return (
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+        <div className="sticky top-0 z-30 bg-card px-[24px] pt-[22px] pb-0 border-b border-border">
           <BackButton onClick={() => onSelectCenter(null)} className="mb-3">
             Health Centers
           </BackButton>
           <div className="flex items-center gap-2 mb-1">
-            <Building2 className="w-5 h-5 text-[#71717a]" />
-            <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px]">
+            <Building2 className="w-5 h-5 text-muted-foreground" />
+            <h1 className="text-2xl font-semibold text-foreground leading-[32px] tracking-[0.4px]">
               {selectedCenter.name}
             </h1>
           </div>
-          <p className="text-sm font-medium text-[#71717a] leading-[14px] mb-4">
+          <p className="text-sm font-medium text-muted-foreground leading-[14px] mb-4">
             {selectedCenter.city}, {selectedCenter.state}
           </p>
           <div className="flex gap-0 -mb-px">
@@ -772,8 +772,8 @@ export function HealthCenterAdminPage({
                 onClick={() => navigateToTab(tab)}
                 className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab
-                    ? 'border-[#fc6] text-[#18181b]'
-                    : 'border-transparent text-[#71717a] hover:text-[#18181b] hover:border-[#e4e4e7]'
+                    ? 'border-[#fc6] text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                 }`}
               >
                 {tab}
@@ -819,7 +819,7 @@ export function HealthCenterAdminPage({
                   onChange={(e) => patchCenter(selectedCenter.name, 'notes', e.target.value as HealthCenter['notes'])}
                   rows={12}
                   placeholder="Enter any general notes about this health center…"
-                  className="w-full px-3 py-2 border border-[#e4e4e7] rounded-[6px] text-[14px] text-[#18181b] placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-white resize-none"
+                  className="w-full px-3 py-2 border border-border rounded-[6px] text-[14px] text-foreground placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-card resize-none"
                 />
               </SectionCard>
             )}
@@ -836,13 +836,13 @@ export function HealthCenterAdminPage({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+      <div className="sticky top-0 z-30 bg-card px-[24px] pt-[22px] pb-0 border-b border-border">
         <div className="flex items-end justify-between gap-4 mb-1">
           <div>
-            <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">
+            <h1 className="text-2xl font-semibold text-foreground leading-[32px] tracking-[0.4px] mb-1">
               Health Centers
             </h1>
-            <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+            <p className="text-sm font-medium text-muted-foreground leading-[14px]">
               {healthCenters.length} centers
             </p>
           </div>
@@ -900,14 +900,14 @@ export function HealthCenterAdminPage({
                   <CommandEmpty>No states found.</CommandEmpty>
                   <CommandGroup>
                     <CommandItem onSelect={() => { setStateFilter(''); setStateOpen(false); setPage(1); }}>
-                      <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${!stateFilter ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                      <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${!stateFilter ? 'bg-[#fc6] border-[#fc6]' : 'border-border'}`}>
                         {!stateFilter && <Check className="h-3 w-3" />}
                       </div>
                       All States
                     </CommandItem>
                     {uniqueStates.map((s) => (
                       <CommandItem key={s} onSelect={() => { setStateFilter(s); setStateOpen(false); setPage(1); }}>
-                        <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${stateFilter === s ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
+                        <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${stateFilter === s ? 'bg-[#fc6] border-[#fc6]' : 'border-border'}`}>
                           {stateFilter === s && <Check className="h-3 w-3" />}
                         </div>
                         {s}
@@ -931,7 +931,7 @@ export function HealthCenterAdminPage({
                 <button
                   key={v || 'all'}
                   onClick={() => { setUltraOptInFilter(v); setUltraOptInOpen(false); setPage(1); }}
-                  className={`w-full text-left px-3 py-2 text-[13px] rounded hover:bg-[#f5f5f5] transition-colors ${ultraOptInFilter === v ? 'font-semibold text-[#18181b]' : 'text-[#52525b]'}`}
+                  className={`w-full text-left px-3 py-2 text-[13px] rounded hover:bg-[#f5f5f5] transition-colors ${ultraOptInFilter === v ? 'font-semibold text-foreground' : 'text-[#52525b]'}`}
                 >
                   {v || 'All'}
                 </button>
@@ -976,23 +976,23 @@ export function HealthCenterAdminPage({
       {/* Table */}
       <div className="flex-1 overflow-auto px-[24px] py-6">
         <table className="w-full border-collapse text-[14px]">
-          <thead className="sticky top-0 bg-[#f9fafb] z-10">
-            <tr className="border-b border-[#e4e4e7]">
-              <th className="text-left px-6 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">Name</th>
-              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">City</th>
-              <th className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">State</th>
+          <thead className="sticky top-0 bg-[var(--app-background)] z-10">
+            <tr className="border-b border-border">
+              <th className="text-left px-6 py-3 text-[12px] font-semibold text-muted-foreground whitespace-nowrap">Name</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold text-muted-foreground whitespace-nowrap">City</th>
+              <th className="text-left px-4 py-3 text-[12px] font-semibold text-muted-foreground whitespace-nowrap">State</th>
               {PROFILE_COLS.filter((c) => visibleCols.has(c.key)).map((col) => (
-                <th key={col.key} className="text-left px-4 py-3 text-[12px] font-semibold text-[#71717a] whitespace-nowrap">
+                <th key={col.key} className="text-left px-4 py-3 text-[12px] font-semibold text-muted-foreground whitespace-nowrap">
                   {col.label}
                 </th>
               ))}
               <th className="w-10 px-4 py-3" />
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-[#f4f4f5]">
+          <tbody className="bg-card divide-y divide-border">
             {pagedCenters.length === 0 ? (
               <tr>
-                <td colSpan={4 + visibleCols.size + 1} className="px-6 py-12 text-center text-[14px] text-[#71717a]">
+                <td colSpan={4 + visibleCols.size + 1} className="px-6 py-12 text-center text-[14px] text-muted-foreground">
                   {search || centerTypeFilter !== 'all' || stateFilter || ultraOptInFilter || testHcFilter !== null ? 'No health centers match your search or filters.' : 'No health centers found.'}
                 </td>
               </tr>
@@ -1000,12 +1000,12 @@ export function HealthCenterAdminPage({
               pagedCenters.map((center) => (
                 <tr
                   key={center.name}
-                  className="hover:bg-[#f9fafb] transition-colors group"
+                  className="hover:bg-[var(--app-background)] transition-colors group"
                 >
                   <td className="px-6 py-3 cursor-pointer" onClick={() => onSelectCenter(center.name)}>
                     <div className="flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-[#a1a1aa] shrink-0" />
-                      <span className="font-medium text-[#18181b] hover:underline">{center.name}</span>
+                      <span className="font-medium text-foreground hover:underline">{center.name}</span>
                     </div>
                   </td>
                   <td className="px-4 py-3 text-[#52525b] cursor-pointer" onClick={() => onSelectCenter(center.name)}>{center.city}</td>
@@ -1019,7 +1019,7 @@ export function HealthCenterAdminPage({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="p-1.5 rounded hover:bg-[#f4f4f5] transition-colors opacity-0 group-hover:opacity-100">
-                          <MoreHorizontal className="w-4 h-4 text-[#71717a]" />
+                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                         </button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
@@ -1037,8 +1037,8 @@ export function HealthCenterAdminPage({
       </div>
 
       {/* Footer / Pagination */}
-      <div className="border-t border-[#e4e4e7] px-6 py-3 flex items-center justify-between bg-white gap-4 shrink-0">
-        <div className="flex items-center gap-2 text-[13px] text-[#71717a]">
+      <div className="border-t border-border px-6 py-3 flex items-center justify-between bg-card gap-4 shrink-0">
+        <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
           <span>Items per page:</span>
           <Select
             size="sm"
@@ -1053,7 +1053,7 @@ export function HealthCenterAdminPage({
           </Select>
         </div>
 
-        <div className="flex items-center gap-1 text-[13px] text-[#71717a]">
+        <div className="flex items-center gap-1 text-[13px] text-muted-foreground">
           <span className="mr-2">
             Page {page} of {totalPages} ({filteredCenters.length} total items)
           </span>

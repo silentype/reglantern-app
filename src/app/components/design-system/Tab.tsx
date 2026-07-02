@@ -19,8 +19,8 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(
         'px-3 py-1.5 text-sm rounded transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
         flex && 'flex-1',
         active
-          ? 'bg-white text-[#09090b] font-semibold shadow-sm'
-          : 'bg-transparent text-[#6b7280] hover:text-[#09090b] font-medium',
+          ? 'bg-card text-foreground font-semibold shadow-sm'
+          : 'bg-transparent text-muted-foreground hover:text-foreground font-medium',
         className
       )}
       {...props}
@@ -47,7 +47,7 @@ export function TabStrip({ children, className, tablist = true }: TabStripProps)
   return (
     <div
       role={tablist ? 'tablist' : undefined}
-      className={clsx('bg-[#f4f4f5] p-1 rounded-md flex gap-0', className)}
+      className={clsx('bg-muted p-1 rounded-md flex gap-0', className)}
     >
       {children}
     </div>

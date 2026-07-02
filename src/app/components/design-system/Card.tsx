@@ -19,9 +19,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={clsx(
-        'bg-white border border-[#e4e4e7] rounded-[6px]',
+        'bg-card border border-border rounded-[6px]',
         elevated && 'shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)]',
-        interactive && 'transition-colors hover:border-[#cdd7e1] cursor-pointer',
+        interactive && 'transition-colors hover:border-[#cdd7e1] dark:hover:border-border/60 cursor-pointer',
         className
       )}
       {...props}
@@ -48,7 +48,7 @@ export function CardBody({ children, className }: { children: ReactNode; classNa
 
 export function CardFooter({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={clsx('px-5 py-3 border-t border-[#f4f4f5] text-[12px] text-[#71717a] flex items-center justify-between', className)}>
+    <div className={clsx('px-5 py-3 border-t border-border text-[12px] text-muted-foreground flex items-center justify-between', className)}>
       {children}
     </div>
   );

@@ -1,14 +1,8 @@
 import React from 'react';
 import { MemoryRouter } from 'react-router';
+import { withThemeByClassName } from '@storybook/addon-themes';
 import '../src/styles/index.css';
 
-// Source-of-truth Figma file: the Reglantern shadcn-style design kit (the
-// file the design-system primitives are authored in). Every story shows
-// this in the "Design" tab by default; individual stories override with a
-// deep link to a specific frame by adding
-//   parameters: { design: { type: 'figma', url: '...?node-id=X' } }
-// Grab a frame URL by right-clicking the frame in Figma -> Copy/paste as ->
-// Copy link to selection. Strip the trailing &t=... session token before pasting.
 const FIGMA_FILE_URL =
   'https://www.figma.com/design/oGbyq96g9IQCvH6oTUgn7o/Reglantern?node-id=0-1';
 
@@ -24,10 +18,12 @@ const preview = {
     backgrounds: {
       default: 'app',
       values: [
-        { name: 'app', value: '#f9fafb' },
-        { name: 'sidebar', value: '#f4f4f5' },
-        { name: 'header', value: '#32383e' },
-        { name: 'white', value: '#ffffff' },
+        { name: 'app',         value: '#f9fafb' },
+        { name: 'app (dark)',  value: '#111318' },
+        { name: 'sidebar',     value: '#f4f4f5' },
+        { name: 'sidebar (dark)', value: '#1c1f26' },
+        { name: 'header',      value: '#32383e' },
+        { name: 'white',       value: '#ffffff' },
       ],
     },
     a11y: { test: 'todo' },
@@ -37,6 +33,15 @@ const preview = {
     },
   },
   decorators: [
+    // Dark mode: toggles `.dark` on the <html> element, which is what
+    // the app uses (Tailwind `dark:` variant via `@custom-variant dark`).
+    withThemeByClassName({
+      themes: {
+        light: '',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+    }),
     (Story) => (
       <MemoryRouter>
         <Story />
