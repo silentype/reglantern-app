@@ -214,7 +214,13 @@ export const TaskRow = memo(function TaskRow({
                   aria-hidden="true"
                   className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] dark:group-hover:bg-[#2a2f3a] group-active:bg-[#f5f5f5] dark:group-active:bg-[#2a2f3a] rounded-l-[8px] transition-colors"
                 />
-                <button className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer z-10">
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={task.completed}
+                  aria-label={task.completed ? `Mark "${task.title}" incomplete` : `Mark "${task.title}" complete`}
+                  className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer z-10"
+                >
                   <CheckboxIcon completed={task.completed} />
                 </button>
               </div>
@@ -276,7 +282,11 @@ export const TaskRow = memo(function TaskRow({
         <div className="flex items-start gap-3 mb-4">
           {!disableCompletion && (
             <button
+              type="button"
               onClick={handleCheckboxClick}
+              role="checkbox"
+              aria-checked={task.completed}
+              aria-label={task.completed ? `Mark "${task.title}" incomplete` : `Mark "${task.title}" complete`}
               className="relative shrink-0 size-[20px] hover:opacity-70 transition-opacity cursor-pointer mt-1"
             >
               <CheckboxIcon completed={task.completed} />

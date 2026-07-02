@@ -27,7 +27,7 @@ export function EmptyState({ title, description, icon, action, className }: Empt
         className
       )}
     >
-      {icon && <div className="text-[#9ca3af] mb-1">{icon}</div>}
+      {icon && <div className="text-[#9ca3af] mb-1" aria-hidden="true">{icon}</div>}
       <p className="text-[14px] font-medium text-[#18181b]">{title}</p>
       {description && <p className="text-[13px] text-[#71717a] max-w-sm">{description}</p>}
       {action && <div className="mt-2">{action}</div>}

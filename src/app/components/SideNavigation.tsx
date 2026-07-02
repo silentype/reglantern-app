@@ -13,8 +13,8 @@ interface SideNavigationProps {
 
 const TASKS_ITEMS = ['My Tasks'] as const;
 const CHECKLISTS_ITEMS = [
-  'Form 5A',
-  'Form 5A — Focus View',
+  'Form 5A - Column View',
+  'Form 5A - Focus View',
   'Site Visit Protocol Checklist',
   'Ryan White Part C/D',
   'FTCA Site Visit Protocol',
@@ -28,8 +28,8 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   'Compliance Review': ClipboardCheck,
   'Compliance Tasks': ClipboardList,
   'Health Centers': Building2,
-  'Form 5A': FileCheck2,
-  'Form 5A — Focus View': LayoutList,
+  'Form 5A - Column View': FileCheck2,
+  'Form 5A - Focus View': LayoutList,
   'Site Visit Protocol Checklist': MapPin,
   'Ryan White Part C/D': HeartPulse,
   'FTCA Site Visit Protocol': ShieldCheck,

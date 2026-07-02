@@ -11,12 +11,13 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { Building2, Check, MessageSquare, MessageSquareText, UserPlus } from 'lucide-react';
+import { Building2, Calendar, Check, MessageSquare, MessageSquareText, UserPlus } from 'lucide-react';
 
 import { SearchInput } from '../components/design-system/SearchInput';
 import { Avatar } from '../components/design-system/Avatar';
 import { StatusBadge } from '../components/design-system/StatusBadge';
 import { EmptyState } from '../components/design-system/EmptyState';
+import { CheckboxIcon } from '../components/task-table/CheckboxIcon';
 import { ColumnEntryBody, taskIdFor } from './Form5AColumnEditor';
 import {
   FORM_5A_COLUMNS,
@@ -66,9 +67,14 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
 
   // Open the existing task side panel (MultiFileUploadPanel) over the form —
   // the same shared overlay the grid page uses, so Assign/Comment behave
-  // identically in both views.
+  // identically in both views. `tab` lands on a specific tab (e.g. Comments);
+  // `focus` tells the panel to jump straight into a field once open;
+  // `openDatePicker` reuses DueDatePicker's own ?datePicker=open param.
   const openTask = useCallback(
-    (serviceKey: string) => {
+    (
+      serviceKey: string,
+      opts?: { tab?: 'comments'; focus?: 'assign' | 'comment'; openDatePicker?: boolean },
+    ) => {
       const id = taskIdFor(healthCenter, serviceKey);
       if (id === null) return;
       setSearchParams(
@@ -76,6 +82,12 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
           const p = new URLSearchParams(prev);
           p.set('task', String(id));
           p.set('service', serviceKey);
+          if (opts?.tab) p.set('tab', opts.tab);
+          else p.delete('tab');
+          if (opts?.focus) p.set('focus', opts.focus);
+          else p.delete('focus');
+          if (opts?.openDatePicker) p.set('datePicker', 'open');
+          else p.delete('datePicker');
           return p;
         },
         { replace: false },
@@ -159,7 +171,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
                       onClick={() => selectService(service)}
                       className={`w-full flex items-center gap-2 px-3 py-2 text-left border-l-2 transition-colors ${
                         isSelected
-                          ? 'border-l-[#fc6] bg-[#fffbe5] dark:bg-[#fc6]/10'
+                          ? 'border-l-[#cdd7e1] dark:border-l-[#3a4455] bg-[#f4f4f5] dark:bg-[#2a2f3a]'
                           : 'border-l-transparent hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a]'
                       }`}
                     >
@@ -189,7 +201,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
               <EmptyState title="No services" description="No services match your search." />
             </div>
           ) : (
-            <div className="p-6 max-w-[900px]">
+            <div className="p-6">
               <div className="flex items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-[20px] font-semibold text-[#18181b] dark:text-[#f4f4f5]">
@@ -199,25 +211,55 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
                     <StatusBadge status={selectedService.completed ? 'Complete' : 'Not Started'} />
                   </div>
                 </div>
-                {/* Same Assign/Comment affordance as the grid rows, opening the same task overlay. */}
-                <button
+                {/* Same Assign/Comment affordance as the grid rows: the whole
+                    pill opens the task drawer on Details; Comment is a
+                    distinct inner target that jumps straight to Comments. */}
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => openTask(selectedService.key)}
-                  title="Assign or comment"
-                  className="shrink-0 flex items-center gap-[6px] rounded-full border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] pl-[9px] pr-[11px] py-[5px] cursor-pointer hover:border-[#cdd7e1] dark:hover:border-[#3a4455] hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      openTask(selectedService.key);
+                    }
+                  }}
+                  className="shrink-0 flex items-center gap-[6px] rounded-[8px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] pl-[12px] pr-[14px] py-[7px] cursor-pointer hover:border-[#cdd7e1] dark:hover:border-[#3a4455] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors"
                 >
-                  <span className="text-[12px] font-medium text-[#71717a]">Assign</span>
-                  {selectedService.assignedTo ? (
-                    <Avatar
-                      initials={selectedService.assignedTo.initials}
-                      name={selectedService.assignedTo.name}
-                      size="sm"
-                    />
-                  ) : (
-                    <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#f4f4f5] dark:bg-[#2a2f3a] text-[#9ca3af]">
-                      <UserPlus size={13} />
-                    </span>
-                  )}
-                  <span className="flex items-center gap-1.5 text-[12px] font-medium text-[#71717a] ml-1">
+                  <span className="shrink-0 size-[14px]" title={selectedService.completed ? 'Complete' : 'Not started'}>
+                    <CheckboxIcon completed={selectedService.completed} />
+                  </span>
+                  <span className="w-px h-4 bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openTask(selectedService.key, { focus: 'assign' });
+                    }}
+                    title="Assign"
+                    className="flex items-center gap-[6px] text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+                  >
+                    {selectedService.assignedTo ? 'Assigned' : 'Assign'}
+                    {selectedService.assignedTo ? (
+                      <Avatar
+                        initials={selectedService.assignedTo.initials}
+                        name={selectedService.assignedTo.name}
+                        size="sm"
+                      />
+                    ) : (
+                      <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#f4f4f5] dark:bg-[#2a2f3a] text-[#9ca3af]">
+                        <UserPlus size={13} />
+                      </span>
+                    )}
+                  </button>
+                  <span className="w-px h-4 bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openTask(selectedService.key, { tab: 'comments', focus: 'comment' });
+                    }}
+                    title="Comments"
+                    className="flex items-center gap-1.5 text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors"
+                  >
                     <span>Comment</span>
                     <span className="flex items-center gap-0.5">
                       {(selectedService.comments?.length ?? 0) > 0 ? (
@@ -227,8 +269,20 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
                       )}
                       {(selectedService.comments?.length ?? 0) > 0 ? selectedService.comments!.length : ''}
                     </span>
-                  </span>
-                </button>
+                  </button>
+                  <span className="w-px h-4 bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openTask(selectedService.key, { openDatePicker: true });
+                    }}
+                    title="Due date"
+                    className="flex items-center gap-1 pr-1 text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+                  >
+                    <Calendar size={13} />
+                    {selectedService.dueDate || 'Due date'}
+                  </button>
+                </div>
               </div>
 
               {/* Delivery-method selector — big cards instead of a row of checkboxes. */}
@@ -243,7 +297,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
                       aria-pressed={isFocused}
                       className={`relative text-left p-4 rounded-[8px] border-2 transition-all ${
                         isFocused
-                          ? 'border-[#fc6] bg-[#fffbe5] dark:bg-[#fc6]/10'
+                          ? 'border-[#cdd7e1] dark:border-[#3a4455] bg-[#f4f4f5] dark:bg-[#2a2f3a]'
                           : 'border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] hover:border-[#cdd7e1] dark:hover:border-[#3a4455]'
                       }`}
                     >

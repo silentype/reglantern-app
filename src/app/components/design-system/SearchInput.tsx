@@ -29,6 +29,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
             'w-full rounded-md border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] text-[#18181b] dark:text-[#f4f4f5]',
             'placeholder:text-[#71717a] dark:placeholder:text-[#52525b] transition-colors',
             'hover:bg-white dark:hover:bg-[#2a2f3a] focus:outline-none focus:bg-white dark:focus:bg-[#2a2f3a] focus:border-[#fc6]',
+            'focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
             size === 'sm' ? 'h-8 pl-8 text-sm' : 'h-10 pl-10 text-sm',
             showClear ? 'pr-8' : 'pr-3',
           )}
@@ -38,7 +39,8 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
           <button
             type="button"
             onClick={onClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-[#e5e5e5] transition-colors"
+            aria-label="Clear search"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-[#e5e5e5] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
           >
             <X className="w-3.5 h-3.5 text-[#71717a]" />
           </button>

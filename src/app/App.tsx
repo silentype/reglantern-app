@@ -22,6 +22,7 @@ import {
 import { PROJECTS_STORAGE_KEY, loadProjects } from './data/initialProjects';
 import {
   type Form5AForm,
+  FORM_5A_SERVICE_CATALOG,
   loadAllForm5A,
   saveAllForm5A,
   makeEmptyForm,
@@ -159,8 +160,8 @@ function LoginScreen({ onAuth }: { onAuth: () => void }) {
 const NAV_ITEM_TO_URL: Record<string, string> = {
   'Home': '/home',
   'My Tasks': '/tasks/my-tasks',
-  'Form 5A': '/checklists/form-5a',
-  'Form 5A — Focus View': '/checklists/form-5a-focus',
+  'Form 5A - Column View': '/checklists/form-5a',
+  'Form 5A - Focus View': '/checklists/form-5a-focus',
   'Site Visit Protocol Checklist': '/checklists/site-visit-protocol',
   'Ryan White Part C/D': '/checklists/ryan-white-c-d',
   'FTCA Site Visit Protocol': '/checklists/ftca-site-visit-protocol',
@@ -172,8 +173,8 @@ const NAV_ITEM_TO_URL: Record<string, string> = {
 
 const URL_TO_NAV_ITEM: Record<string, string> = {
   'my-tasks': 'My Tasks',
-  'form-5a': 'Form 5A',
-  'form-5a-focus': 'Form 5A — Focus View',
+  'form-5a': 'Form 5A - Column View',
+  'form-5a-focus': 'Form 5A - Focus View',
   'site-visit-protocol': 'Site Visit Protocol Checklist',
   'ryan-white-c-d': 'Ryan White Part C/D',
   'ftca-site-visit-protocol': 'FTCA Site Visit Protocol',
@@ -515,6 +516,33 @@ export default function App() {
     navigate(`/tasks/my-tasks/${taskId}`);
   }, [navigate]);
 
+  // For a Form 5A task open in the panel, a small clickable source tag (e.g.
+  // "Form 5A · Diagnostic Laboratory") so the assignee always knows what the
+  // task relates to — independent of the task's own editable title — and can
+  // jump to that row in the Form 5A workspace.
+  const form5aSourceTag = useMemo(() => {
+    if (selectedTaskId === null || !isForm5ATaskId(selectedTaskId)) return undefined;
+    const { hcIndex, serviceIndex } = decodeForm5ATaskId(selectedTaskId);
+    const hc = HEALTH_CENTERS[hcIndex];
+    const svc = FORM_5A_SERVICE_CATALOG[serviceIndex];
+    if (!hc || !svc) return undefined;
+    const slug = svc.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    return {
+      label: `Form 5A · ${svc.name}`,
+      onClick: () => {
+        // Switch the top-nav health center to match the task's, so the
+        // Form 5A page actually shows this service's real data (members
+        // are always locked to their own HC already).
+        if (currentUser.role !== 'member' && hc !== effectiveHC) {
+          handleHCChange(hc);
+        }
+        const params = new URLSearchParams();
+        params.set('service', slug);
+        navigate(`/checklists/form-5a?${params}`);
+      },
+    };
+  }, [selectedTaskId, navigate, currentUser.role, effectiveHC, handleHCChange]);
+
   const handleClosePanel = useCallback(() => {
     setNewTaskTitle('');
     if (currentPage === 'test') {
@@ -657,7 +685,9 @@ export default function App() {
     if (isForm5ATaskId(taskId)) {
       mutateForm5AService(taskId, (svc) => {
         const next = { ...svc };
-        if (updates.assignedTo !== undefined) next.assignedTo = updates.assignedTo;
+        if (updates.title !== undefined) next.taskTitle = updates.title;
+        if (updates.description !== undefined) next.taskDescription = updates.description;
+        if ('assignedTo' in updates) next.assignedTo = updates.assignedTo;
         if (updates.dueDate !== undefined) next.dueDate = updates.dueDate;
         if (updates.status !== undefined) {
           next.completed = updates.status === 'Complete';
@@ -761,14 +791,15 @@ export default function App() {
       form.services.forEach((svc, i) => {
         out.push({
           id: form5aTaskId(hcIndex, i),
-          title: `Form 5A — ${svc.name}`,
+          title: svc.taskTitle ?? `Form 5A — ${svc.name}`,
+          description: svc.taskDescription,
           completed: svc.completed,
           status: svc.completed ? 'Complete' : 'Not Started',
           completedAt: svc.completedAt,
           dueDate: svc.dueDate,
           healthCenter: hc,
           category: 'Form 5A',
-          assignedTo: svc.assignedTo ?? { initials: 'TF', name: 'Tim Freeman' },
+          assignedTo: svc.assignedTo,
           createdBy: { initials: 'RL', name: 'Reglantern' },
           taskType: 'custom',
           alwaysCompletable: true,
@@ -1012,6 +1043,7 @@ export default function App() {
             <MultiFileUpload1
               taskId={selectedTaskId}
               taskTitle={currentTask.title}
+              initialDescription={currentTask.description}
               onClose={handleClosePanel}
               onUpdateTaskDetails={handleUpdateTaskDetails}
               onUpdateFiles={handleUpdateTaskFiles}
@@ -1035,6 +1067,7 @@ export default function App() {
               availableProjects={projects
                 .filter((p) => p.id !== currentProject?.id)
                 .map((p) => ({ id: p.id, name: p.name, startDate: p.startDate, endDate: p.endDate }))}
+              sourceTag={form5aSourceTag}
             />
           ) : null}
           </Suspense>

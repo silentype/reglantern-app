@@ -78,6 +78,8 @@ export interface DueDateRule {
 export interface Task {
   id: number;
   title: string;
+  /** Free-text description, editable from the shared task panel for custom tasks. */
+  description?: string;
   completed: boolean;
   /** MM/dd/yyyy date when work on this task began (status flipped to In Progress). */
   startedAt?: string;

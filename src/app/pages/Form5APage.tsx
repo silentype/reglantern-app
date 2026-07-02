@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router';
-import { Building2, Calendar, CheckCircle2, ChevronDown, UserPlus, MessageSquare, MessageSquareText } from 'lucide-react';
+import { Building2, Calendar, ChevronDown, UserPlus, MessageSquare, MessageSquareText } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { SearchInput } from '../components/design-system/SearchInput';
@@ -23,6 +23,7 @@ import { FileRow } from '../components/design-system/FileRow';
 import { FileUploadDropzone } from '../components/design-system/FileUploadDropzone';
 import { EmptyState } from '../components/design-system/EmptyState';
 import { CheckboxIcon } from '../components/task-table/CheckboxIcon';
+import { DocumentPreviewModal } from '../components/multi-file-upload-panel/DocumentPreviewModal';
 import { ColumnEntryBody, makeFile, taskIdFor } from './Form5AColumnEditor';
 import {
   FORM_5A_COLUMNS,
@@ -80,15 +81,21 @@ function Form5AEditor({ form, onChange }: { form: Form5AForm; onChange: (next: F
     const t = setTimeout(() => {
       document
         .querySelector(`[data-form5a-row="${deepLinkService}"]`)
-        ?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     }, 120);
     return () => clearTimeout(t);
   }, [deepLinkService]);
 
   // Open the existing task side panel (MultiFileUploadPanel) over the form by
-  // setting ?task=<numeric task id>. App parses it and renders the shared panel.
+  // setting ?task=<numeric task id>. App parses it and renders the shared
+  // panel. `tab` lands on a specific tab (e.g. Comments); `focus` tells the
+  // panel to jump straight into a field once open (assignee picker, comment
+  // box); `openDatePicker` reuses DueDatePicker's own ?datePicker=open param.
   const openTask = useCallback(
-    (serviceKey: string) => {
+    (
+      serviceKey: string,
+      opts?: { tab?: 'comments'; focus?: 'assign' | 'comment'; openDatePicker?: boolean },
+    ) => {
       const id = taskIdFor(healthCenter, serviceKey);
       if (id === null) return;
       setSearchParams(
@@ -96,6 +103,12 @@ function Form5AEditor({ form, onChange }: { form: Form5AForm; onChange: (next: F
           const p = new URLSearchParams(prev);
           p.set('task', String(id));
           p.set('service', serviceKey);
+          if (opts?.tab) p.set('tab', opts.tab);
+          else p.delete('tab');
+          if (opts?.focus) p.set('focus', opts.focus);
+          else p.delete('focus');
+          if (opts?.openDatePicker) p.set('datePicker', 'open');
+          else p.delete('datePicker');
           return p;
         },
         { replace: false },
@@ -179,9 +192,9 @@ function Form5AEditor({ form, onChange }: { form: Form5AForm; onChange: (next: F
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <h2 className="text-[15px] font-semibold text-[#18181b] dark:text-[#f4f4f5]">Most Recent Form 5A</h2>
+              <h2 className="text-[15px] font-semibold text-[#18181b] dark:text-[#f4f4f5]">Add Most Recent Form 5A</h2>
               <p className="text-[13px] text-[#71717a]">
-                Attach the health center&apos;s existing Form 5A for reference while you complete the grid below.
+                Attach your health center&apos;s existing (complete or incomplete) Form 5A for reference while you complete the grid below.
               </p>
             </div>
           </div>
@@ -190,15 +203,37 @@ function Form5AEditor({ form, onChange }: { form: Form5AForm; onChange: (next: F
               name={form.recentUpload.name}
               size={form.recentUpload.size}
               category={`Uploaded by ${form.recentUpload.uploadedBy}`}
+              onPreview={() => setSearchParams((prev) => {
+                const p = new URLSearchParams(prev);
+                p.set('preview', 'recent-upload');
+                return p;
+              })}
               onDownload={() => toast.info('Download coming soon')}
               onDelete={() => setForm((prev) => ({ ...prev, recentUpload: undefined }))}
             />
           ) : (
             <FileUploadDropzone
+              compact
               accept=".pdf,.doc,.docx"
               onFiles={handleUploadRecent}
               title="Drag & drop your existing Form 5A"
               hint="PDF or Word · stored as a reference attachment"
+            />
+          )}
+          {form.recentUpload && searchParams.get('preview') === 'recent-upload' && (
+            <DocumentPreviewModal
+              file={{
+                id: form.recentUpload.id,
+                name: form.recentUpload.name,
+                size: form.recentUpload.size,
+                category: `Uploaded by ${form.recentUpload.uploadedBy}`,
+              }}
+              onClose={() => setSearchParams((prev) => {
+                const p = new URLSearchParams(prev);
+                p.delete('preview');
+                return p;
+              })}
+              onDownload={() => toast.info('Download coming soon')}
             />
           )}
         </Card>
@@ -257,6 +292,9 @@ function Form5AEditor({ form, onChange }: { form: Form5AForm; onChange: (next: F
                         setExpanded((prev) => (prev === service.key ? null : service.key))
                       }
                       onOpenTask={() => openTask(service.key)}
+                      onOpenAssign={() => openTask(service.key, { focus: 'assign' })}
+                      onOpenComments={() => openTask(service.key, { tab: 'comments', focus: 'comment' })}
+                      onOpenDueDate={() => openTask(service.key, { openDatePicker: true })}
                       onToggleColumn={(col) => toggleColumn(service.key, col)}
                       onUpdateColumn={(col, updater) => updateColumn(service.key, col, updater)}
                     />
@@ -284,7 +322,7 @@ function PageChrome({
     <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a] flex items-start justify-between">
       <div>
         <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px]">
-          Form 5A
+          Form 5A - Column View
         </h1>
         <p className="text-[13px] text-[#71717a] mt-0.5">
           Services Provided{healthCenter ? ` · ${healthCenter}` : ''}
@@ -325,23 +363,25 @@ const COLUMN_HEADER_EYEBROW: Record<Form5AColumnKey, string> = {
 function ColumnLegend({ section }: { section: string }) {
   return (
     <>
-      <div className="flex bg-[#f4f4f5] dark:bg-[#2a2f3a] px-3 pt-2 pb-[9px] border-b border-[#e4e4e7] dark:border-[#3a4455]">
-        <p className="flex-1 text-[10px] font-semibold text-[#52525b] dark:text-[#d4d4d8] uppercase tracking-[0.37px] leading-[15px]">
+      <div className="flex items-center gap-3 bg-[#f4f4f5] dark:bg-[#2a2f3a] px-3 pt-2 pb-[9px] border-b border-[#e4e4e7] dark:border-[#3a4455]">
+        <p className="flex-1 min-w-0 text-[10px] font-semibold text-[#52525b] dark:text-[#d4d4d8] uppercase tracking-[0.37px] leading-[15px]">
           Service Type
         </p>
+        <div className="w-[300px] shrink-0" />
         <div className="w-[660px] text-center">
           <p className="text-[10px] font-semibold text-[#52525b] dark:text-[#d4d4d8] uppercase tracking-[0.37px] leading-[15px]">
             Service Delivery Methods
           </p>
         </div>
       </div>
-      <div className="flex items-stretch px-3 bg-white dark:bg-[#1c1f26] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
-        <div className="flex-1 min-w-0 pr-3 py-3">
-          <p className="text-[12px] font-medium text-[#18181b] dark:text-[#f4f4f5] leading-[18px]">{section}</p>
-          <p className="text-[11px] text-[#71717a] dark:text-[#a1a1aa] leading-snug tracking-[0.065px]">
+      <div className="flex items-stretch gap-3 px-3 bg-white dark:bg-[#1c1f26] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+        <div className="flex-1 min-w-0 py-3">
+          <p className="text-[16px] font-medium text-[#18181b] dark:text-[#f4f4f5] leading-[22px]">{section}</p>
+          <p className="text-[15px] text-[#71717a] dark:text-[#a1a1aa] leading-[22px] tracking-[0.065px] mt-0.5">
             {SECTION_DESCRIPTIONS[section] ?? ''}
           </p>
         </div>
+        <div className="w-[300px] shrink-0" />
         <div className="flex shrink-0">
           {FORM_5A_COLUMNS.map((col) => (
             <div
@@ -351,7 +391,7 @@ function ColumnLegend({ section }: { section: string }) {
               <p className="text-[10px] font-semibold text-[#71717a] dark:text-[#a1a1aa] uppercase tracking-[0.37px] leading-[15px]">
                 {COLUMN_HEADER_EYEBROW[col.key]}
               </p>
-              <p className="text-[13px] font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[16px] tracking-[-0.076px] mt-0.5">
+              <p className="text-[13px] font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[16px] tracking-[-0.076px] mt-1.5">
                 {COLUMN_DISPLAY_LABELS[col.key]}
               </p>
               <p className="text-[10px] text-[#9ca3af] leading-[12.5px] tracking-[0.12px] mt-0.5">{col.sub}</p>
@@ -381,6 +421,9 @@ function ServiceRow({
   expanded,
   onToggleExpand,
   onOpenTask,
+  onOpenAssign,
+  onOpenComments,
+  onOpenDueDate,
   onToggleColumn,
   onUpdateColumn,
 }: {
@@ -390,55 +433,98 @@ function ServiceRow({
   expanded: boolean;
   onToggleExpand: () => void;
   onOpenTask: () => void;
+  onOpenAssign: () => void;
+  onOpenComments: () => void;
+  onOpenDueDate: () => void;
   onToggleColumn: (col: Form5AColumnKey) => void;
   onUpdateColumn: (col: Form5AColumnKey, updater: (c: Form5AColumnState) => Form5AColumnState) => void;
 }) {
   const commentCount = service.comments?.length ?? 0;
   return (
-    <div className={isLast && !expanded ? '' : 'border-b border-[#e4e4e7] dark:border-[#2a2f3a]'}>
+    <div
+      data-form5a-row={service.key}
+      className={isLast && !expanded ? '' : 'border-b border-[#e4e4e7] dark:border-[#2a2f3a]'}
+    >
       <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a] transition-colors">
         <button
           onClick={onToggleExpand}
-          className={`flex-1 flex items-center gap-2 text-left min-w-0 ${indented ? 'pl-5' : ''}`}
+          className={`flex-1 flex items-start gap-2 text-left min-w-0 py-0.5 ${indented ? 'pl-5' : ''}`}
         >
           <ChevronDown
             size={16}
-            className={`shrink-0 text-[#71717a] transition-transform ${expanded ? 'rotate-180' : ''}`}
+            className={`shrink-0 mt-0.5 text-[#71717a] transition-transform ${expanded ? 'rotate-180' : ''}`}
           />
-          {indented && <span className="text-[#9ca3af]">•</span>}
-          <span className="text-[14px] text-[#18181b] dark:text-[#f4f4f5] truncate">{service.name}</span>
+          {indented && <span className="text-[#9ca3af] mt-0.5">•</span>}
+          <span className="text-[14px] text-[#18181b] dark:text-[#f4f4f5] min-w-0 line-clamp-2">
+            {service.name}
+          </span>
         </button>
-        {/* Task affordance — assignee + comments, opens the task drawer.
-            Completion is set from the task overlay only (via its Status
-            field); a check here just reflects that state. */}
-        <button
+        {/* Task affordance — the whole pill opens the task drawer on the
+            Details tab; Comment is a distinct inner target that jumps
+            straight to the Comments tab instead. Completion is set from the
+            task overlay only (via its Status field); the leading icon here
+            just reflects that state. */}
+        <div
+          role="button"
+          tabIndex={0}
           onClick={onOpenTask}
-          title="Assign or comment"
-          className="shrink-0 flex items-center gap-[6px] rounded-full border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] pl-[9px] pr-[11px] py-[5px] cursor-pointer hover:border-[#cdd7e1] dark:hover:border-[#3a4455] hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-all"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onOpenTask();
+            }
+          }}
+          className="shrink-0 flex items-center gap-[6px] rounded-[8px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] pl-[12px] pr-[14px] py-[7px] cursor-pointer hover:border-[#cdd7e1] dark:hover:border-[#3a4455] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-all"
         >
-          {service.completed && <CheckCircle2 size={14} className="text-[#16a34a]" />}
-          <span className="text-[12px] font-medium text-[#71717a]">Assign</span>
-          {service.assignedTo ? (
-            <Avatar initials={service.assignedTo.initials} name={service.assignedTo.name} size="sm" />
-          ) : (
-            <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#f4f4f5] dark:bg-[#2a2f3a] text-[#9ca3af]">
-              <UserPlus size={13} />
-            </span>
-          )}
-          <span className="flex items-center gap-1.5 text-[12px] font-medium text-[#71717a] ml-1">
-            <span>Comment</span>
+          <span className="shrink-0 size-[14px]" title={service.completed ? 'Complete' : 'Not started'}>
+            <CheckboxIcon completed={service.completed} />
+          </span>
+          <span className="w-px h-4 bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenAssign();
+            }}
+            title="Assign"
+            className="flex items-center gap-[6px] text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+          >
+            {service.assignedTo ? 'Assigned' : 'Assign'}
+            {service.assignedTo ? (
+              <Avatar initials={service.assignedTo.initials} name={service.assignedTo.name} size="sm" />
+            ) : (
+              <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#f4f4f5] dark:bg-[#2a2f3a] text-[#9ca3af]">
+                <UserPlus size={13} />
+              </span>
+            )}
+          </button>
+          <span className="w-px h-4 bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenComments();
+            }}
+            title="Comments"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+          >
             <span className="flex items-center gap-0.5">
               {commentCount > 0 ? <MessageSquareText size={13} /> : <MessageSquare size={13} />}
               {commentCount > 0 ? commentCount : ''}
             </span>
-          </span>
-          {service.dueDate && (
-            <span className="flex items-center gap-1 text-[12px] text-[#71717a] border-l border-[#e4e4e7] dark:border-[#2a2f3a] pl-2 ml-0.5">
-              <Calendar size={13} />
-              {service.dueDate}
-            </span>
-          )}
-        </button>
+            <span>Comments</span>
+          </button>
+          <span className="w-px h-4 bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenDueDate();
+            }}
+            title="Due date"
+            className="flex items-center gap-1 pr-1 text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+          >
+            <Calendar size={13} />
+            {service.dueDate || 'Due date'}
+          </button>
+        </div>
         <div className="flex shrink-0">
           {FORM_5A_COLUMNS.map((col) => (
             <div key={col.key} className="w-[220px] flex items-center justify-center">

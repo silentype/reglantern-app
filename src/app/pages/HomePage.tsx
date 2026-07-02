@@ -804,7 +804,7 @@ function AdminDashboard({
                             className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] last:border-0 hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer"
                           >
                             <td className="px-4 py-3 font-medium text-[#18181b] dark:text-[#f4f4f5]">{p.name}</td>
-                            <td className="px-4 py-3"><ProgressBar done={done} total={total} /></td>
+                            <td className="px-4 py-3"><ProgressBar done={done} total={total} color={projectStatus(done, total).bar} /></td>
                             <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{centerLabel}</td>
                             <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{done}/{total}</td>
                             <td className="px-4 py-3">

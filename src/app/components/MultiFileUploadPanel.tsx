@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
-import { type LucideIcon, X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight, FileText, FileImage, FileSpreadsheet, File, ExternalLink } from 'lucide-react';
+import { type LucideIcon, X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight, FileText, FileImage, FileSpreadsheet, File, ExternalLink, ArrowUpRight } from 'lucide-react';
 
 function fileIcon(name: string): LucideIcon {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
@@ -26,7 +26,7 @@ import { Button } from './design-system/Button';
 import { BackButton } from './design-system/BackButton';
 import { Avatar } from './design-system/Avatar';
 import { FileRow } from './design-system/FileRow';
-import { Select as DesignSelect } from './design-system/Select';
+import { FilterChip } from './design-system/FilterChip';
 import { UserAvatar } from './task-table/UserAvatar';
 import type { DueDateRule, Task } from './TaskTableDynamic';
 import { AVAILABLE_USERS, STATUS_OPTIONS } from '../constants';
@@ -45,6 +45,7 @@ const statusOptions = STATUS_OPTIONS;
 export default function MultiFileUploadPanel({
   taskId,
   taskTitle,
+  initialDescription,
   onClose,
   onUpdateTaskDetails,
   onUpdateFiles,
@@ -68,9 +69,12 @@ export default function MultiFileUploadPanel({
   siblingTasks,
   currentProjectName,
   availableProjects,
+  sourceTag,
 }: {
   taskId: number | null;
   taskTitle: string;
+  /** Persisted description, if any. Falls back to a generated placeholder when absent. */
+  initialDescription?: string;
   onClose: () => void;
   onUpdateTaskDetails?: (
     taskId: number,
@@ -143,6 +147,12 @@ export default function MultiFileUploadPanel({
   currentProjectName?: string;
   /** Other projects in the system (cross-project anchor options). */
   availableProjects?: Array<{ id: number; name: string; startDate?: string; endDate?: string }>;
+  /**
+   * Optional compact, clickable tag shown above the title (e.g. "Form 5A ·
+   * Diagnostic Laboratory") telling the assignee what this task relates to.
+   * Independent of the task's own editable title, so it survives renames.
+   */
+  sourceTag?: { label: string; onClick: () => void };
 }) {
   // Panel sub-state lives in URL search params so each view is paste-able:
   //   ?subtask=:subtaskId  -> drilled into subtask upload page (omit -> task overview)
@@ -166,7 +176,9 @@ export default function MultiFileUploadPanel({
   
   // Form state
   const [editableTitle, setEditableTitle] = useState<string>(taskTitle);
-  const [editableDescription, setEditableDescription] = useState<string>(getTaskDescription(taskTitle));
+  const [editableDescription, setEditableDescription] = useState<string>(
+    initialDescription ?? getTaskDescription(taskTitle),
+  );
   const [taskStatus, setTaskStatus] = useState<string>(initialStatus);
   const [dueDate, setDueDate] = useState<string | undefined>(initialDueDate);
   const [assignedTo, setAssignedTo] = useState<UserType | undefined>(initialAssignedTo);
@@ -219,6 +231,27 @@ export default function MultiFileUploadPanel({
   const [showValidationError, setShowValidationError] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // ?focus=assign|comment — set by callers (e.g. clicking "Assign"/"Comment"
+  // directly on a Form 5A row) to jump straight into that field once the
+  // panel opens, instead of just landing on the tab. Cleared after acting so
+  // it doesn't re-trigger on unrelated re-renders.
+  useEffect(() => {
+    const focus = searchParams.get('focus');
+    if (!focus) return;
+    if (focus === 'assign') {
+      setAssignedOpen(true);
+    } else if (focus === 'comment') {
+      if (activeTab !== 'comments') return;
+      commentTextareaRef.current?.focus();
+    } else {
+      return;
+    }
+    const params = new URLSearchParams(searchParams);
+    params.delete('focus');
+    setSearchParams(params, { replace: true });
+  }, [searchParams, activeTab, setSearchParams]);
   const filePreviewId = searchParams.get('filePreview');
   const previewFile = useMemo(() => {
     if (!filePreviewId) return null;
@@ -863,16 +896,17 @@ export default function MultiFileUploadPanel({
             <Button onClick={handleSaveAndClose} disabled={!editableTitle.trim()}>Add Task</Button>
           )}
           
-          <DesignSelect
-            size="sm"
-            value={taskStatus}
-            onChange={(e) => setTaskStatus(e.target.value)}
-            className="w-[200px]"
-          >
+          <div className="flex items-center gap-2">
             {statusOptions.map((status) => (
-              <option key={status} value={status}>{status}</option>
+              <FilterChip
+                key={status}
+                active={taskStatus === status}
+                onClick={() => setTaskStatus(status)}
+              >
+                {status}
+              </FilterChip>
             ))}
-          </DesignSelect>
+          </div>
         </div>
         
         <div className="flex items-center gap-4">
@@ -925,7 +959,17 @@ export default function MultiFileUploadPanel({
               </p>
             </>
           )}
-          
+
+          {sourceTag && (
+            <button
+              onClick={sourceTag.onClick}
+              className="group inline-flex items-center gap-1.5 rounded-full border border-border bg-muted hover:border-[#fc6] hover:bg-[#fffbe5] dark:hover:bg-[#fc6]/10 px-2.5 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+            >
+              <span className="group-hover:underline">{sourceTag.label}</span>
+              <ArrowUpRight size={14} className="shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </button>
+          )}
+
           {/* Subtasks List - Only show for system tasks with subtasks */}
           {hasSubtasks && (
             <div className="space-y-3 pt-3">
@@ -1319,6 +1363,23 @@ export default function MultiFileUploadPanel({
                       <CommandList>
                         <CommandEmpty>No user found.</CommandEmpty>
                         <CommandGroup>
+                          <CommandItem
+                            value="Unassign"
+                            onSelect={() => {
+                              setAssignedTo(undefined);
+                              setAssignedOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 h-4 w-4 ${!assignedTo ? 'opacity-100' : 'opacity-0'}`}
+                            />
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                                <X className="size-3.5" />
+                              </span>
+                              <span className="text-sm text-muted-foreground">Unassign</span>
+                            </div>
+                          </CommandItem>
                           {availableUsers.map((user) => (
                             <CommandItem
                               key={user.name}
@@ -1447,6 +1508,7 @@ export default function MultiFileUploadPanel({
           {activeTab === 'comments' && (
             <div className="space-y-4">
               <textarea
+                ref={commentTextareaRef}
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 onKeyDown={handleKeyDown}
