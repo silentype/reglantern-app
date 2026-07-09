@@ -808,7 +808,7 @@ function AdminDashboard({
                             <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{centerLabel}</td>
                             <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{done}/{total}</td>
                             <td className="px-4 py-3">
-                              <Pill color={(getProjectEffectiveStatus(p)) === 'completed' ? 'green' : 'blue'}>
+                              <Pill color={(getProjectEffectiveStatus(p)) === 'completed' ? 'green' : 'yellow'}>
                                 {(getProjectEffectiveStatus(p)) === 'completed' ? 'Complete' : 'In Progress'}
                               </Pill>
                             </td>
