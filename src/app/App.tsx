@@ -70,6 +70,9 @@ const HomePage = lazy(() =>
 const CompactRowTestPage = lazy(() =>
   import('./pages/CompactRowTestPage').then((m) => ({ default: m.CompactRowTestPage }))
 );
+const TypographyPage = lazy(() =>
+  import('./pages/TypographyPage').then((m) => ({ default: m.TypographyPage }))
+);
 
 // MultiFileUploadPanel only mounts when a task / new-task panel is open.
 // Keeping it eager would pull 1.6k lines + the relative-due-date picker into
@@ -907,7 +910,9 @@ export default function App() {
         {/* Main Page Content */}
         <main className={`flex-1 overflow-auto transition-all duration-300 ${sideNavOpen ? 'ml-[280px]' : 'ml-[66px]'}`}>
           <Suspense fallback={<PageFallback />}>
-          {currentPage === 'test' ? (
+          {currentPage === 'test' && itemSeg === 'typography' ? (
+            <TypographyPage />
+          ) : currentPage === 'test' ? (
             <CompactRowTestPage
               tasks={visibleTasks}
               selectedTaskId={selectedTaskId}
