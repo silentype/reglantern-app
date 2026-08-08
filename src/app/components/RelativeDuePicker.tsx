@@ -395,7 +395,7 @@ export function RelativeDuePicker({
   // Vertical-row layout for the Trigger section: label fixed-width on
   // the left, control filling the remaining width on the right.
   const rowCls = 'flex items-center gap-2';
-  const rowLabelCls = 'w-[88px] shrink-0 text-[12px] font-medium text-[#71717a]';
+  const rowLabelCls = 'w-[88px] shrink-0 text-[12px] font-medium text-[#6b7280]';
 
   return (
     <div className={`p-4 w-full flex flex-col gap-4 ${className ?? ''}`}>

@@ -40,7 +40,7 @@ export const ProjectCard: Story = {
           <h3 className="text-[16px] font-semibold text-[#18181b]">Site Compliance Review</h3>
           <Pill color="purple">Compliance</Pill>
         </div>
-        <p className="mt-2 text-[12px] text-[#71717a]">Comprehensive review of all site compliance requirements and documentation.</p>
+        <p className="mt-2 text-[12px] text-[#6b7280]">Comprehensive review of all site compliance requirements and documentation.</p>
       </CardHeader>
       <CardBody>
         <AvatarStack
@@ -65,7 +65,7 @@ export const ChapterCard: Story = {
     <Card interactive className="w-[280px]">
       <CardHeader>
         <h3 className="text-[16px] font-semibold text-[#18181b]">Chapter 1</h3>
-        <p className="mt-1 text-[12px] text-[#71717a]">Completed: 0/6</p>
+        <p className="mt-1 text-[12px] text-[#6b7280]">Completed: 0/6</p>
       </CardHeader>
     </Card>
   ),

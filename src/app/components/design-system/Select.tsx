@@ -40,7 +40,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       </select>
       <ChevronDown
         className={clsx(
-          'absolute top-1/2 -translate-y-1/2 text-[#71717a] pointer-events-none',
+          'absolute top-1/2 -translate-y-1/2 text-[#6b7280] pointer-events-none',
           ICON_POS[size]
         )}
       />

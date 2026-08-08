@@ -183,9 +183,9 @@ For data visualization and charts:
 - **Active filters:** Use yellow (`#fc6`) background with dark text
 
 ### Filters & Chips
-- **Active:** Yellow background (`#fc6`) with dark text (`#09090b`)
-- **Inactive:** Light gray background (`#f5f5f5`) with gray text (`#71717a`)
-- **Hover (inactive):** Darker gray (`#e5e5e5`)
+- **Active:** Yellow background (`#fc6`) with dark text (`#18181b`)
+- **Inactive:** Light gray background (`#f4f4f5`) with gray text (`#6b7280`)
+- **Hover (inactive):** Darker gray (`#e4e4e7`)
 
 ### Backgrounds
 - **Main app:** `#F9FAFB`

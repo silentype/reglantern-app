@@ -23,7 +23,7 @@ export function CommentItem({ author, timestamp, children, actions, className }:
         <header className="flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
             <span className="text-[14px] font-semibold text-[#18181b]">{author.name}</span>
-            <span className="text-[12px] text-[#71717a]">{timestamp}</span>
+            <span className="text-[12px] text-[#6b7280]">{timestamp}</span>
           </div>
           {actions}
         </header>

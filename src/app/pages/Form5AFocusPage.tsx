@@ -160,7 +160,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
           <div className="flex-1 overflow-y-auto">
             {grouped.map(({ section, services }) => (
               <div key={section}>
-                <div className="px-3 pt-3 pb-1 text-[11px] font-semibold text-[#71717a] dark:text-[#a1a1aa] uppercase tracking-wide">
+                <div className="px-3 pt-3 pb-1 text-[11px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide">
                   {section}
                 </div>
                 {services.map((service) => {
@@ -236,7 +236,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
                       openTask(selectedService.key, { focus: 'assign' });
                     }}
                     title="Assign"
-                    className="flex items-center gap-[6px] text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-[6px] text-[12px] font-medium text-[#6b7280] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
                   >
                     {selectedService.assignedTo ? 'Assigned' : 'Assign'}
                     {selectedService.assignedTo ? (
@@ -258,7 +258,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
                       openTask(selectedService.key, { tab: 'comments', focus: 'comment' });
                     }}
                     title="Comments"
-                    className="flex items-center gap-1.5 text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors"
+                    className="flex items-center gap-1.5 text-[12px] font-medium text-[#6b7280] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors"
                   >
                     <span>Comment</span>
                     <span className="flex items-center gap-0.5">
@@ -277,7 +277,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
                       openTask(selectedService.key, { openDatePicker: true });
                     }}
                     title="Due date"
-                    className="flex items-center gap-1 pr-1 text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1 pr-1 text-[12px] font-medium text-[#6b7280] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
                   >
                     <Calendar size={13} />
                     {selectedService.dueDate || 'Due date'}
@@ -325,7 +325,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
                       >
                         <Check size={13} strokeWidth={3} />
                       </span>
-                      <p className="text-[10px] font-semibold text-[#71717a] dark:text-[#a1a1aa] uppercase tracking-[0.37px] leading-[15px] pr-6">
+                      <p className="text-[10px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-[0.37px] leading-[15px] pr-6">
                         {col.short}
                       </p>
                       <p className="text-[14px] font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[18px] mt-1 pr-6">
@@ -356,7 +356,7 @@ function PageHeader({ healthCenter }: { healthCenter: string | null }) {
       <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px]">
         Form 5A
       </h1>
-      <p className="text-[13px] text-[#71717a] mt-0.5">
+      <p className="text-[13px] text-[#6b7280] mt-0.5">
         Focus View{healthCenter ? ` · ${healthCenter}` : ''}
       </p>
     </div>

@@ -30,31 +30,8 @@ import {
 import { QuickDateButton } from './QuickDateButton';
 import { formatRelativeDate, getDateBadgeStyles } from './helpers';
 import { AVAILABLE_USERS, QUICK_DATE_OPTIONS } from '../../constants';
+import { Avatar } from '../design-system/Avatar';
 import type { Task } from './types';
-
-// Coloured initials avatar
-function InitialsAvatar({ user }: { user: NonNullable<Task['assignedTo']> }) {
-  const palette = [
-    { bg: '#fef9c3', text: '#854d0e' },
-    { bg: '#dbeafe', text: '#1e40af' },
-    { bg: '#dcfce7', text: '#166534' },
-    { bg: '#fce7f3', text: '#9d174d' },
-    { bg: '#ede9fe', text: '#5b21b6' },
-    { bg: '#ffedd5', text: '#9a3412' },
-  ];
-  const { bg, text } =
-    palette[
-      user.name.split('').reduce((a, c) => a + c.charCodeAt(0), 0) % palette.length
-    ];
-  return (
-    <span
-      className="inline-flex items-center justify-center rounded-full shrink-0 size-[26px] text-[11px] font-semibold leading-none"
-      style={{ backgroundColor: bg, color: text }}
-    >
-      {user.initials}
-    </span>
-  );
-}
 
 interface CompactTaskRowProps {
   task: Task;
@@ -126,7 +103,7 @@ export const CompactTaskRow = memo(function CompactTaskRow({
 
   return (
     <div
-      className={`relative bg-white rounded-[12px] w-full cursor-pointer transition-colors hover:bg-[#fafafa] flex flex-col gap-[8px] px-[14px] pt-[12px] pb-[11px] border ${
+      className={`relative bg-white rounded-[12px] w-full cursor-pointer transition-colors hover:bg-[#f9fafb] flex flex-col gap-[8px] px-[14px] pt-[12px] pb-[11px] border ${
         isSelected
           ? 'border-[#47515B] shadow-sm'
           : 'border-[#e4e4e7] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)]'
@@ -157,7 +134,7 @@ export const CompactTaskRow = memo(function CompactTaskRow({
               onClick={(e) => e.stopPropagation()}
             >
               {task.assignedTo ? (
-                <InitialsAvatar user={task.assignedTo} />
+                <Avatar initials={task.assignedTo.initials} name={task.assignedTo.name} size="sm" />
               ) : (
                 <span className="inline-flex items-center justify-center rounded-full size-[26px] bg-[#f4f4f5] border border-dashed border-[#d4d4d8]" />
               )}
@@ -235,7 +212,7 @@ export const CompactTaskRow = memo(function CompactTaskRow({
         {/* Comment count */}
         {commentCount > 0 && (
           <button
-            className="inline-flex items-center gap-[4px] px-[7px] py-[3px] rounded-[6px] border border-[#e4e4e7] bg-white text-[12px] text-[#71717a] hover:bg-[#f5f5f5] transition-colors"
+            className="inline-flex items-center gap-[4px] px-[7px] py-[3px] rounded-[6px] border border-[#e4e4e7] bg-white text-[12px] text-[#6b7280] hover:bg-[#f4f4f5] transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onClickWithTab('comments');
@@ -263,7 +240,7 @@ export const CompactTaskRow = memo(function CompactTaskRow({
         {/* Needs attention — purple */}
         {task.attention?.type === 'needs' && (
           <button
-            className="inline-flex items-center gap-[4px] px-[7px] py-[3px] rounded-[6px] border border-[#ede9fe] bg-[#f5f3ff] text-[12px] font-medium text-[#7c3aed] hover:bg-[#ede9fe] transition-colors"
+            className="inline-flex items-center gap-[4px] px-[7px] py-[3px] rounded-[6px] border border-[#ede9fe] bg-[#ede9fe] text-[12px] font-medium text-[#7c3aed] hover:bg-[#ede9fe] transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               onClickWithTab('details');
@@ -276,7 +253,7 @@ export const CompactTaskRow = memo(function CompactTaskRow({
 
         {/* Subtasks ratio */}
         {subtaskRatio && (
-          <span className="text-[12px] text-[#71717a] whitespace-nowrap">
+          <span className="text-[12px] text-[#6b7280] whitespace-nowrap">
             ↳ {subtaskRatio}
           </span>
         )}

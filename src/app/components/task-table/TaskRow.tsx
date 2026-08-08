@@ -212,7 +212,7 @@ export const TaskRow = memo(function TaskRow({
               >
                 <div
                   aria-hidden="true"
-                  className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] dark:group-hover:bg-[#2a2f3a] group-active:bg-[#f5f5f5] dark:group-active:bg-[#2a2f3a] rounded-l-[8px] transition-colors"
+                  className="absolute inset-0 bg-transparent group-hover:bg-[#f4f4f5] dark:group-hover:bg-[#2a2f3a] group-active:bg-[#f4f4f5] dark:group-active:bg-[#2a2f3a] rounded-l-[8px] transition-colors"
                 />
                 <button
                   type="button"
@@ -234,7 +234,7 @@ export const TaskRow = memo(function TaskRow({
             <div className="ml-auto content-stretch flex h-full items-center justify-center relative shrink-0 w-[60px] group/ellipsis">
               <div
                 aria-hidden="true"
-                className="absolute inset-0 bg-transparent group-hover/ellipsis:bg-[#f5f5f5] dark:group-hover/ellipsis:bg-[#2a2f3a] transition-colors rounded-r-[8px]"
+                className="absolute inset-0 bg-transparent group-hover/ellipsis:bg-[#f4f4f5] dark:group-hover/ellipsis:bg-[#2a2f3a] transition-colors rounded-r-[8px]"
               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -304,7 +304,7 @@ export const TaskRow = memo(function TaskRow({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="flex items-center justify-center hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer p-1 rounded"
+                className="flex items-center justify-center hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer p-1 rounded"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreHorizontal className="size-[20px] text-[#18181b]" />
@@ -339,7 +339,7 @@ export const TaskRow = memo(function TaskRow({
             <Popover>
               <PopoverTrigger asChild>
                 <button
-                  className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] dark:bg-[#1c1f26] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] rounded-md transition-colors text-left w-full"
+                  className="flex items-center justify-between px-3 py-2 bg-[#f4f4f5] dark:bg-[#1c1f26] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] rounded-md transition-colors text-left w-full"
                   onClick={(e) => e.stopPropagation()}
                   title={task.dueDate}
                 >
@@ -355,7 +355,7 @@ export const TaskRow = memo(function TaskRow({
                       );
                     })()
                   ) : (
-                    <span className="font-['Geist:Regular',sans-serif] font-normal text-[#999] text-[14px]">
+                    <span className="font-['Geist:Regular',sans-serif] font-normal text-[#9ca3af] text-[14px]">
                       Set Due Date
                     </span>
                   )}
@@ -383,13 +383,13 @@ export const TaskRow = memo(function TaskRow({
               onValueChange={handleMobileUserChange}
             >
               <SelectTrigger
-                className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] dark:bg-[#1c1f26] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] data-[state=open]:bg-[#e5e5e5] dark:data-[state=open]:bg-[#2a2f3a] border-0 rounded-md shadow-none focus:ring-0 transition-colors w-full [&>svg]:hidden"
+                className="flex items-center justify-between px-3 py-2 bg-[#f4f4f5] dark:bg-[#1c1f26] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] data-[state=open]:bg-[#e4e4e7] dark:data-[state=open]:bg-[#2a2f3a] border-0 rounded-md shadow-none focus:ring-0 transition-colors w-full [&>svg]:hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {task.assignedTo ? (
                   <UserAvatar user={task.assignedTo} />
                 ) : (
-                  <span className="font-['Geist:Regular',sans-serif] font-normal text-[#999] text-[14px]">
+                  <span className="font-['Geist:Regular',sans-serif] font-normal text-[#9ca3af] text-[14px]">
                     Assign User
                   </span>
                 )}
@@ -413,7 +413,7 @@ export const TaskRow = memo(function TaskRow({
               onValueChange={handleMobileHealthCenterChange}
             >
               <SelectTrigger
-                className="flex items-center justify-between px-3 py-2 bg-[#f5f5f5] dark:bg-[#1c1f26] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] data-[state=open]:bg-[#e5e5e5] dark:data-[state=open]:bg-[#2a2f3a] border-0 rounded-md shadow-none focus:ring-0 transition-colors w-full [&>svg]:hidden"
+                className="flex items-center justify-between px-3 py-2 bg-[#f4f4f5] dark:bg-[#1c1f26] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] data-[state=open]:bg-[#e4e4e7] dark:data-[state=open]:bg-[#2a2f3a] border-0 rounded-md shadow-none focus:ring-0 transition-colors w-full [&>svg]:hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {task.healthCenter ? (
@@ -421,7 +421,7 @@ export const TaskRow = memo(function TaskRow({
                     {task.healthCenter}
                   </span>
                 ) : (
-                  <span className="font-['Geist:Medium',sans-serif] font-medium text-[#999] text-[14px]">
+                  <span className="font-['Geist:Medium',sans-serif] font-medium text-[#9ca3af] text-[14px]">
                     Select Health Center
                   </span>
                 )}

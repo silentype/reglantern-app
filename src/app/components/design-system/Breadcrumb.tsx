@@ -28,12 +28,12 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
           <button
             type="button"
             onClick={item.onClick}
-            className="text-[#71717a] hover:text-[#18181b] transition-colors focus:outline-none focus-visible:underline"
+            className="text-[#6b7280] hover:text-[#18181b] transition-colors focus:outline-none focus-visible:underline"
           >
             {item.label}
           </button>
         ) : (
-          <span className={isLast ? 'text-[#18181b] font-medium' : 'text-[#71717a]'}>
+          <span className={isLast ? 'text-[#18181b] font-medium' : 'text-[#6b7280]'}>
             {item.label}
           </span>
         );

@@ -28,13 +28,13 @@ export const DateChip = forwardRef<HTMLButtonElement, DateChipProps>(
           highlighted
             ? 'bg-white border border-[#fc6] text-[#18181b]'
             : 'bg-white border border-[#e4e4e7] hover:border-[#cdd7e1]',
-          !hasValue && !highlighted && 'text-[#71717a]',
+          !hasValue && !highlighted && 'text-[#6b7280]',
           className
         )}
         {...props}
       >
-        <Calendar className="size-4 shrink-0 text-[#71717a]" />
-        <span className={clsx(hasValue ? 'text-[#18181b]' : 'text-[#71717a]')}>
+        <Calendar className="size-4 shrink-0 text-[#6b7280]" />
+        <span className={clsx(hasValue ? 'text-[#18181b]' : 'text-[#6b7280]')}>
           {value ?? placeholder}
         </span>
       </button>

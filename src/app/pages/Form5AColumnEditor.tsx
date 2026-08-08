@@ -87,7 +87,7 @@ export function ColumnEntryBody({
 
   if (!col.checked) {
     return (
-      <div className="border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1c1f26] py-6 text-center text-[13px] text-[#71717a]">
+      <div className="border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1c1f26] py-6 text-center text-[13px] text-[#6b7280]">
         Check {meta.short} above to record how this service is provided.
       </div>
     );
@@ -95,12 +95,12 @@ export function ColumnEntryBody({
 
   return (
     <div className="border border-[#e4e4e7] dark:border-[#2a2f3a] border-t-2 border-t-[#fc6] rounded-[6px] bg-white dark:bg-[#1c1f26] p-4">
-      <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#f0f0f0] dark:border-[#2a2f3a]">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center rounded-[6px] bg-[#fff7e0] dark:bg-[#2d2400] border border-[#fc6] px-2.5 py-1 text-[12px] font-semibold text-[#18181b] dark:text-[#f4f4f5] whitespace-nowrap">
+          <span className="inline-flex items-center rounded-[6px] bg-[#fffbe5] dark:bg-[#fc6]/10 border border-[#fc6] px-2.5 py-1 text-[12px] font-semibold text-[#18181b] dark:text-[#f4f4f5] whitespace-nowrap">
             {meta.short}
           </span>
-          <span className="text-[13px] text-[#71717a]">
+          <span className="text-[13px] text-[#6b7280]">
             {meta.title.replace(`${meta.short}. `, '')} {meta.sub} — Details and Policies
           </span>
         </div>
@@ -126,7 +126,7 @@ export function ColumnEntryBody({
 
       {/* Column I: compliance questions. Columns II/III: free-text notes. */}
       {active === 'I' ? (
-        <div className="mt-5 pt-2 border-t border-[#e4e4e7] dark:border-[#2a2f3a] divide-y divide-[#f0f0f0] dark:divide-[#2a2f3a]">
+        <div className="mt-5 pt-2 border-t border-[#e4e4e7] dark:border-[#2a2f3a] divide-y divide-[#e4e4e7] dark:divide-[#2a2f3a]">
           {FORM_5A_POLICY_QUESTIONS.map((q) => (
             <QuestionRow
               key={q.id}
@@ -146,7 +146,7 @@ export function ColumnEntryBody({
         </div>
       ) : (
         <div className="mt-5 pt-4 border-t border-[#f4f4f5] dark:border-[#2a2f3a]">
-          <label className="block text-[12px] font-medium text-[#71717a] mb-1.5">
+          <label className="block text-[12px] font-medium text-[#6b7280] mb-1.5">
             {meta.short} Notes
           </label>
           <textarea
@@ -154,7 +154,7 @@ export function ColumnEntryBody({
             onChange={(e) => update((c) => ({ ...c, notes: e.target.value }))}
             rows={3}
             placeholder={`Add any ${meta.short} notes…`}
-            className="w-full rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#161a20] px-3 py-2 text-[13px] text-[#18181b] dark:text-[#f4f4f5] placeholder:text-[#9ca3af] dark:placeholder:text-[#52525b] resize-y focus:outline-none focus:ring-2 focus:ring-[#fc6]"
+            className="w-full rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1e2129] px-3 py-2 text-[13px] text-[#18181b] dark:text-[#f4f4f5] placeholder:text-[#9ca3af] dark:placeholder:text-[#6b7280] resize-y focus:outline-none focus:ring-2 focus:ring-[#fc6]"
           />
         </div>
       )}
@@ -182,7 +182,7 @@ function EntryEditor({
   const [showDrop, setShowDrop] = useState(false);
 
   return (
-    <div className="rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] p-3 bg-[#fafafa] dark:bg-[#161a20]">
+    <div className="rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] p-3 bg-[#f9fafb] dark:bg-[#1e2129]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Field
           label="Description of services"
@@ -261,13 +261,13 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-[12px] font-medium text-[#71717a] mb-1">{label}</label>
+      <label className="block text-[12px] font-medium text-[#6b7280] mb-1">{label}</label>
       <input
         type="text"
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] px-3 py-2 text-[13px] text-[#18181b] dark:text-[#f4f4f5] placeholder:text-[#9ca3af] dark:placeholder:text-[#52525b] focus:outline-none focus:ring-2 focus:ring-[#fc6]"
+        className="w-full rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] px-3 py-2 text-[13px] text-[#18181b] dark:text-[#f4f4f5] placeholder:text-[#9ca3af] dark:placeholder:text-[#6b7280] focus:outline-none focus:ring-2 focus:ring-[#fc6]"
       />
     </div>
   );
@@ -301,7 +301,7 @@ function QuestionRow({
               className={`min-w-[52px] px-3 py-1.5 rounded-[6px] border text-[12px] font-medium transition-colors ${
                 selected
                   ? 'bg-[#fc6] border-[#fc6] text-[#18181b]'
-                  : 'bg-white dark:bg-[#1c1f26] border-[#e4e4e7] dark:border-[#2a2f3a] text-[#71717a] hover:border-[#cdd7e1] dark:hover:border-[#3a4455]'
+                  : 'bg-white dark:bg-[#1c1f26] border-[#e4e4e7] dark:border-[#2a2f3a] text-[#6b7280] hover:border-[#cdd7e1] dark:hover:border-[#3a4455]'
               }`}
             >
               {label[opt]}

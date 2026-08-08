@@ -20,7 +20,7 @@ const PALETTE: { group: string; swatches: { name: string; value: string; textDar
     group: 'Text',
     swatches: [
       { name: 'Primary',   value: '#18181b' },
-      { name: 'Secondary', value: '#71717a' },
+      { name: 'Secondary', value: '#6b7280' },
       { name: 'Muted',     value: '#a1a1aa', textDark: true },
     ],
   },
@@ -37,7 +37,7 @@ const PALETTE: { group: string; swatches: { name: string; value: string; textDar
     swatches: [
       { name: 'Page bg',         value: '#f9fafb', textDark: true },
       { name: 'Sidebar bg',      value: '#f4f4f5', textDark: true },
-      { name: 'Hover row',       value: '#f5f5f5', textDark: true },
+      { name: 'Hover row',       value: '#f4f4f5', textDark: true },
       { name: 'White',           value: '#ffffff',  textDark: true },
       // Dark surfaces
       { name: 'Dark page bg',    value: '#111318' },
@@ -112,7 +112,7 @@ function ColorPalette() {
               fontWeight: 600,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
-              color: 'var(--color-muted-foreground, #71717a)',
+              color: 'var(--color-muted-foreground, #6b7280)',
               marginBottom: 16,
             }}
           >

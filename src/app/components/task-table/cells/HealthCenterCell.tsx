@@ -19,7 +19,7 @@ export const HealthCenterCell = memo(function HealthCenterCell({ task, col }: He
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-transparent group-hover/health:bg-[#f5f5f5] transition-colors pointer-events-none"
+        className="absolute inset-0 bg-transparent group-hover/health:bg-[#f4f4f5] transition-colors pointer-events-none"
       />
       <div className="flex items-center justify-between w-full relative z-10">
         {task.healthCenter ? (
@@ -27,7 +27,7 @@ export const HealthCenterCell = memo(function HealthCenterCell({ task, col }: He
             {task.healthCenter}
           </span>
         ) : (
-          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#999] text-[14px]">—</span>
+          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#9ca3af] text-[14px]">—</span>
         )}
       </div>
     </div>

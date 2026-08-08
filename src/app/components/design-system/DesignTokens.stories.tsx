@@ -22,7 +22,7 @@ const COLOR_GROUPS: Array<{ heading: string; tokens: Array<{ name: string; value
     heading: 'Text',
     tokens: [
       { name: 'Text Primary', value: '#18181b', text: '#ffffff' },
-      { name: 'Text Secondary', value: '#71717a', text: '#ffffff' },
+      { name: 'Text Secondary', value: '#6b7280', text: '#ffffff' },
       { name: 'Text Muted', value: '#9ca3af', text: '#ffffff' },
     ],
   },
@@ -67,11 +67,11 @@ export const Colors: Story = {
   render: () => (
     <div className="p-6 bg-white">
       <h1 className="text-2xl font-bold text-[#18181b] mb-1">Colors</h1>
-      <p className="text-sm text-[#71717a] mb-6">Source of truth: <code>src/styles/theme.css</code></p>
+      <p className="text-sm text-[#6b7280] mb-6">Source of truth: <code>src/styles/theme.css</code></p>
       <div className="flex flex-col gap-6">
         {COLOR_GROUPS.map(group => (
           <section key={group.heading}>
-            <h2 className="text-sm font-semibold text-[#71717a] uppercase tracking-wide mb-2">{group.heading}</h2>
+            <h2 className="text-sm font-semibold text-[#6b7280] uppercase tracking-wide mb-2">{group.heading}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {group.tokens.map(t => <ColorSwatch key={t.value + t.name} {...t} />)}
             </div>
@@ -86,12 +86,12 @@ export const Typography: Story = {
   render: () => (
     <div className="p-6 bg-white flex flex-col gap-5">
       <h1 className="text-2xl font-bold text-[#18181b] mb-1">Typography</h1>
-      <p className="text-sm text-[#71717a]">System font stack — same as the live app.</p>
+      <p className="text-sm text-[#6b7280]">System font stack — same as the live app.</p>
       <div className="text-3xl font-bold text-[#18181b]">Display 30 / 700 — Section heading</div>
       <div className="text-xl font-semibold text-[#18181b]">Heading 20 / 600 — Card titles</div>
       <div className="text-base font-medium text-[#18181b]">Body 16 / 500 — Important text</div>
       <div className="text-sm text-[#18181b]">Body 14 / 400 — Default body text used in tables and side panels</div>
-      <div className="text-xs font-medium text-[#71717a]">Label 12 / 500 — Pills, metadata, breadcrumbs</div>
+      <div className="text-xs font-medium text-[#6b7280]">Label 12 / 500 — Pills, metadata, breadcrumbs</div>
     </div>
   ),
 };
@@ -100,13 +100,13 @@ export const Spacing: Story = {
   render: () => (
     <div className="p-6 bg-white">
       <h1 className="text-2xl font-bold text-[#18181b] mb-4">Spacing scale</h1>
-      <p className="text-sm text-[#71717a] mb-6">Tailwind default 4px unit. Use <code>p-1</code>…<code>p-16</code> in source.</p>
+      <p className="text-sm text-[#6b7280] mb-6">Tailwind default 4px unit. Use <code>p-1</code>…<code>p-16</code> in source.</p>
       <div className="flex flex-col gap-2">
         {[1, 2, 3, 4, 5, 6, 8, 10, 12, 16].map(n => (
           <div key={n} className="flex items-center gap-3">
-            <div className="w-16 font-mono text-sm text-[#71717a]">p-{n}</div>
+            <div className="w-16 font-mono text-sm text-[#6b7280]">p-{n}</div>
             <div className="bg-[#fc6] h-6" style={{ width: n * 4 }} />
-            <div className="font-mono text-xs text-[#71717a]">{n * 4}px</div>
+            <div className="font-mono text-xs text-[#6b7280]">{n * 4}px</div>
           </div>
         ))}
       </div>
@@ -128,7 +128,7 @@ export const Radii: Story = {
         ].map(r => (
           <div key={r.label} className="flex flex-col items-center gap-2">
             <div className={`bg-[#fc6] ${r.cls}`} style={{ width: 80, height: 80 }} />
-            <div className="text-xs text-[#71717a] font-mono">{r.label}</div>
+            <div className="text-xs text-[#6b7280] font-mono">{r.label}</div>
           </div>
         ))}
       </div>

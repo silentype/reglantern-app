@@ -55,11 +55,11 @@ export function FileRow({
       className={`flex items-center gap-3 p-3 bg-white border border-[#e4e4e7] rounded-md ${className ?? ''}`}
     >
       <div className="shrink-0 size-8 rounded bg-[#f4f4f5] flex items-center justify-center">
-        {icon ?? (() => { const Icon = fileIcon(name); return <Icon className="size-4 text-[#52525b]" strokeWidth={2} />; })()}
+        {icon ?? (() => { const Icon = fileIcon(name); return <Icon className="size-4 text-[#6b7280]" strokeWidth={2} />; })()}
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-[14px] font-medium text-[#18181b] truncate">{name}</div>
-        <div className="text-[12px] text-[#71717a]">
+        <div className="text-[12px] text-[#6b7280]">
           {category ? `${category} · ` : ''}{formatSize(size)}
         </div>
       </div>
@@ -75,7 +75,7 @@ export function FileRow({
             type="button"
             onClick={onOpenInNew}
             aria-label={`Open ${name} in new window`}
-            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
+            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
             title="Open in new window"
           >
             <ExternalLink className="size-3.5" />

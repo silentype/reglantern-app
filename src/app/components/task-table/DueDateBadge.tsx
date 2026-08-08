@@ -58,7 +58,7 @@ export const DueDateBadge = memo(
                 {ruleSummary}
               </span>
             </div>
-            <ChevronDown className="size-[16px] text-[#71717a] ml-1" />
+            <ChevronDown className="size-[16px] text-[#6b7280] ml-1" />
           </>
         ) : relativeInfo && styles ? (
           <>
@@ -72,14 +72,14 @@ export const DueDateBadge = memo(
                 {relativeInfo.text}
               </span>
             </div>
-            <ChevronDown className="size-[16px] text-[#71717a] ml-1" />
+            <ChevronDown className="size-[16px] text-[#6b7280] ml-1" />
           </>
         ) : (
           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[#e4e4e7] bg-white">
-            <span className="font-['Geist:Regular',sans-serif] font-normal text-[#71717a] text-[13px] leading-tight">
+            <span className="font-['Geist:Regular',sans-serif] font-normal text-[#6b7280] text-[13px] leading-tight">
               Select due date
             </span>
-            <ChevronDown className="size-[14px] text-[#71717a]" />
+            <ChevronDown className="size-[14px] text-[#6b7280]" />
           </div>
         )}
       </button>

@@ -316,7 +316,7 @@ export function ComplianceReviewPage() {
               <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
                 Compliance Review
               </h1>
-              <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
+              <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
                 Select a framework to begin your review
               </p>
             </div>
@@ -347,14 +347,14 @@ export function ComplianceReviewPage() {
                   <h3 className="font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[16px] leading-[24px] flex-1 pr-2">
                     {fw.name}
                   </h3>
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] text-[12px] font-medium bg-[#f4f4f5] dark:bg-[#2a2f3a] text-[#71717a] dark:text-[#a1a1aa] shrink-0">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-[6px] text-[12px] font-medium bg-[#f4f4f5] dark:bg-[#2a2f3a] text-[#6b7280] dark:text-[#a1a1aa] shrink-0">
                     {fw.category}
                   </span>
                 </div>
-                <p className="text-[13px] text-[#71717a] dark:text-[#a1a1aa] leading-[20px] mb-4">
+                <p className="text-[13px] text-[#6b7280] dark:text-[#a1a1aa] leading-[20px] mb-4">
                   {fw.description}
                 </p>
-                <div className="text-[12px] text-[#a1a1aa] dark:text-[#52525b]">
+                <div className="text-[12px] text-[#6b7280] dark:text-[#a1a1aa]">
                   {fw.chapters} chapters
                 </div>
               </button>
@@ -376,7 +376,7 @@ export function ComplianceReviewPage() {
           <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
             {framework.name}
           </h1>
-          <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
+          <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
             Walk through each chapter and confirm compliance for every element
           </p>
         </div>
@@ -433,7 +433,7 @@ export function ComplianceReviewPage() {
                 {isActive && (
                   <span className="absolute inset-[4px] rounded-full bg-[#cdd7e1]" />
                 )}
-                <span className={`relative text-[13px] font-semibold ${isActive ? 'text-[#18181b] dark:text-[#f4f4f5]' : completed > 0 ? 'text-[#18181b] dark:text-[#f4f4f5]' : 'text-[#71717a] dark:text-[#a1a1aa]'} group-hover:text-[#18181b] dark:group-hover:text-[#f4f4f5] transition-colors`}>
+                <span className={`relative text-[13px] font-semibold ${isActive ? 'text-[#18181b] dark:text-[#f4f4f5]' : completed > 0 ? 'text-[#18181b] dark:text-[#f4f4f5]' : 'text-[#6b7280] dark:text-[#a1a1aa]'} group-hover:text-[#18181b] dark:group-hover:text-[#f4f4f5] transition-colors`}>
                   {chapter.id}
                 </span>
               </button>
@@ -451,7 +451,7 @@ export function ComplianceReviewPage() {
                   <div key={index} className="flex gap-[10px] items-center">
                     <p
                       className="font-normal text-[14px] leading-[20px] whitespace-nowrap"
-                      style={{ color: index === arr.length - 1 ? '#09090b' : '#71717a' }}
+                      style={{ color: index === arr.length - 1 ? '#18181b' : '#6b7280' }}
                     >
                       {part}
                     </p>
@@ -461,7 +461,7 @@ export function ComplianceReviewPage() {
                           <path
                             clipRule="evenodd"
                             d="M0.292893 0.292893C0.683418 -0.0976311 1.31658 -0.0976311 1.70711 0.292893L7.70711 6.29289C8.09763 6.68342 8.09763 7.31658 7.70711 7.70711L1.70711 13.7071C1.31658 14.0976 0.683418 14.0976 0.292893 13.7071C-0.0976311 13.3166 -0.0976311 12.6834 0.292893 12.2929L5.58579 7L0.292893 1.70711C-0.0976311 1.31658 -0.0976311 0.683418 0.292893 0.292893Z"
-                            fill="#71717a"
+                            fill="#6b7280"
                             fillRule="evenodd"
                           />
                         </svg>
@@ -486,7 +486,7 @@ export function ComplianceReviewPage() {
                 >
                   <div
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      currentAnswer?.answer === 'yes' ? 'border-green-500' : 'border-[#71717a]'
+                      currentAnswer?.answer === 'yes' ? 'border-green-500' : 'border-[#6b7280]'
                     }`}
                   >
                     {currentAnswer?.answer === 'yes' && (
@@ -506,7 +506,7 @@ export function ComplianceReviewPage() {
                 >
                   <div
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      currentAnswer?.answer === 'no' ? 'border-red-500' : 'border-[#71717a]'
+                      currentAnswer?.answer === 'no' ? 'border-red-500' : 'border-[#6b7280]'
                     }`}
                   >
                     {currentAnswer?.answer === 'no' && (
@@ -519,7 +519,7 @@ export function ComplianceReviewPage() {
 
               {/* Explanation */}
               <div className="mb-5">
-                <label className="block text-[13px] font-medium text-[#52525b] dark:text-[#a1a1aa] mb-1.5">Explanation</label>
+                <label className="block text-[13px] font-medium text-[#6b7280] dark:text-[#a1a1aa] mb-1.5">Explanation</label>
                 <textarea
                   value={currentAnswer?.explanation || ''}
                   onChange={(e) => handleExplanationChange(e.target.value)}
@@ -533,10 +533,10 @@ export function ComplianceReviewPage() {
                 {/* Progress bar */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[12px] font-medium text-[#71717a] dark:text-[#a1a1aa]">
+                    <span className="text-[12px] font-medium text-[#6b7280] dark:text-[#a1a1aa]">
                       Question {currentQuestionIndex + 1} of {totalQuestions}
                     </span>
-                    <span className="text-[12px] text-[#a1a1aa] dark:text-[#52525b]">
+                    <span className="text-[12px] text-[#6b7280] dark:text-[#a1a1aa]">
                       {answeredCount} of {totalQuestions} answered
                     </span>
                   </div>
@@ -552,9 +552,9 @@ export function ComplianceReviewPage() {
                           className={`flex-1 rounded-full transition-all duration-200 ${
                             isCurrent ? 'h-[10px]' : 'h-[6px]'
                           } ${
-                            ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#15803d]' :
+                            ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#16a34a]' :
                             ans === 'no'  ? 'bg-[#dc2626] hover:bg-[#b91c1c]' :
-                            isCurrent     ? 'bg-[#a1a1aa] hover:bg-[#71717a]' :
+                            isCurrent     ? 'bg-[#a1a1aa] hover:bg-[#6b7280]' :
                                             'bg-[#e4e4e7] hover:bg-[#d4d4d8]'
                           }`}
                         />
@@ -572,7 +572,7 @@ export function ComplianceReviewPage() {
               </div>
             </div>
           ) : (
-            <div className="h-full flex items-center justify-center text-[#71717a]">
+            <div className="h-full flex items-center justify-center text-[#6b7280]">
               <p>No questions found for this chapter.</p>
             </div>
           )}
@@ -589,7 +589,7 @@ export function ComplianceReviewPage() {
                 className={`py-2.5 px-4 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
                   rightTab === 'tasks'
                     ? 'border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
-                    : 'border-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5]'
+                    : 'border-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5]'
                 }`}
               >
                 Tasks
@@ -600,7 +600,7 @@ export function ComplianceReviewPage() {
                   className={`py-2.5 px-4 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
                     rightTab === 'preview'
                       ? 'border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
-                      : 'border-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5]'
+                      : 'border-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5]'
                   }`}
                 >
                   {previewFile.name}
@@ -623,19 +623,19 @@ export function ComplianceReviewPage() {
                   {/* Status pills */}
                   <button
                     onClick={() => setStatusFilter(['all'])}
-                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'}`}
+                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}
                   >
                     All Tasks
                   </button>
                   <button
                     onClick={() => setStatusFilter(['incomplete'])}
-                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('incomplete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'}`}
+                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('incomplete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}
                   >
                     Incomplete
                   </button>
                   <button
                     onClick={() => setStatusFilter(['complete'])}
-                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('complete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'}`}
+                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('complete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}
                   >
                     Complete
                   </button>
@@ -645,7 +645,7 @@ export function ComplianceReviewPage() {
                   {/* Due Date popover */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${dueDateFilter ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'}`}>
+                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${dueDateFilter ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}>
                         <CalendarIcon className="h-3.5 w-3.5" />
                         {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
                       </button>
@@ -658,7 +658,7 @@ export function ComplianceReviewPage() {
                             {DATE_FILTER_PRESETS.map((preset) => (
                               <button
                                 key={preset.value}
-                                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
+                                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
                                 onClick={() => setDueDateFilter(preset.value)}
                               >
                                 {preset.label}
@@ -709,7 +709,7 @@ export function ComplianceReviewPage() {
                   {/* Assigned To popover */}
                   <Popover open={assignedToOpen} onOpenChange={setAssignedToOpen}>
                     <PopoverTrigger asChild>
-                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${!assignedToFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'}`}>
+                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${!assignedToFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}>
                         <User className="h-3.5 w-3.5" />
                         Assigned {!assignedToFilter.includes('all') && `(${assignedToFilter.length})`}
                       </button>
@@ -743,7 +743,7 @@ export function ComplianceReviewPage() {
                   {/* Needs Attention popover */}
                   <Popover open={needsAttentionOpen} onOpenChange={setNeedsAttentionOpen}>
                     <PopoverTrigger asChild>
-                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${!needsAttentionFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'}`}>
+                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${!needsAttentionFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}>
                         <AlertCircle className="h-3.5 w-3.5" />
                         Needs Attention {!needsAttentionFilter.includes('all') && `(${needsAttentionFilter.length})`}
                       </button>
@@ -782,7 +782,7 @@ export function ComplianceReviewPage() {
                       <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
                       <button
                         onClick={clearAllFilters}
-                        className="px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#3b82f6] hover:bg-[#f5f5f5] transition-colors flex items-center gap-1 shrink-0"
+                        className="px-2.5 py-1 rounded-full text-xs font-medium bg-white text-[#3b82f6] hover:bg-[#f4f4f5] transition-colors flex items-center gap-1 shrink-0"
                       >
                         <X className="h-3.5 w-3.5" />
                         Clear All
@@ -797,7 +797,7 @@ export function ComplianceReviewPage() {
           <div className={`flex-1 overflow-y-auto ${rightTab === 'tasks' ? 'block' : 'hidden'}`}>
             {hasActiveFilters && (
               <div className="px-4 py-2 bg-[#f9fafb] dark:bg-[#111318] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
-                <span className="text-[11px] text-[#71717a] dark:text-[#a1a1aa]">
+                <span className="text-[11px] text-[#6b7280] dark:text-[#a1a1aa]">
                   {chapterTasks.length} of {allTasksForChapter.length} tasks
                 </span>
               </div>
@@ -805,14 +805,14 @@ export function ComplianceReviewPage() {
 
             {chapterTasks.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-[13px] text-[#71717a]">No tasks match the selected filters</p>
+                <p className="text-[13px] text-[#6b7280]">No tasks match the selected filters</p>
               </div>
             ) : (
               <div className="divide-y divide-[#f4f4f5] dark:divide-[#2a2f3a]">
                 {chapterTasks.map((task) => {
                   const allFiles = task.files?.flatMap((fg) => fg.uploadedFiles ?? []) ?? [];
                   return (
-                    <div key={task.id} className="px-4 py-3 bg-white dark:bg-[#1e2129] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a] transition-colors">
+                    <div key={task.id} className="px-4 py-3 bg-white dark:bg-[#1e2129] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a] transition-colors">
                       {/* Task header */}
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-[13px] text-[#18181b] dark:text-[#f4f4f5] truncate flex-1 mr-2">
@@ -823,8 +823,8 @@ export function ComplianceReviewPage() {
                           className="shrink-0 flex items-center gap-1 px-2 py-1 hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
                           title="Open task details"
                         >
-                          <span className="text-[11px] text-[#71717a] dark:text-[#a1a1aa]">View task</span>
-                          <ArrowUpRight className="w-3.5 h-3.5 text-[#71717a] dark:text-[#a1a1aa]" />
+                          <span className="text-[11px] text-[#6b7280] dark:text-[#a1a1aa]">View task</span>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-[#6b7280] dark:text-[#a1a1aa]" />
                         </button>
                       </div>
 
@@ -845,7 +845,7 @@ export function ComplianceReviewPage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="text-[11px] text-[#a1a1aa] dark:text-[#52525b] italic mb-2">No files uploaded</p>
+                        <p className="text-[11px] text-[#6b7280] dark:text-[#a1a1aa] italic mb-2">No files uploaded</p>
                       )}
 
                       {/* Status + assignee + due date */}
@@ -855,7 +855,7 @@ export function ComplianceReviewPage() {
                           <UserAvatar user={task.assignedTo} />
                         )}
                         {task.dueDate && (
-                          <span className="text-[11px] text-[#71717a] ml-auto flex items-center gap-1">
+                          <span className="text-[11px] text-[#6b7280] ml-auto flex items-center gap-1">
                             <CalendarIcon className="w-3 h-3" />
                             {format(new Date(task.dueDate), 'MMM d')}
                           </span>
@@ -872,9 +872,9 @@ export function ComplianceReviewPage() {
           <div className={`flex-1 flex flex-col overflow-hidden bg-[#f9fafb] dark:bg-[#111318] ${rightTab === 'preview' ? 'flex' : 'hidden'}`}>
             {previewFile === null ? (
               <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-[#71717a] px-6">
+                <div className="text-center text-[#6b7280] px-6">
                   <FileText className="mx-auto w-10 h-10 mb-3 opacity-30" />
-                  <p className="text-[13px] font-medium text-[#71717a]">Select a file to preview</p>
+                  <p className="text-[13px] font-medium text-[#6b7280]">Select a file to preview</p>
                   <p className="text-[11px] text-[#a1a1aa] mt-1">
                     Click a file in the Tasks tab to preview it here
                   </p>
@@ -886,8 +886,8 @@ export function ComplianceReviewPage() {
                 <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1e2129]">
                   <div className="flex items-center gap-2 flex-1 min-w-0 mr-3">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-medium text-[#09090b] dark:text-[#f4f4f5] truncate">{previewFile.name}</p>
-                      <p className="text-[11px] text-[#71717a] dark:text-[#a1a1aa]">
+                      <p className="text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] truncate">{previewFile.name}</p>
+                      <p className="text-[11px] text-[#6b7280] dark:text-[#a1a1aa]">
                         {previewFile.category} · {(previewFile.size / 1_000_000).toFixed(1)} MB
                       </p>
                     </div>
@@ -901,7 +901,7 @@ export function ComplianceReviewPage() {
                     </button>
                     <button
                       onClick={() => {/* open in new window handler */}}
-                      className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
+                      className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
                       title="Open in new window"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -912,8 +912,8 @@ export function ComplianceReviewPage() {
                         className="shrink-0 flex items-center gap-1 px-2 h-[32px] hover:bg-[#f4f4f5] rounded-[6px] transition-colors"
                         title="Open task details"
                       >
-                        <span className="text-[12px] text-[#71717a] font-medium">View task</span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-[#71717a]" />
+                        <span className="text-[12px] text-[#6b7280] font-medium">View task</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-[#6b7280]" />
                       </button>
                     )}
                   </div>
@@ -924,8 +924,8 @@ export function ComplianceReviewPage() {
                   {getFileType(previewFile.name) === 'pdf' ? (
                     <div className="bg-white rounded-lg shadow-sm border border-[#e4e4e7] p-6 space-y-4">
                       <div className="text-center border-b border-[#e4e4e7] pb-3">
-                        <h4 className="text-[14px] font-semibold text-[#09090b]">Document Preview</h4>
-                        <p className="text-[11px] text-[#71717a] mt-0.5">{previewFile.name}</p>
+                        <h4 className="text-[14px] font-semibold text-[#18181b]">Document Preview</h4>
+                        <p className="text-[11px] text-[#6b7280] mt-0.5">{previewFile.name}</p>
                       </div>
                       <div className="w-full h-28 bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] rounded flex items-center justify-center">
                         <div className="text-center">
@@ -936,13 +936,13 @@ export function ComplianceReviewPage() {
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <h5 className="text-[13px] font-semibold text-[#09090b]">Section 1: Introduction</h5>
+                        <h5 className="text-[13px] font-semibold text-[#18181b]">Section 1: Introduction</h5>
                         <p className="text-[12px] text-[#404040] leading-relaxed">
                           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
                         </p>
                       </div>
                       <div className="space-y-2">
-                        <h5 className="text-[13px] font-semibold text-[#09090b]">Section 2: Details</h5>
+                        <h5 className="text-[13px] font-semibold text-[#18181b]">Section 2: Details</h5>
                         <ul className="list-disc list-inside space-y-1 text-[12px] text-[#404040]">
                           <li>First important point about the document</li>
                           <li>Second key consideration for review</li>
@@ -952,14 +952,14 @@ export function ComplianceReviewPage() {
                       </div>
                       <div className="w-full h-20 bg-gradient-to-br from-[#e8f4f8] to-[#d0e8f0] rounded flex items-center justify-center">
                         <div className="text-center">
-                          <svg className="mx-auto size-8 text-[#0891b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="mx-auto size-8 text-[#3b82f6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                           </svg>
-                          <p className="text-[11px] text-[#0891b2] mt-1">Chart or Graph</p>
+                          <p className="text-[11px] text-[#3b82f6] mt-1">Chart or Graph</p>
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <h5 className="text-[13px] font-semibold text-[#09090b]">Section 3: Summary</h5>
+                        <h5 className="text-[13px] font-semibold text-[#18181b]">Section 3: Summary</h5>
                         <p className="text-[12px] text-[#404040] leading-relaxed">
                           In conclusion, this document provides comprehensive information regarding the subject matter. All relevant details have been included for review and approval.
                         </p>
@@ -976,15 +976,15 @@ export function ComplianceReviewPage() {
                         <svg className="mx-auto size-16 text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <p className="text-[13px] font-medium text-[#09090b] mt-3">{previewFile.name}</p>
-                        <p className="text-[11px] text-[#71717a] mt-1">Sample Image Preview</p>
+                        <p className="text-[13px] font-medium text-[#18181b] mt-3">{previewFile.name}</p>
+                        <p className="text-[11px] text-[#6b7280] mt-1">Sample Image Preview</p>
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <FileText className="size-14 mb-3 text-[#52525b]" strokeWidth={1.5} />
-                      <p className="text-[13px] font-medium text-[#09090b] mb-1">{previewFile.name}</p>
-                      <p className="text-[12px] text-[#71717a]">Preview not available for this file type</p>
+                      <FileText className="size-14 mb-3 text-[#6b7280]" strokeWidth={1.5} />
+                      <p className="text-[13px] font-medium text-[#18181b] mb-1">{previewFile.name}</p>
+                      <p className="text-[12px] text-[#6b7280]">Preview not available for this file type</p>
                     </div>
                   )}
                 </div>

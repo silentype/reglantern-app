@@ -181,12 +181,12 @@ export function TopNav({
             <div className="absolute top-full right-0 mt-2 bg-[#232a30] border border-[#3d444b] rounded-md shadow-xl z-50 min-w-[220px]">
               {/* Current user info */}
               <div className="px-4 py-3 border-b border-[#3d444b]">
-                <p className="text-[11px] text-[#71717a] uppercase tracking-wide mb-2">Signed in as</p>
+                <p className="text-[11px] text-[#6b7280] uppercase tracking-wide mb-2">Signed in as</p>
                 <div className="flex items-center gap-2">
                   <Avatar initials={user.initials} name={user.name} size="sm" color="#fc6" className="font-bold shrink-0" />
                   <div className="min-w-0">
                     <p className="text-sm text-white font-medium truncate">{user.name}</p>
-                    <p className="text-xs text-[#71717a]">{isAdmin ? 'Multi-center admin' : 'Single health center'}</p>
+                    <p className="text-xs text-[#6b7280]">{isAdmin ? 'Multi-center admin' : 'Single health center'}</p>
                   </div>
                 </div>
               </div>
@@ -194,7 +194,7 @@ export function TopNav({
               {/* Switch user */}
               {users.length > 1 && onUserChange && (
                 <div className="py-1">
-                  <p className="text-[11px] text-[#71717a] uppercase tracking-wide px-4 pt-2 pb-1">Switch user</p>
+                  <p className="text-[11px] text-[#6b7280] uppercase tracking-wide px-4 pt-2 pb-1">Switch user</p>
                   {users.filter(u => u.name !== user.name).map(u => (
                     <button
                       key={u.name}

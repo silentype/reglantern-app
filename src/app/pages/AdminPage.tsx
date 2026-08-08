@@ -443,7 +443,7 @@ export function AdminPage({
                 {selectedProject.name}
               </h1>
               {selectedProject.description && (
-                <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
+                <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
                   {selectedProject.description}
                 </p>
               )}
@@ -462,7 +462,7 @@ export function AdminPage({
                 </button>
                 <button
                   onClick={() => setConfirmDeleteProjectOpen(true)}
-                  className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1e2129] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#fef2f2] dark:hover:bg-[#2d1010] hover:text-[#b91c1c] hover:border-[#fecaca] dark:hover:border-[#7f1d1d] transition-colors"
+                  className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1e2129] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#fef2f2] dark:hover:bg-[#2d1010] hover:text-[#b91c1c] hover:border-[#fecaca] dark:hover:border-[#7f1d1d] transition-colors"
                   aria-label="Delete project"
                   title="Delete project"
                 >
@@ -546,7 +546,7 @@ export function AdminPage({
                         className={`flex-1 h-[36px] rounded-[6px] border text-[13px] font-medium transition-colors ${
                           editProjectDraft.status === s
                             ? 'border-[#fc6] bg-[#fc6] text-[#18181b]'
-                            : 'border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a]'
+                            : 'border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a]'
                         }`}
                       >
                         {s === 'in_progress' ? 'In Progress' : 'Completed'}
@@ -578,7 +578,7 @@ export function AdminPage({
               <h2 className="text-[18px] font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">
                 Delete this project?
               </h2>
-              <p className="text-[14px] text-[#52525b] dark:text-[#a1a1aa] mb-5">
+              <p className="text-[14px] text-[#6b7280] dark:text-[#a1a1aa] mb-5">
                 <span className="font-medium text-[#18181b]">"{selectedProject.name}"</span>{' '}
                 and its {selectedProject.tasks.length} task
                 {selectedProject.tasks.length === 1 ? '' : 's'} will be permanently removed. This can't be undone.
@@ -611,13 +611,13 @@ export function AdminPage({
           {resolvedProjectTasks.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
-                <p className="text-[#71717a] dark:text-[#a1a1aa] text-[14px]">No tasks added to this project yet.</p>
-                <p className="text-[#71717a] dark:text-[#a1a1aa] text-[14px] mt-1">Click "Add Task" to create your first custom task.</p>
+                <p className="text-[#6b7280] dark:text-[#a1a1aa] text-[14px]">No tasks added to this project yet.</p>
+                <p className="text-[#6b7280] dark:text-[#a1a1aa] text-[14px] mt-1">Click "Add Task" to create your first custom task.</p>
               </div>
             </div>
           ) : filteredProjectTasks.length === 0 ? (
             <div className="flex-1 flex items-center justify-center">
-              <p className="text-[#71717a] text-[14px]">No tasks match "{taskSearch}"</p>
+              <p className="text-[#6b7280] text-[14px]">No tasks match "{taskSearch}"</p>
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto overflow-x-auto px-[24px] pb-6">
@@ -647,8 +647,8 @@ export function AdminPage({
         {pendingDelete && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={() => setPendingDelete(null)}>
             <div className="bg-white dark:bg-[#1e2129] rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold text-[#09090b] dark:text-[#f4f4f5] mb-2">Delete task with dependents</h3>
-              <p className="text-[14px] text-[#71717a] dark:text-[#a1a1aa] mb-3">
+              <h3 className="text-lg font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Delete task with dependents</h3>
+              <p className="text-[14px] text-[#6b7280] dark:text-[#a1a1aa] mb-3">
                 <span className="font-medium text-[#18181b] dark:text-[#f4f4f5]">{pendingDelete.task.title}</span> is the anchor for {pendingDelete.dependents.length} other task{pendingDelete.dependents.length === 1 ? '' : 's'}. Deleting it will clear those due-date rules.
               </p>
               <ul className="text-[13px] text-[#18181b] dark:text-[#f4f4f5] mb-6 list-disc pl-5 space-y-0.5 max-h-40 overflow-y-auto">
@@ -687,7 +687,7 @@ export function AdminPage({
         <div className="flex items-end justify-between gap-4 mb-1">
           <div>
             <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">Project Builder</h1>
-            <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
+            <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
               Create and manage projects with custom tasks
             </p>
           </div>
@@ -804,7 +804,7 @@ export function AdminPage({
                       {project.name}
                     </h3>
                   </div>
-                  <p className="text-[14px] text-[#71717a] dark:text-[#a1a1aa] mb-4 line-clamp-2 leading-[20px]">
+                  <p className="text-[14px] text-[#6b7280] dark:text-[#a1a1aa] mb-4 line-clamp-2 leading-[20px]">
                     {project.description}
                   </p>
 
@@ -840,8 +840,8 @@ export function AdminPage({
                               className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] text-[12px] hover:border-[#d4d4d8] dark:hover:border-[#3f4756] transition-colors h-[36px]"
                             >
                               <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <Building2 className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
-                                <span className="text-[#71717a] truncate">
+                                <Building2 className="w-3.5 h-3.5 text-[#6b7280] shrink-0" />
+                                <span className="text-[#6b7280] truncate">
                                   {pendingCenters.length > 0
                                     ? pendingCenters.length === 1
                                       ? pendingCenters[0]
@@ -849,7 +849,7 @@ export function AdminPage({
                                     : 'Assign to health center...'}
                                 </span>
                               </div>
-                              <ChevronsUpDown className="w-3.5 h-3.5 text-[#71717a] shrink-0" />
+                              <ChevronsUpDown className="w-3.5 h-3.5 text-[#6b7280] shrink-0" />
                             </button>
                           </PopoverTrigger>
                           <PopoverContent
@@ -871,7 +871,7 @@ export function AdminPage({
                                         : { projectId: project.id, centers: [], search: e.target.value }
                                     )
                                   }
-                                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#71717a]"
+                                  className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-[#6b7280]"
                                 />
                               </div>
                               <CommandList>
@@ -931,7 +931,7 @@ export function AdminPage({
                                 e.stopPropagation();
                                 setPendingAssign(null);
                               }}
-                              className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
+                              className="h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors shrink-0"
                               title="Clear selection"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -978,7 +978,7 @@ export function AdminPage({
                     );
                   })()}
 
-                  <div className="flex items-center justify-between text-[12px] text-[#71717a] dark:text-[#a1a1aa] pt-3 border-t border-[#f4f4f5] dark:border-[#2a2f3a]">
+                  <div className="flex items-center justify-between text-[12px] text-[#6b7280] dark:text-[#a1a1aa] pt-3 border-t border-[#f4f4f5] dark:border-[#2a2f3a]">
                     <span className="font-medium">
                       {project.tasks.length} {project.tasks.length === 1 ? 'task' : 'tasks'}
                     </span>
@@ -996,13 +996,13 @@ export function AdminPage({
               p.name.toLowerCase().includes(projectSearch.toLowerCase()) ||
               p.description.toLowerCase().includes(projectSearch.toLowerCase())
           ) && (
-          <p className="text-[14px] text-[#71717a] py-8 text-center">No projects match "{projectSearch}"</p>
+          <p className="text-[14px] text-[#6b7280] py-8 text-center">No projects match "{projectSearch}"</p>
         )}
 
         {projects.length === 0 && !creatingNewProject && (
           <div className="text-center py-16">
-            <p className="text-[#71717a] dark:text-[#a1a1aa] text-[14px]">No projects yet.</p>
-            <p className="text-[#71717a] dark:text-[#a1a1aa] text-[14px] mt-1">Click "Create New Project" to get started.</p>
+            <p className="text-[#6b7280] dark:text-[#a1a1aa] text-[14px]">No projects yet.</p>
+            <p className="text-[#6b7280] dark:text-[#a1a1aa] text-[14px] mt-1">Click "Create New Project" to get started.</p>
           </div>
         )}
       </div>

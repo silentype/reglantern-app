@@ -73,6 +73,9 @@ const CompactRowTestPage = lazy(() =>
 const TypographyPage = lazy(() =>
   import('./pages/TypographyPage').then((m) => ({ default: m.TypographyPage }))
 );
+const ColorsPage = lazy(() =>
+  import('./pages/ColorsPage').then((m) => ({ default: m.ColorsPage }))
+);
 
 // MultiFileUploadPanel only mounts when a task / new-task panel is open.
 // Keeping it eager would pull 1.6k lines + the relative-due-date picker into
@@ -80,7 +83,7 @@ const TypographyPage = lazy(() =>
 const MultiFileUpload1 = lazy(() => import('./components/MultiFileUploadPanel'));
 
 const PageFallback = () => (
-  <div className="flex items-center justify-center h-full text-[#71717a] text-sm">
+  <div className="flex items-center justify-center h-full text-[#6b7280] text-sm">
     Loading…
   </div>
 );
@@ -123,7 +126,7 @@ function LoginScreen({ onAuth }: { onAuth: () => void }) {
       >
         <div>
           <h1 className="text-lg font-semibold text-[#18181b]">Welcome to RegLantern</h1>
-          <p className="text-sm text-[#71717a] mt-0.5">Enter the access password to continue.</p>
+          <p className="text-sm text-[#6b7280] mt-0.5">Enter the access password to continue.</p>
         </div>
         <input
           type="password"
@@ -912,6 +915,8 @@ export default function App() {
           <Suspense fallback={<PageFallback />}>
           {currentPage === 'test' && itemSeg === 'typography' ? (
             <TypographyPage />
+          ) : currentPage === 'test' && itemSeg === 'colors' ? (
+            <ColorsPage />
           ) : currentPage === 'test' ? (
             <CompactRowTestPage
               tasks={visibleTasks}

@@ -125,7 +125,7 @@ type CenterTypeFilter = 'all' | 'regPathway' | 'ryanWhite' | 'ftca';
 
 function chip(active: boolean, extra?: string) {
   return `px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${extra ?? ''} ${
-    active ? 'bg-[#fc6] text-foreground' : 'bg-[#f5f5f5] text-muted-foreground hover:bg-[#e5e5e5]'
+    active ? 'bg-[#fc6] text-foreground' : 'bg-[#f4f4f5] text-muted-foreground hover:bg-[#e4e4e7]'
   }`;
 }
 
@@ -133,7 +133,7 @@ function chip(active: boolean, extra?: string) {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="text-[13px] font-medium text-[#52525b] mb-1.5">
+    <div className="text-[13px] font-medium text-[#6b7280] mb-1.5">
       {children}
     </div>
   );
@@ -249,7 +249,7 @@ function SpPopulationsField({ value, onChange }: { value: string[]; onChange: (v
           className={`h-[28px] px-3 rounded-full text-[12px] font-medium border transition-colors ${
             value.includes(opt)
               ? 'bg-[#fc6] border-[#fc6] text-foreground'
-              : 'bg-card border-border text-[#52525b] hover:border-[#cdd7e1]'
+              : 'bg-card border-border text-[#6b7280] hover:border-[#cdd7e1]'
           }`}
         >
           {opt}
@@ -931,7 +931,7 @@ export function HealthCenterAdminPage({
                 <button
                   key={v || 'all'}
                   onClick={() => { setUltraOptInFilter(v); setUltraOptInOpen(false); setPage(1); }}
-                  className={`w-full text-left px-3 py-2 text-[13px] rounded hover:bg-[#f5f5f5] transition-colors ${ultraOptInFilter === v ? 'font-semibold text-foreground' : 'text-[#52525b]'}`}
+                  className={`w-full text-left px-3 py-2 text-[13px] rounded hover:bg-[#f4f4f5] transition-colors ${ultraOptInFilter === v ? 'font-semibold text-foreground' : 'text-[#6b7280]'}`}
                 >
                   {v || 'All'}
                 </button>
@@ -1008,10 +1008,10 @@ export function HealthCenterAdminPage({
                       <span className="font-medium text-foreground hover:underline">{center.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-[#52525b] cursor-pointer" onClick={() => onSelectCenter(center.name)}>{center.city}</td>
-                  <td className="px-4 py-3 text-[#52525b] cursor-pointer" onClick={() => onSelectCenter(center.name)}>{center.state}</td>
+                  <td className="px-4 py-3 text-[#6b7280] cursor-pointer" onClick={() => onSelectCenter(center.name)}>{center.city}</td>
+                  <td className="px-4 py-3 text-[#6b7280] cursor-pointer" onClick={() => onSelectCenter(center.name)}>{center.state}</td>
                   {PROFILE_COLS.filter((c) => visibleCols.has(c.key)).map((col) => (
-                    <td key={col.key} className="px-4 py-3 text-[#52525b] whitespace-nowrap cursor-pointer" onClick={() => onSelectCenter(center.name)}>
+                    <td key={col.key} className="px-4 py-3 text-[#6b7280] whitespace-nowrap cursor-pointer" onClick={() => onSelectCenter(center.name)}>
                       {getCellValue(center, col.key)}
                     </td>
                   ))}

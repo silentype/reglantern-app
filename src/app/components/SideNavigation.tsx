@@ -77,7 +77,7 @@ const NavItem = memo(({ item, isSelected, onClick, isExpanded, isPinned, onToggl
           className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-all hover:bg-[#d4d4d8] ${
             isPinned
               ? 'opacity-100 text-[#18181b]'
-              : 'opacity-0 group-hover/nav:opacity-100 text-[#71717a]'
+              : 'opacity-0 group-hover/nav:opacity-100 text-[#6b7280]'
           }`}
         >
           <Pin

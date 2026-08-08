@@ -19,7 +19,7 @@ export const SubtasksCell = memo(function SubtasksCell({ task, col }: SubtasksCe
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-transparent group-hover/subtasks:bg-[#f5f5f5] dark:group-hover/subtasks:bg-[#2a2f3a] transition-colors"
+        className="absolute inset-0 bg-transparent group-hover/subtasks:bg-[#f4f4f5] dark:group-hover/subtasks:bg-[#2a2f3a] transition-colors"
       />
       <div className="flex items-center justify-between w-full relative z-10">
         {task.subtasks && task.subtasks.length > 0 ? (
@@ -27,7 +27,7 @@ export const SubtasksCell = memo(function SubtasksCell({ task, col }: SubtasksCe
             {task.subtasks.length} Subtasks
           </span>
         ) : (
-          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#999] dark:text-[#52525b] text-[14px]">—</span>
+          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#9ca3af] text-[14px]">—</span>
         )}
       </div>
     </div>

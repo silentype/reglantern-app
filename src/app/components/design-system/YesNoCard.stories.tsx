@@ -28,7 +28,7 @@ export const Interactive: Story = {
       return (
         <div className="flex flex-col gap-3">
           <YesNoCard value={v} onChange={setV} />
-          <div className="text-[12px] text-[#71717a]">Selected: <strong>{v ?? 'none'}</strong></div>
+          <div className="text-[12px] text-[#6b7280]">Selected: <strong>{v ?? 'none'}</strong></div>
         </div>
       );
     };

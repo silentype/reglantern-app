@@ -57,7 +57,7 @@ function SpecRow({ label, source, size, weight, color, lineHeight, note, preview
         <span className="text-[12px] text-[#9ca3af] ml-auto">{source}</span>
       </div>
       {note && (
-        <div className="px-5 py-2 border-t border-[#e4e4e7] text-[12px] text-[#71717a] bg-white">{note}</div>
+        <div className="px-5 py-2 border-t border-[#e4e4e7] text-[12px] text-[#6b7280] bg-white">{note}</div>
       )}
     </div>
   );
@@ -65,7 +65,7 @@ function SpecRow({ label, source, size, weight, color, lineHeight, note, preview
 
 function SpecField({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <span className="text-[12px] text-[#71717a]">
+    <span className="text-[12px] text-[#6b7280]">
       <span className="text-[#9ca3af]">{label}:</span>{' '}
       <span className="text-[#18181b] font-medium">{value}</span>
     </span>
@@ -74,7 +74,7 @@ function SpecField({ label, value }: { label: string; value: ReactNode }) {
 
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
-    <h2 className="text-[13px] font-semibold text-[#71717a] uppercase tracking-wide mt-8 mb-3 first:mt-0">
+    <h2 className="text-[13px] font-semibold text-[#6b7280] uppercase tracking-wide mt-8 mb-3 first:mt-0">
       {children}
     </h2>
   );
@@ -94,9 +94,9 @@ export function TypographyPage() {
     <div className="h-full flex flex-col bg-[#f9fafb]">
       {/* ── Page header ───────────────────────────────────────────────── */}
       <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
-        <p className="text-[11px] font-medium text-[#71717a] uppercase tracking-wide mb-[2px]">Test Page</p>
+        <p className="text-[11px] font-medium text-[#6b7280] uppercase tracking-wide mb-[2px]">Test Page</p>
         <h1 className="text-[20px] font-semibold text-[#18181b] leading-[28px]">Typography</h1>
-        <p className="mt-[4px] text-[13px] text-[#71717a]">
+        <p className="mt-[4px] text-[13px] text-[#6b7280]">
           Font, size, and color actually used for headings, body copy, navigation, and tags across the app.
         </p>
       </div>
@@ -130,8 +130,8 @@ export function TypographyPage() {
             source="MultiFileUploadPanel.tsx section headers"
             size="20px (text-xl)"
             weight="600 (semibold)"
-            color="#09090b"
-            preview={<h2 className="text-xl font-semibold text-[#09090b]">Section heading</h2>}
+            color="#18181b"
+            preview={<h2 className="text-xl font-semibold text-[#18181b]">Section heading</h2>}
             note="Also seen at 24px/font-normal for the file-panel document title — h2 isn't perfectly consistent across the app."
           />
           <SpecRow
@@ -139,8 +139,8 @@ export function TypographyPage() {
             source="MultiFileUploadPanel.tsx / AdminPage.tsx dialog titles"
             size="18px (text-lg)"
             weight="600 (semibold)"
-            color="#09090b"
-            preview={<h3 className="text-lg font-semibold text-[#09090b]">Dialog title</h3>}
+            color="#18181b"
+            preview={<h3 className="text-lg font-semibold text-[#18181b]">Dialog title</h3>}
             note="Also seen at 16px in compliance-review card headers and 14px in the due-date picker — h3 ranges 14–18px depending on context."
           />
           <SpecRow
@@ -148,24 +148,24 @@ export function TypographyPage() {
             source="ComplianceReviewPage.tsx"
             size="14px"
             weight="600 (semibold)"
-            color="#09090b"
-            preview={<h4 className="text-[14px] font-semibold text-[#09090b]">Document Preview</h4>}
+            color="#18181b"
+            preview={<h4 className="text-[14px] font-semibold text-[#18181b]">Document Preview</h4>}
           />
           <SpecRow
             label="h5"
             source="ComplianceReviewPage.tsx"
             size="13px"
             weight="600 (semibold)"
-            color="#09090b"
-            preview={<h5 className="text-[13px] font-semibold text-[#09090b]">Subsection label</h5>}
+            color="#18181b"
+            preview={<h5 className="text-[13px] font-semibold text-[#18181b]">Subsection label</h5>}
           />
           <SpecRow
             label="h6"
             source="not used anywhere in the app"
             size="12px (suggested)"
             weight="600 (suggested)"
-            color="#71717a (suggested)"
-            preview={<h6 className="text-[12px] font-semibold text-[#71717a] uppercase tracking-wide">Not in use</h6>}
+            color="#6b7280 (suggested)"
+            preview={<h6 className="text-[12px] font-semibold text-[#6b7280] uppercase tracking-wide">Not in use</h6>}
             note="No component currently renders an <h6>. Shown here as an extrapolation of the h4/h5 scale, not an existing pattern — if you need one, this is a reasonable place to start."
           />
         </div>
@@ -185,10 +185,10 @@ export function TypographyPage() {
             source="design-system/PageHeader.tsx description"
             size="14px (text-sm)"
             weight="500 (medium)"
-            color="#71717a"
+            color="#6b7280"
             lineHeight="14px"
             preview={
-              <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+              <p className="text-sm font-medium text-[#6b7280] leading-[14px]">
                 Secondary / muted description text
               </p>
             }

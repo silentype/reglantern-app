@@ -63,7 +63,7 @@ function greeting(): string {
 // Count "chip" styles used in the Health Center rows. Neutral pill for most
 // counts; a red-tinted variant for overdue.
 const COUNT_CHIP =
-  'inline-flex items-center justify-center min-w-[32px] px-2.5 py-1 rounded-full border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-xs font-medium text-[#18181b] dark:text-[#f4f4f5] hover:border-[#fc6] hover:bg-[#fff7e6] dark:hover:bg-[#2a3a2a] transition-colors';
+  'inline-flex items-center justify-center min-w-[32px] px-2.5 py-1 rounded-full border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-xs font-medium text-[#18181b] dark:text-[#f4f4f5] hover:border-[#fc6] hover:bg-[#fffbe5] dark:hover:bg-[#2a3a2a] transition-colors';
 const OVERDUE_CHIP =
   'inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#fecaca] dark:border-[#7f1d1d] bg-[#fef2f2] dark:bg-[#2d1010] text-xs font-medium text-[#dc2626] hover:border-[#dc2626] transition-colors';
 
@@ -113,7 +113,7 @@ function ProgressBar({ done, total, color = '#fc6' }: { done: number; total: num
       <div className="flex-1 h-1.5 bg-[#e4e4e7] dark:bg-[#2a2f3a] rounded-full overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
-      <span className="text-xs text-[#71717a] dark:text-[#a1a1aa] shrink-0">{done}/{total}</span>
+      <span className="text-xs text-[#6b7280] dark:text-[#a1a1aa] shrink-0">{done}/{total}</span>
     </div>
   );
 }
@@ -137,14 +137,14 @@ function SortHeader<T extends string>({
     <th className={`text-left px-4 py-2.5 ${className ?? ''}`}>
       <button
         onClick={() => onSort(col)}
-        className="flex items-center gap-1 hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] px-1 py-0.5 rounded transition-colors"
+        className="flex items-center gap-1 hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] px-1 py-0.5 rounded transition-colors"
       >
         <span className="font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[14px] leading-[20px]">{label}</span>
         {active
           ? dir === 'asc'
-            ? <ChevronUp size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />
-            : <ChevronDown size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />
-          : <ChevronsUpDown size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />}
+            ? <ChevronUp size={16} className="text-[#6b7280] dark:text-[#a1a1aa]" />
+            : <ChevronDown size={16} className="text-[#6b7280] dark:text-[#a1a1aa]" />
+          : <ChevronsUpDown size={16} className="text-[#6b7280] dark:text-[#a1a1aa]" />}
       </button>
     </th>
   );
@@ -237,7 +237,7 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
                     className="flex flex-col items-center p-2 rounded-md bg-[#f9fafb] dark:bg-[#1c1f26] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] transition-colors"
                   >
                     <span className={`text-base font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b] dark:text-[#f4f4f5]'}`}>{value}</span>
-                    <span className="text-[10px] text-[#71717a] dark:text-[#a1a1aa] mt-0.5 text-center leading-tight">{label}</span>
+                    <span className="text-[10px] text-[#6b7280] dark:text-[#a1a1aa] mt-0.5 text-center leading-tight">{label}</span>
                   </button>
                 ))}
               </div>
@@ -245,7 +245,7 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
           );
         })}
         {filtered.length === 0 && (
-          <p className="col-span-3 py-8 text-center text-sm text-[#71717a]">{search ? 'No matching health centers' : 'No health centers yet'}</p>
+          <p className="col-span-3 py-8 text-center text-sm text-[#6b7280]">{search ? 'No matching health centers' : 'No health centers yet'}</p>
         )}
       </div>
     );
@@ -273,7 +273,7 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
               <tr
                 key={hc.name}
                 onClick={() => navigate(`/tasks/my-tasks?${hcQuery}`)}
-                className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] last:border-0 hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer"
+                className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] last:border-0 hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer"
               >
                 <td className="px-4 py-3 font-medium text-[#18181b] dark:text-[#f4f4f5]">{hc.name}</td>
                 <td className="px-4 py-3">
@@ -282,27 +282,27 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
                 <td className="px-4 py-3">
                   {overdueCount > 0
                     ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=overdue&status=incomplete`); }} className={OVERDUE_CHIP}><span className="inline-block w-1.5 h-1.5 rounded-full bg-[#dc2626]" />{overdueCount}</button>
-                    : <span className="text-[#71717a]">—</span>}
+                    : <span className="text-[#6b7280]">—</span>}
                 </td>
                 <td className="px-4 py-3">
                   {thisWeekCount > 0
                     ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&due=thisweek&status=incomplete`); }} className={COUNT_CHIP}>{thisWeekCount}</button>
-                    : <span className="text-[#71717a]">—</span>}
+                    : <span className="text-[#6b7280]">—</span>}
                 </td>
                 <td className="px-4 py-3">
                   {completedCount > 0
                     ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&status=complete`); }} className={COUNT_CHIP}>{completedCount}</button>
-                    : <span className="text-[#71717a]">—</span>}
+                    : <span className="text-[#6b7280]">—</span>}
                 </td>
                 <td className="px-4 py-3">
                   {unassignedCount > 0
                     ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&assigned=unassigned`); }} className={COUNT_CHIP}>{unassignedCount}</button>
-                    : <span className="text-[#71717a]">—</span>}
+                    : <span className="text-[#6b7280]">—</span>}
                 </td>
                 <td className="px-4 py-3">
                   {assignedToMeCount > 0
                     ? <button onClick={(e) => { e.stopPropagation(); navigate(`/tasks/my-tasks?${hcQuery}&assigned=${encodeURIComponent(CURRENT_USER)}`); }} className={COUNT_CHIP}>{assignedToMeCount}</button>
-                    : <span className="text-[#71717a]">—</span>}
+                    : <span className="text-[#6b7280]">—</span>}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Button
@@ -317,7 +317,7 @@ function HealthCenterTable({ rows, navigate, view = 'list', search = '' }: { row
             );
           })}
           {filtered.length === 0 && (
-            <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#71717a]">{search ? 'No matching health centers' : 'No health centers yet'}</td></tr>
+            <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[#6b7280]">{search ? 'No matching health centers' : 'No health centers yet'}</td></tr>
           )}
         </tbody>
       </table>
@@ -468,7 +468,7 @@ function AdminDashboard({
               <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
                 {greeting()}, {currentUserName.split(' ')[0]}
               </h1>
-              <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
+              <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
                 Review your health centers and projects, or jump to any open tasks
               </p>
             </div>
@@ -486,12 +486,12 @@ function AdminDashboard({
               <button
                 key={label}
                 onClick={onClick}
-                className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] dark:bg-[#1c1f26] rounded-full hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
+                className="flex items-center gap-2 px-3 py-1.5 bg-[#f4f4f5] dark:bg-[#1c1f26] rounded-full hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1"
               >
                 <span className={`text-sm font-semibold ${danger && value > 0 ? 'text-[#dc2626]' : 'text-[#18181b] dark:text-[#f4f4f5]'}`}>
                   {value}
                 </span>
-                <span className="text-xs text-[#71717a] dark:text-[#a1a1aa]">{label}</span>
+                <span className="text-xs text-[#6b7280] dark:text-[#a1a1aa]">{label}</span>
               </button>
             ))}
           </div>
@@ -503,7 +503,7 @@ function AdminDashboard({
                 className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab
                     ? 'border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
-                    : 'border-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:border-[#e4e4e7] dark:hover:border-[#2a2f3a]'
+                    : 'border-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:border-[#e4e4e7] dark:hover:border-[#2a2f3a]'
                 }`}>
                 {tab === 'health-centers' ? 'Health Centers' : 'Projects'}
               </button>
@@ -530,7 +530,7 @@ function AdminDashboard({
                   <button
                     onClick={() => setHcView('grid')}
                     aria-label="Grid view"
-                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] dark:border-[#2a2f3a] ${hcView === 'grid' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a]'}`}
+                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] dark:border-[#2a2f3a] ${hcView === 'grid' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a]'}`}
                   >
                     <LayoutGrid className="h-3.5 w-3.5" />
                     Grid
@@ -538,7 +538,7 @@ function AdminDashboard({
                   <button
                     onClick={() => setHcView('list')}
                     aria-label="List view"
-                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'list' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a]'}`}
+                    className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${hcView === 'list' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a]'}`}
                   >
                     <List className="h-3.5 w-3.5" />
                     List
@@ -571,7 +571,7 @@ function AdminDashboard({
                       className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${
                         projectStatusFilter === s
                           ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]'
-                          : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'
+                          : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'
                       }`}
                     >
                       {s === 'in_progress' ? 'In Progress' : s === 'completed' ? 'Complete' : 'All'}
@@ -583,7 +583,7 @@ function AdminDashboard({
                   <Popover open={projectNameOpen} onOpenChange={setProjectNameOpen}>
                     <PopoverTrigger asChild>
                       <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                        !projectNameFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'
+                        !projectNameFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'
                       }`}>
                         <FolderOpen className="h-3.5 w-3.5" />
                         Project {!projectNameFilter.includes('all') && `(${projectNameFilter.length})`}
@@ -619,7 +619,7 @@ function AdminDashboard({
                   <Popover open={projectHCOpen} onOpenChange={setProjectHCOpen}>
                     <PopoverTrigger asChild>
                       <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                        !projectHCFilter.includes('All Health Centers') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f5f5f5] dark:bg-[#1c1f26] text-[#71717a] dark:text-[#a1a1aa] hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a]'
+                        !projectHCFilter.includes('All Health Centers') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'
                       }`}>
                         <Building2 className="h-3.5 w-3.5" />
                         Health Center {!projectHCFilter.includes('All Health Centers') && `(${projectHCFilter.length})`}
@@ -662,7 +662,7 @@ function AdminDashboard({
                           setProjectNameFilter(['all']);
                           setProjectHCFilter(['All Health Centers']);
                         }}
-                        className="px-2.5 py-1 rounded-full text-[12px] font-medium flex items-center gap-1 shrink-0 text-[#3b82f6] bg-white dark:bg-[#1c1f26] hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] border border-[#e4e4e7] dark:border-[#2a2f3a] transition-colors"
+                        className="px-2.5 py-1 rounded-full text-[12px] font-medium flex items-center gap-1 shrink-0 text-[#3b82f6] bg-white dark:bg-[#1c1f26] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] border border-[#e4e4e7] dark:border-[#2a2f3a] transition-colors"
                       >
                         <X className="h-3 w-3" />
                         Clear
@@ -676,7 +676,7 @@ function AdminDashboard({
                       <button
                         onClick={() => setProjectView('grid')}
                         aria-label="Grid view"
-                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] dark:border-[#2a2f3a] ${projectView === 'grid' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a]'}`}
+                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors border-r border-[#e4e4e7] dark:border-[#2a2f3a] ${projectView === 'grid' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a]'}`}
                       >
                         <LayoutGrid className="h-3.5 w-3.5" />
                         Grid
@@ -684,14 +684,14 @@ function AdminDashboard({
                       <button
                         onClick={() => setProjectView('list')}
                         aria-label="List view"
-                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'list' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#71717a] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#fafafa] dark:hover:bg-[#2a2f3a]'}`}
+                        className={`px-3 py-1.5 flex items-center gap-1.5 text-[12px] font-medium transition-colors ${projectView === 'list' ? 'bg-white dark:bg-[#1e2129] text-[#18181b] dark:text-[#f4f4f5]' : 'bg-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a]'}`}
                       >
                         <List className="h-3.5 w-3.5" />
                         List
                       </button>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-medium text-[#71717a] dark:text-[#a1a1aa] shrink-0">Sort by</span>
+                      <span className="text-xs font-medium text-[#6b7280] dark:text-[#a1a1aa] shrink-0">Sort by</span>
                       <select
                         value={projectSort}
                         onChange={(e) => { setProjectSort(e.target.value as ProjectSort); setProjectSortDir(e.target.value === 'name' ? 'asc' : 'desc'); }}
@@ -705,7 +705,7 @@ function AdminDashboard({
                   </div>
                 </div>
                 {sortedProjects.length === 0 ? (
-                  <p className="text-sm text-[#71717a] italic">No projects match your filters</p>
+                  <p className="text-sm text-[#6b7280] italic">No projects match your filters</p>
                 ) : projectView === 'grid' ? (
                 <div className="space-y-6">
                 {(() => {
@@ -722,8 +722,8 @@ function AdminDashboard({
 
                   return groups.map(group => (
                     <div key={group.name}>
-                      <h3 className="text-xs font-semibold text-[#71717a] dark:text-[#a1a1aa] uppercase tracking-wide mb-3">
-                        {group.name} <span className="text-[#a1a1aa] dark:text-[#71717a]">({group.projects.length})</span>
+                      <h3 className="text-xs font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mb-3">
+                        {group.name} <span className="text-[#6b7280] dark:text-[#a1a1aa]">({group.projects.length})</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {group.projects.map(p => {
@@ -758,7 +758,7 @@ function AdminDashboard({
                               <ProgressBar done={done} total={total} color={status.bar} />
                               <div className="mt-3 flex items-center justify-between gap-2">
                                 <Pill color={status.pill}>{status.label}</Pill>
-                                <span className="text-xs text-[#71717a] dark:text-[#a1a1aa] truncate text-right">{centerLabel}</span>
+                                <span className="text-xs text-[#6b7280] dark:text-[#a1a1aa] truncate text-right">{centerLabel}</span>
                               </div>
                             </button>
                           );
@@ -801,12 +801,12 @@ function AdminDashboard({
                                   : `/admin/project-builder/${p.id}`,
                               )
                             }
-                            className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] last:border-0 hover:bg-[#f5f5f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer"
+                            className="border-b border-[#e4e4e7] dark:border-[#2a2f3a] last:border-0 hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] transition-colors cursor-pointer"
                           >
                             <td className="px-4 py-3 font-medium text-[#18181b] dark:text-[#f4f4f5]">{p.name}</td>
                             <td className="px-4 py-3"><ProgressBar done={done} total={total} color={projectStatus(done, total).bar} /></td>
-                            <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{centerLabel}</td>
-                            <td className="px-4 py-3 text-[#71717a] dark:text-[#a1a1aa]">{done}/{total}</td>
+                            <td className="px-4 py-3 text-[#6b7280] dark:text-[#a1a1aa]">{centerLabel}</td>
+                            <td className="px-4 py-3 text-[#6b7280] dark:text-[#a1a1aa]">{done}/{total}</td>
                             <td className="px-4 py-3">
                               <Pill color={(getProjectEffectiveStatus(p)) === 'completed' ? 'green' : 'yellow'}>
                                 {(getProjectEffectiveStatus(p)) === 'completed' ? 'Complete' : 'In Progress'}
@@ -821,7 +821,7 @@ function AdminDashboard({
                 )}
               </div>
             ) : (
-              <p className="text-sm text-[#71717a] italic">No projects yet</p>
+              <p className="text-sm text-[#6b7280] italic">No projects yet</p>
             )
           )}
         </div>

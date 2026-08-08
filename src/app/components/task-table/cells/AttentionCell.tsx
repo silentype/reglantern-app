@@ -26,7 +26,7 @@ export const AttentionCell = memo(function AttentionCell({ task, col, onClick }:
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-transparent group-hover/attention:bg-[#f5f5f5] dark:group-hover/attention:bg-[#2a2f3a] group-active/attention:bg-[#f5f5f5] dark:group-active/attention:bg-[#2a2f3a] transition-colors"
+        className="absolute inset-0 bg-transparent group-hover/attention:bg-[#f4f4f5] dark:group-hover/attention:bg-[#2a2f3a] group-active/attention:bg-[#f4f4f5] dark:group-active/attention:bg-[#2a2f3a] transition-colors"
       />
       <div className="z-10">
         <AttentionBadge attention={task.attention} />

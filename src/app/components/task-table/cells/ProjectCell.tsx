@@ -21,11 +21,11 @@ export const ProjectCell = memo(function ProjectCell({ task, col }: ProjectCellP
       />
       {name ? (
         <div className="flex items-center gap-1.5 min-w-0">
-          <FolderOpen size={13} className="text-[#71717a] dark:text-[#a1a1aa] shrink-0" strokeWidth={2} />
+          <FolderOpen size={13} className="text-[#6b7280] dark:text-[#a1a1aa] shrink-0" strokeWidth={2} />
           <span className="text-[13px] text-[#18181b] dark:text-[#f4f4f5] truncate" title={name}>{name}</span>
         </div>
       ) : (
-        <span className="text-[13px] text-[#9ca3af] dark:text-[#52525b] italic">—</span>
+        <span className="text-[13px] text-[#9ca3af] italic">—</span>
       )}
     </div>
   );

@@ -19,7 +19,7 @@ export const SortButton = memo(
 
     return (
       <button
-        className="flex items-center gap-1 hover:bg-[#e5e5e5] dark:hover:bg-[#2a2f3a] px-1 py-0.5 rounded transition-colors relative z-10"
+        className="flex items-center gap-1 hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] px-1 py-0.5 rounded transition-colors relative z-10"
         onClick={handleClick}
       >
         {Icon && <Icon size={14} className="text-[#18181b] dark:text-[#f4f4f5]" />}
@@ -28,12 +28,12 @@ export const SortButton = memo(
         </span>
         {currentColumn === sortColumn ? (
           sortDirection === 'asc' ? (
-            <ChevronUp size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />
+            <ChevronUp size={16} className="text-[#6b7280] dark:text-[#a1a1aa]" />
           ) : (
-            <ChevronDown size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />
+            <ChevronDown size={16} className="text-[#6b7280] dark:text-[#a1a1aa]" />
           )
         ) : (
-          <ChevronsUpDown size={16} className="text-[#71717a] dark:text-[#a1a1aa]" />
+          <ChevronsUpDown size={16} className="text-[#6b7280] dark:text-[#a1a1aa]" />
         )}
       </button>
     );

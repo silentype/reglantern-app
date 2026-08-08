@@ -124,7 +124,7 @@ export function ComplianceReviewTasksPage() {
               className={`relative w-[40px] h-[40px] rounded-full flex items-center justify-center text-[13px] font-semibold transition-all shrink-0 ${
                 isSelected
                   ? 'bg-[#18181b] text-white'
-                  : 'bg-[#f4f4f5] text-[#71717a] hover:bg-[#e4e4e7] hover:text-[#18181b]'
+                  : 'bg-[#f4f4f5] text-[#6b7280] hover:bg-[#e4e4e7] hover:text-[#18181b]'
               }`}
             >
               {ch.id}
@@ -155,7 +155,7 @@ export function ComplianceReviewTasksPage() {
           <h1 className="text-[22px] font-semibold text-[#18181b] leading-tight">
             {framework.name}
           </h1>
-          <p className="mt-[4px] text-[13px] text-[#71717a]">{framework.description}</p>
+          <p className="mt-[4px] text-[13px] text-[#6b7280]">{framework.description}</p>
         </div>
 
         {/* Scrollable chapter body */}
@@ -164,7 +164,7 @@ export function ComplianceReviewTasksPage() {
           {/* Chapter heading */}
           <div className="flex items-center justify-between mb-[16px]">
             <div>
-              <p className="text-[11px] font-semibold text-[#71717a] uppercase tracking-wide">
+              <p className="text-[11px] font-semibold text-[#6b7280] uppercase tracking-wide">
                 {currentChapter?.name ?? `Chapter ${selectedChapter}`}
               </p>
               <p className="text-[13px] text-[#18181b] font-medium mt-[2px] capitalize">
@@ -216,7 +216,7 @@ export function ComplianceReviewTasksPage() {
           ) : (
             <div className="flex flex-col items-center justify-center py-[60px] text-center max-w-[400px]">
               <p className="text-[14px] font-medium text-[#18181b] mb-[4px]">No tasks yet</p>
-              <p className="text-[13px] text-[#71717a]">
+              <p className="text-[13px] text-[#6b7280]">
                 Add tasks to track compliance work for this chapter.
               </p>
             </div>
@@ -233,7 +233,7 @@ export function ComplianceReviewTasksPage() {
             Back
           </Button>
 
-          <span className="text-[13px] text-[#71717a]">
+          <span className="text-[13px] text-[#6b7280]">
             Chapter {selectedChapter}/{chapters.length}
           </span>
 

@@ -50,13 +50,13 @@ export function CompactRowTestPage({
     <div className="h-full flex flex-col bg-[#f9fafb]">
       {/* ── Page header ───────────────────────────────────────────────── */}
       <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
-        <p className="text-[11px] font-medium text-[#71717a] uppercase tracking-wide mb-[2px]">
+        <p className="text-[11px] font-medium text-[#6b7280] uppercase tracking-wide mb-[2px]">
           Test Page
         </p>
         <h1 className="text-[20px] font-semibold text-[#18181b] leading-[28px]">
           Compact Task Row
         </h1>
-        <p className="mt-[4px] text-[13px] text-[#71717a]">
+        <p className="mt-[4px] text-[13px] text-[#6b7280]">
           Two-line rows at 360 px. Click a row to open the task panel · click the date pill to set
           due date inline.
         </p>
@@ -68,10 +68,10 @@ export function CompactRowTestPage({
         {/* ── Column 1: compact task list ─────────────────────────────── */}
         <div className="w-[360px] shrink-0 border-r border-[#e4e4e7] bg-[#f4f4f5] flex flex-col overflow-hidden">
           <div className="px-[16px] pt-[16px] pb-[10px] shrink-0">
-            <p className="text-[11px] font-semibold text-[#71717a] uppercase tracking-wide">
+            <p className="text-[11px] font-semibold text-[#6b7280] uppercase tracking-wide">
               My Tasks
             </p>
-            <p className="text-[12px] text-[#71717a] mt-[2px]">
+            <p className="text-[12px] text-[#6b7280] mt-[2px]">
               {tasks.filter((t) => !t.completed).length} remaining
             </p>
           </div>
@@ -94,12 +94,12 @@ export function CompactRowTestPage({
         {/* ── Columns 2 + 3: placeholder panels ───────────────────────── */}
         <div className="flex-1 flex overflow-hidden">
           <div className="flex-1 border-r border-[#e4e4e7] bg-white flex items-center justify-center">
-            <p className="text-[13px] text-[#71717a]">
+            <p className="text-[13px] text-[#6b7280]">
               {selectedTaskId ? `Task ${selectedTaskId} selected` : 'Select a task to open the panel →'}
             </p>
           </div>
           <div className="flex-1 bg-[#f9fafb] flex items-center justify-center">
-            <p className="text-[13px] text-[#71717a]">Panel 3</p>
+            <p className="text-[13px] text-[#6b7280]">Panel 3</p>
           </div>
         </div>
       </div>

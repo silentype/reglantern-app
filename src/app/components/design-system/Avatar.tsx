@@ -8,8 +8,9 @@ const SIZE_CLASS: Record<AvatarSize, string> = {
   lg: 'h-10 w-10 text-base',
 };
 
-// Soft pastel palette deterministic per-initials. Keep this in sync with
-// SCHOOL_COLORS in any consumer that wants matching avatar colors.
+// Soft pastel palette, deterministic per-initials. This is the single
+// source of truth for avatar colors — every consumer should render
+// initials through <Avatar>, not hand-roll its own palette.
 const PALETTE = [
   '#fde68a', '#fecaca', '#bfdbfe', '#bbf7d0', '#fbcfe8',
   '#ddd6fe', '#fed7aa', '#a5f3fc', '#e9d5ff', '#fef9c3',

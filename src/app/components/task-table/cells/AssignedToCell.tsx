@@ -41,7 +41,7 @@ export const AssignedToCell = memo(function AssignedToCell({
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-transparent group-hover/assigned:bg-[#f5f5f5] dark:group-hover/assigned:bg-[#2a2f3a] transition-colors"
+        className="absolute inset-0 bg-transparent group-hover/assigned:bg-[#f4f4f5] dark:group-hover/assigned:bg-[#2a2f3a] transition-colors"
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -54,7 +54,7 @@ export const AssignedToCell = memo(function AssignedToCell({
               {task.assignedTo ? (
                 <UserAvatar user={task.assignedTo} />
               ) : (
-                <span className="font-['Geist:Regular',sans-serif] font-normal text-[#999] text-[14px]">
+                <span className="font-['Geist:Regular',sans-serif] font-normal text-[#9ca3af] text-[14px]">
                   Assign User
                 </span>
               )}

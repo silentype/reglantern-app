@@ -35,8 +35,8 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
           <div className="flex items-center gap-2 flex-1 min-w-0 mr-3">
             <BackButton onClick={onClose}>Back</BackButton>
             <div className="min-w-0">
-              <p className="text-[13px] font-medium text-[#09090b] truncate">{file.name}</p>
-              <p className="text-[11px] text-[#71717a]">
+              <p className="text-[13px] font-medium text-[#18181b] truncate">{file.name}</p>
+              <p className="text-[11px] text-[#6b7280]">
                 {file.category} · {(file.size / 1_000_000).toFixed(1)} MB
               </p>
             </div>
@@ -51,7 +51,7 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
             {onOpenInNew && (
               <button
                 onClick={() => onOpenInNew(file)}
-                className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#71717a] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
+                className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
                 title="Open in new window"
               >
                 <ExternalLink size={14} strokeWidth={2} />
@@ -69,8 +69,8 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="text-center border-b border-[#e4e4e7] pb-4">
-                    <h1 className="text-2xl font-bold text-[#09090b] mb-2">Document Preview</h1>
-                    <p className="text-sm text-[#71717a]">{file.name}</p>
+                    <h1 className="text-2xl font-bold text-[#18181b] mb-2">Document Preview</h1>
+                    <p className="text-sm text-[#6b7280]">{file.name}</p>
                   </div>
 
                   {/* Mock Image */}
@@ -95,7 +95,7 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
 
                   {/* Mock Text Content */}
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-[#09090b]">Section 1: Introduction</h2>
+                    <h2 className="text-xl font-semibold text-[#18181b]">Section 1: Introduction</h2>
                     <p className="text-[15px] text-[#404040] leading-relaxed">
                       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
                     </p>
@@ -105,7 +105,7 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
                   </div>
 
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-[#09090b]">Section 2: Details</h2>
+                    <h2 className="text-xl font-semibold text-[#18181b]">Section 2: Details</h2>
                     <ul className="list-disc list-inside space-y-2 text-[15px] text-[#404040]">
                       <li>First important point about the document</li>
                       <li>Second key consideration for review</li>
@@ -118,7 +118,7 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
                   <div className="w-full h-40 bg-gradient-to-br from-[#e8f4f8] to-[#d0e8f0] rounded-lg flex items-center justify-center">
                     <div className="text-center">
                       <svg
-                        className="mx-auto size-12 text-[#0891b2]"
+                        className="mx-auto size-12 text-[#3b82f6]"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -130,12 +130,12 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
                           d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                         />
                       </svg>
-                      <p className="text-sm text-[#0891b2] mt-2">Chart or Graph</p>
+                      <p className="text-sm text-[#3b82f6] mt-2">Chart or Graph</p>
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-[#09090b]">Section 3: Summary</h2>
+                    <h2 className="text-xl font-semibold text-[#18181b]">Section 3: Summary</h2>
                     <p className="text-[15px] text-[#404040] leading-relaxed">
                       In conclusion, this document provides comprehensive information regarding the subject matter. All relevant details have been included for review and approval. Please ensure all sections are carefully examined before proceeding.
                     </p>
@@ -165,8 +165,8 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
                       d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <p className="text-lg font-medium text-[#09090b] mt-4">{file.name}</p>
-                  <p className="text-sm text-[#71717a] mt-2">Sample Image Preview</p>
+                  <p className="text-lg font-medium text-[#18181b] mt-4">{file.name}</p>
+                  <p className="text-sm text-[#6b7280] mt-2">Sample Image Preview</p>
                 </div>
               </div>
             ) : (
@@ -175,29 +175,29 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
                   <svg className="mx-auto size-16" fill="none" viewBox="0 0 32 32">
                     <path
                       d={svgPathsUpload.p284b0000}
-                      stroke="#71717a"
+                      stroke="#6b7280"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                     <path
                       d={svgPathsUpload.p50e1c00}
-                      stroke="#71717a"
+                      stroke="#6b7280"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                     <path
                       d={svgPathsUpload.pb8d9980}
-                      stroke="#71717a"
+                      stroke="#6b7280"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
                 </div>
-                <p className="text-lg font-medium text-[#09090b] mb-2">{file.name}</p>
-                <p className="text-sm text-[#71717a] mb-4">Preview not available for this file type</p>
+                <p className="text-lg font-medium text-[#18181b] mb-2">{file.name}</p>
+                <p className="text-sm text-[#6b7280] mb-4">Preview not available for this file type</p>
               </div>
             )}
           </div>

@@ -92,7 +92,7 @@ export function SettingsPage({
         <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
           Settings
         </h1>
-        <p className="text-sm font-medium text-[#71717a] leading-[14px]">
+        <p className="text-sm font-medium text-[#6b7280] leading-[14px]">
           Manage catalogs and global configuration.
         </p>
       </div>
@@ -100,7 +100,7 @@ export function SettingsPage({
       <div className="flex-1 overflow-auto px-[24px] py-6">
         <div className="max-w-[720px]">
           <h2 className="text-[16px] font-semibold text-[#18181b] mb-1">Health Center Fields</h2>
-          <p className="text-[13px] text-[#71717a] mb-4">
+          <p className="text-[13px] text-[#6b7280] mb-4">
             Date questions that every health center can answer. These appear in the
             relative due-date picker as the "Health Center Info" trigger and in
             Admin → Health Center Information for per-center values.
@@ -108,7 +108,7 @@ export function SettingsPage({
 
           <div className="border border-[#e4e4e7] rounded-[6px] bg-white">
             {fieldDefs.length === 0 ? (
-              <div className="px-4 py-6 text-center text-[#71717a] text-[14px]">
+              <div className="px-4 py-6 text-center text-[#6b7280] text-[14px]">
                 No fields yet. Add one below.
               </div>
             ) : (
@@ -124,7 +124,7 @@ export function SettingsPage({
                     <span className="text-[11px] text-[#a1a1aa] font-mono shrink-0">{def.id}</span>
                     <button
                       onClick={() => removeField(def.id)}
-                      className="h-[36px] w-[36px] flex items-center justify-center rounded-md text-[#71717a] hover:bg-[#fef2f2] hover:text-[#b91c1c] transition-colors"
+                      className="h-[36px] w-[36px] flex items-center justify-center rounded-md text-[#6b7280] hover:bg-[#fef2f2] hover:text-[#b91c1c] transition-colors"
                       aria-label={`Remove ${def.label}`}
                       title={`Remove ${def.label}`}
                     >

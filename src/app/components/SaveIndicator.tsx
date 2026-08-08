@@ -27,7 +27,7 @@ export const SaveIndicator = memo(function SaveIndicator({ status }: SaveIndicat
 
   if (status === 'saving') {
     return (
-      <div className="flex items-center gap-1.5 text-[#71717a] text-xs transition-opacity duration-300">
+      <div className="flex items-center gap-1.5 text-[#6b7280] text-xs transition-opacity duration-300">
         <div className="flex gap-0.5">
           <span className="animate-bounce" style={{ animationDelay: '0ms', animationDuration: '1s' }}>•</span>
           <span className="animate-bounce" style={{ animationDelay: '150ms', animationDuration: '1s' }}>•</span>

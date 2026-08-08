@@ -47,7 +47,7 @@ export const Controlled: Story = {
             placeholder="Search tasks…"
             className="w-full"
           />
-          <div className="text-xs text-[#71717a]">Value: {value || <em>(empty)</em>}</div>
+          <div className="text-xs text-[#6b7280]">Value: {value || <em>(empty)</em>}</div>
         </div>
       );
     };

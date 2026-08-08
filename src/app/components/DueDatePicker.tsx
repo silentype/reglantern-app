@@ -94,7 +94,7 @@ export function DueDatePicker({
           onClick={(e) => e.stopPropagation()}
         >
           {displayValue || (value ? value : <span className="text-[#6b7280]">{placeholder}</span>)}
-          <ChevronDown className="size-[16px] text-[#71717a] ml-1" />
+          <ChevronDown className="size-[16px] text-[#6b7280] ml-1" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -136,7 +136,7 @@ export function DueDatePicker({
             <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
             <div className="flex flex-col gap-1">
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addDays(new Date(), 7), 'MM/dd/yyyy');
                   onSelect('7d');
@@ -147,7 +147,7 @@ export function DueDatePicker({
                 Within 7 days
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addDays(new Date(), 14), 'MM/dd/yyyy');
                   onSelect('14d');
@@ -158,7 +158,7 @@ export function DueDatePicker({
                 Within 14 days
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addMonths(new Date(), 1), 'MM/dd/yyyy');
                   onSelect('1m');
@@ -169,7 +169,7 @@ export function DueDatePicker({
                 Within 1 month
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addMonths(new Date(), 3), 'MM/dd/yyyy');
                   onSelect('3m');
@@ -180,7 +180,7 @@ export function DueDatePicker({
                 Within 3 months
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addMonths(new Date(), 6), 'MM/dd/yyyy');
                   onSelect('6m');
@@ -191,7 +191,7 @@ export function DueDatePicker({
                 Within 6 months
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f5f5f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addYears(new Date(), 1), 'MM/dd/yyyy');
                   onSelect('1y');

@@ -16,7 +16,7 @@ export const TitleCell = memo(function TitleCell({ task, col, onClick }: TitleCe
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-transparent group-hover:bg-[#f5f5f5] dark:group-hover:bg-[#2a2f3a] group-active:bg-[#f5f5f5] dark:group-active:bg-[#2a2f3a] transition-colors"
+        className="absolute inset-0 bg-transparent group-hover:bg-[#f4f4f5] dark:group-hover:bg-[#2a2f3a] group-active:bg-[#f4f4f5] dark:group-active:bg-[#2a2f3a] transition-colors"
       />
       <div
         aria-hidden="true"

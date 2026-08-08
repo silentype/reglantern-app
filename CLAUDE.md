@@ -175,6 +175,15 @@ Seed data in `src/app/data/initialTasks.ts`. Relative-due-date resolution lives 
 - Do not hand-edit them — re-export from Figma if you need updates.
 - App components import the SVG paths but otherwise should not depend on the screen-level dumps.
 
+### Figma token pipeline (app colors → Figma Variables)
+`tokens/tokens.json` is the single source of truth for pushing the app's design tokens into Figma as native Variables. Its `core.color.*` values must match `eslint-rules/approved-colors.js` and CLAUDE.md's color table exactly (all three describe the same 66-color palette — enforced, documented, and design-tool views of it). `semantic.*` and `component.*` reference `core` via `{path.to.token}` strings rather than duplicating hex — never hand-write a literal hex outside `core`.
+
+Two ways to push tokens into Figma, both reading `tokens.json`:
+- **`figma-plugin/`** — a real Figma plugin (Figma → Plugins → Development → Import plugin from manifest → select `figma-plugin/manifest.json`). No API token needed; runs inside Figma desktop. "Create / Replace Variables" creates the 🎨 Core / 🔤 Semantic / 🧩 Component collections, replacing any existing collections with those exact names — other variables in the file are never touched. `figma-plugin/code.js`'s `TOKENS` constant is **generated**, not hand-maintained: after editing `tokens/tokens.json`, run `node scripts/generate-figma-plugin-tokens.mjs` to regenerate it (this resolves all `{ref}` chains down to literal values, since the plugin doesn't create Figma-side variable aliases).
+- **`scripts/push-tokens-to-figma.mjs`** — REST API alternative for CI/headless use. Requires `FIGMA_TOKEN` (a personal access token) as an env var — never hardcode it, never commit it. Unlike the plugin, this one preserves `{ref}` chains as real Figma `VARIABLE_ALIAS` relationships.
+
+**html.to.design / Figma Chrome-extension imports:** once matching Variables exist in the target Figma file, whether an html.to.design capture auto-binds imported colors to those variables depends on that extension's own matching behavior and plan — not something this repo controls. What this pipeline guarantees is the prerequisite: Figma Variables with the exact same hex values the app actually uses.
+
 ### Vite config quirks
 `vite.config.ts` registers a custom `figmaAssetResolver` plugin that rewrites `figma:asset/<filename>` imports to `src/assets/<filename>`. Used by the logo import. Don't remove.
 
@@ -225,24 +234,48 @@ Do not use inline `<svg>` + `<path>` for icons that lucide covers. If lucide doe
 
 ### Colors — tokens and the approved palette only
 
-| Use | Value |
-|---|---|
-| Brand yellow (primary action) | `#fc6` |
-| Hover on yellow | `#eab308` |
-| Active on yellow | `#ca8a04` |
-| Text primary | `#18181b` |
-| Text secondary / muted | `#71717a` |
-| Border default | `#e4e4e7` |
-| Border strong (selected sidebar) | `#cdd7e1` |
-| Surface 1 (page bg) | `#f9fafb` |
-| Surface 2 (sidebar bg) | `#f4f4f5` |
-| Surface 3 (hover rows) | `#f5f5f5` |
-| White surface (cards, panels) | `#ffffff` |
-| Danger | `#dc2626` |
-| Success | `#16a34a` |
-| Info / selected chapter | `#cdd7e1` |
+**This table is enforced, not just documented.** `eslint-rules/no-unlisted-hex-colors.js` fails lint on any `#hex` literal in `src/app` that isn't in `eslint-rules/approved-colors.js`. The two files must stay in sync — adding a color means adding it to both, deliberately, not just typing a new hex and moving on. `/test/colors` renders this palette live, light/dark side by side. `ColorsPage.tsx`, `TypographyPage.tsx`, `*.stories.tsx`, and `.storybook/**` are exempt from the lint rule since they document colors as content rather than using them as UI.
 
-Never introduce a new hex color without adding it to this table. If the user asks for a new color, check whether an existing token covers the intent first.
+| Use | Light | Dark |
+|---|---|---|
+| Brand yellow | `#fc6` | — |
+| Yellow hover | `#eab308` | — |
+| Yellow active | `#ca8a04` | — |
+| Text primary | `#18181b` | `#f4f4f5` |
+| Text secondary / muted | `#6b7280` | `#a1a1aa` |
+| Text muted (lighter) — also border | `#9ca3af` | — |
+| Text grey (mock doc body, not theme-aware) | `#404040` | — |
+| Border default — also surface hover fill | `#e4e4e7` | `#2a2f3a` |
+| Border strong / selected | `#cdd7e1` | `#2a2f3a` (resting) / `#3a4455` (hover) |
+| Border default — hover | `#d4d4d8` | `#3f4756` |
+| Border — TopNav dropdown (always-dark chrome) | `#3d444b` | — |
+| Border — `--selected-gray` token | `#47515b` | `#5a7a9a` |
+| Surface — page / card / dropzone | `#f9fafb` | `#111318` |
+| Surface — sidebar / row | `#f4f4f5` | `#1c1f26` |
+| Surface — elevated card (dark only) | — | `#1e2129` |
+| Surface — header dark (always-dark) | `#32383e` | — |
+| Surface — TopNav dropdown bg (always-dark) | `#232a30` | — |
+| Text — TopNav inactive (always-dark) | `#b8bcc2` | — |
+| Danger | `#dc2626` | — |
+| Danger — text on tint | `#b91c1c` | — |
+| Danger — active | `#991b1b` | — |
+| Danger — bg tint | `#fef2f2` | `#2d1010` |
+| Danger — border tint | `#fecaca` | `#7f1d1d` |
+| Success | `#16a34a` | — |
+| Info / link | `#3b82f6` | — |
+| Info — pill text / bg | `#1e40af` / `#dbeafe` | — |
+| Purple (status) | `#8745ae` | — |
+| Purple — pill text / bg | `#7c3aed` / `#ede9fe` | — |
+| Yellow — pill text / bg | `#92400e` / `#fef3c7` | — |
+| Green — pill text / bg | `#166534` / `#dcfce7` | — |
+| Pale-yellow highlight | `#fffbe5` | `#fc6` at 10% opacity |
+| Decorative gradients (file-preview mocks only) | `#f0f0f0`→`#e0e0e0`, `#e8f4f8`→`#d0e8f0` | — |
+
+**Category tags** (`task-table/cells/CategoryCell.tsx`): clinical `#dbeafe`/`#1e40af`, fiscal `#fecdd3`/`#b91c1c`, governance `#d1fae5`/`#065f46`, compliance `#fef3c7`/`#92400e`, operational `#f3e8ff`/`#6b21a8`, fallback `#f3f4f6`/`#6b7280`.
+
+**Avatar palette** (`design-system/Avatar.tsx` — the single source; nothing else should implement its own): `#fde68a`, `#fecaca`, `#bfdbfe`, `#bbf7d0`, `#fbcfe8`, `#ddd6fe`, `#fed7aa`, `#a5f3fc`, `#e9d5ff`, `#fef9c3`, assigned deterministically per-initials via `<Avatar>`.
+
+Never introduce a new hex color without adding it to this table (and to `eslint-rules/approved-colors.js` — lint will fail otherwise). Check whether an existing token covers the intent first; reusing a close color across border/surface/text is preferred over adding a new one.
 
 ### Spacing — consistent page chrome
 

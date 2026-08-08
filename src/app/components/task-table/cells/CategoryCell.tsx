@@ -39,7 +39,7 @@ export const CategoryCell = memo(function CategoryCell({
           {category}
         </span>
       ) : (
-        <span className="text-[13px] text-[#9ca3af] dark:text-[#52525b] italic">—</span>
+        <span className="text-[13px] text-[#9ca3af] italic">—</span>
       )}
     </div>
   );

@@ -26,7 +26,7 @@ export const TaskTypeCell = memo(function TaskTypeCell({
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-transparent group-hover/taskType:bg-[#f5f5f5] transition-colors"
+        className="absolute inset-0 bg-transparent group-hover/taskType:bg-[#f4f4f5] transition-colors"
       />
       <Select
         value={task.taskType || 'unassigned'}
@@ -44,7 +44,7 @@ export const TaskTypeCell = memo(function TaskTypeCell({
                 {task.taskType}
               </span>
             ) : (
-              <span className="font-['Geist:Medium',sans-serif] font-medium text-[#999] text-[14px]">
+              <span className="font-['Geist:Medium',sans-serif] font-medium text-[#9ca3af] text-[14px]">
                 Select Task Type
               </span>
             )}

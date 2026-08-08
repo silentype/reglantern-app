@@ -60,7 +60,7 @@ export const Controlled: Story = {
             <option value="weeks">weeks</option>
             <option value="months">months</option>
           </Select>
-          <div className="text-xs text-[#71717a]">Value: {value}</div>
+          <div className="text-xs text-[#6b7280]">Value: {value}</div>
         </div>
       );
     };
@@ -82,14 +82,14 @@ export const ThreeAcross: Story = {
       <h3 className="text-sm font-semibold text-[#18181b] mb-2">Trigger</h3>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="block text-[11px] font-medium text-[#71717a] mb-1">Type</label>
+          <label className="block text-[11px] font-medium text-[#6b7280] mb-1">Type</label>
           <Select defaultValue="project">
             <option value="project">Project</option>
             <option value="task">Task</option>
           </Select>
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-[#71717a] mb-1">Reference</label>
+          <label className="block text-[11px] font-medium text-[#6b7280] mb-1">Reference</label>
           <Select defaultValue="current">
             <option value="current">Current project</option>
             <option value="2">FTCA Site Visit</option>
@@ -97,7 +97,7 @@ export const ThreeAcross: Story = {
           </Select>
         </div>
         <div>
-          <label className="block text-[11px] font-medium text-[#71717a] mb-1">Event</label>
+          <label className="block text-[11px] font-medium text-[#6b7280] mb-1">Event</label>
           <Select defaultValue="started">
             <option value="started">started</option>
           </Select>

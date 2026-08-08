@@ -598,7 +598,7 @@ export default function MultiFileUploadPanel({
     return (
       <div className="h-full flex flex-col bg-card">
         {/* Header */}
-        <div className="px-6 py-6 border-b border-[#e5e7eb] flex items-center justify-between">
+        <div className="px-6 py-6 border-b border-[#e4e4e7] flex items-center justify-between">
           <BackButton onClick={handleClosePreview}>Back</BackButton>
           <button onClick={handleClose} className="p-1 hover:bg-muted rounded transition-colors">
             <X size={24} className="text-foreground" />
@@ -608,7 +608,7 @@ export default function MultiFileUploadPanel({
         {/* File info bar */}
         <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-border bg-card">
           <div className="min-w-0 flex-1 mr-3">
-            <p className="text-[13px] font-medium text-[#09090b] truncate">{previewFile.name}</p>
+            <p className="text-[13px] font-medium text-[#18181b] truncate">{previewFile.name}</p>
             <p className="text-[11px] text-muted-foreground">
               {previewFile.category} · {(previewFile.size / 1_000_000).toFixed(1)} MB
             </p>
@@ -637,7 +637,7 @@ export default function MultiFileUploadPanel({
               <div className="w-full max-w-[640px] bg-card rounded-lg shadow-lg p-8">
                 <div className="space-y-6">
                   <div className="text-center border-b border-border pb-4">
-                    <h1 className="text-2xl font-bold text-[#09090b] mb-2">Document Preview</h1>
+                    <h1 className="text-2xl font-bold text-[#18181b] mb-2">Document Preview</h1>
                     <p className="text-sm text-muted-foreground">{previewFile.name}</p>
                   </div>
                   <div className="w-full h-48 bg-gradient-to-br from-[#f0f0f0] to-[#e0e0e0] rounded-lg flex items-center justify-center">
@@ -649,12 +649,12 @@ export default function MultiFileUploadPanel({
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-[#09090b]">Section 1: Introduction</h2>
+                    <h2 className="text-xl font-semibold text-[#18181b]">Section 1: Introduction</h2>
                     <p className="text-[15px] text-[#404040] leading-relaxed">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
                     <p className="text-[15px] text-[#404040] leading-relaxed">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
                   </div>
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-[#09090b]">Section 2: Details</h2>
+                    <h2 className="text-xl font-semibold text-[#18181b]">Section 2: Details</h2>
                     <ul className="list-disc list-inside space-y-2 text-[15px] text-[#404040]">
                       <li>First important point about the document</li>
                       <li>Second key consideration for review</li>
@@ -664,14 +664,14 @@ export default function MultiFileUploadPanel({
                   </div>
                   <div className="w-full h-40 bg-gradient-to-br from-[#e8f4f8] to-[#d0e8f0] rounded-lg flex items-center justify-center">
                     <div className="text-center">
-                      <svg className="mx-auto size-12 text-[#0891b2]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="mx-auto size-12 text-[#3b82f6]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      <p className="text-sm text-[#0891b2] mt-2">Chart or Graph</p>
+                      <p className="text-sm text-[#3b82f6] mt-2">Chart or Graph</p>
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <h2 className="text-xl font-semibold text-[#09090b]">Section 3: Summary</h2>
+                    <h2 className="text-xl font-semibold text-[#18181b]">Section 3: Summary</h2>
                     <p className="text-[15px] text-[#404040] leading-relaxed">In conclusion, this document provides comprehensive information regarding the subject matter. All relevant details have been included for review and approval.</p>
                   </div>
                   <div className="text-center border-t border-border pt-4 mt-8">
@@ -685,7 +685,7 @@ export default function MultiFileUploadPanel({
                   <svg className="mx-auto size-24 text-[#9ca3af]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p className="text-lg font-medium text-[#09090b] mt-4">{previewFile.name}</p>
+                  <p className="text-lg font-medium text-[#18181b] mt-4">{previewFile.name}</p>
                   <p className="text-sm text-muted-foreground mt-2">Sample Image Preview</p>
                 </div>
               </div>
@@ -693,12 +693,12 @@ export default function MultiFileUploadPanel({
               <div className="text-center pt-16">
                 <div className="mb-4">
                   <svg className="mx-auto size-16" fill="none" viewBox="0 0 32 32">
-                    <path d={svgPathsUpload.p284b0000} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d={svgPathsUpload.p50e1c00} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path d={svgPathsUpload.pb8d9980} stroke="#71717a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d={svgPathsUpload.p284b0000} stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d={svgPathsUpload.p50e1c00} stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d={svgPathsUpload.pb8d9980} stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </div>
-                <p className="text-lg font-medium text-[#09090b] mb-2">{previewFile.name}</p>
+                <p className="text-lg font-medium text-[#18181b] mb-2">{previewFile.name}</p>
                 <p className="text-sm text-muted-foreground">Preview not available for this file type</p>
               </div>
             )}
@@ -733,12 +733,12 @@ export default function MultiFileUploadPanel({
         <div className="flex-1 overflow-auto px-6 py-5">
           <div className="max-w-[521px] space-y-3">
             {/* Subtask Title */}
-            <h2 className="text-2xl font-normal text-[#09090b] tracking-[0.4px] leading-[22px]">
+            <h2 className="text-2xl font-normal text-[#18181b] tracking-[0.4px] leading-[22px]">
               {activeSubtask.title}
             </h2>
 
             {/* Subtask Description */}
-            <p className="text-[15px] text-[#09090b] tracking-[0.4px] leading-[22px]">
+            <p className="text-[15px] text-[#18181b] tracking-[0.4px] leading-[22px]">
               {activeSubtask.description}
             </p>
 
@@ -749,7 +749,7 @@ export default function MultiFileUploadPanel({
                   type="checkbox"
                   checked={currentSubtask.notApplicable || false}
                   onChange={() => toggleNotApplicable(currentSubtask.id)}
-                  className="size-5 border-2 border-[#71717a] rounded bg-card checked:border-[#71717a] cursor-pointer focus:outline-none focus:border-[#fc6] transition-colors"
+                  className="size-5 border-2 border-[#6b7280] rounded bg-card checked:border-[#6b7280] cursor-pointer focus:outline-none focus:border-[#fc6] transition-colors"
                   style={{
                     appearance: 'none',
                     WebkitAppearance: 'none',
@@ -767,12 +767,12 @@ export default function MultiFileUploadPanel({
 
             {/* Upload Drop Zone - show as disabled if marked as N/A */}
             <div 
-              className={`bg-[#f6f6f6] border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors ${
+              className={`bg-[#f9fafb] dark:bg-[#1e2129] border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors ${
                 currentSubtask.notApplicable 
                   ? 'opacity-40 pointer-events-none border-[#d4d4d8]' 
                   : isDragging 
-                    ? 'bg-[#e4e4e7] border-[#71717a]' 
-                    : 'border-[#a7a7a7]'
+                    ? 'bg-[#e4e4e7] border-[#6b7280]' 
+                    : 'border-[#9ca3af]'
               }`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -783,7 +783,7 @@ export default function MultiFileUploadPanel({
                   <path d={svgPathsUpload.p1363c030} fill="black" />
                 </svg>
               </div>
-              <p className="text-sm text-[#0d062d]">Drag & drop file here</p>
+              <p className="text-sm text-[#18181b]">Drag & drop file here</p>
               <button 
                 onClick={handleBrowseClick}
                 className="bg-card border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-[var(--app-background)] transition-colors"
@@ -803,7 +803,7 @@ export default function MultiFileUploadPanel({
             <div className={`flex items-center justify-between text-sm ${currentSubtask.notApplicable ? 'opacity-40' : ''}`}>
               <div>
                 <span className="text-foreground">Status: </span>
-                <span className={currentFiles.length > 0 ? 'text-[#00bc06]' : 'text-[#dc2626]'}>
+                <span className={currentFiles.length > 0 ? 'text-[#16a34a]' : 'text-[#dc2626]'}>
                   {currentFiles.length > 0 ? `${currentFiles.length} files uploaded` : 'Missing files'}
                 </span>
               </div>
@@ -853,7 +853,7 @@ export default function MultiFileUploadPanel({
         {deleteConfirmFile && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
             <div className="bg-card rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-              <h3 className="text-lg font-semibold text-[#09090b] mb-2">Delete File</h3>
+              <h3 className="text-lg font-semibold text-[#18181b] mb-2">Delete File</h3>
               <p className="text-[14px] text-muted-foreground mb-6">
                 Are you sure you want to delete this file? This action cannot be undone.
               </p>
@@ -890,7 +890,7 @@ export default function MultiFileUploadPanel({
     <>
       <div className="h-full flex flex-col bg-card">
       {/* Header */}
-      <div className="px-6 py-3 border-b border-[#e5e7eb] flex items-center justify-between">
+      <div className="px-6 py-3 border-b border-[#e4e4e7] flex items-center justify-between">
         <div className="flex items-center gap-3">
           {isCreatingNew && (
             <Button onClick={handleSaveAndClose} disabled={!editableTitle.trim()}>Add Task</Button>
@@ -946,15 +946,15 @@ export default function MultiFileUploadPanel({
               <textarea
                 value={editableDescription}
                 onChange={(e) => setEditableDescription(e.target.value)}
-                className="w-full text-[#52525b] tracking-[0.4px] bg-[var(--app-background)] border border-border rounded-md px-3 py-2 focus:bg-card focus:border-[#fc6] focus:outline-none resize-none transition-colors text-[15px]"
+                className="w-full text-[#6b7280] tracking-[0.4px] bg-[var(--app-background)] border border-border rounded-md px-3 py-2 focus:bg-card focus:border-[#fc6] focus:outline-none resize-none transition-colors text-[15px]"
                 placeholder="Description"
                 rows={2}
               />
             </>
           ) : (
             <>
-              <h2 className="text-2xl font-normal text-[#09090b] tracking-[0.4px] leading-[22px]">{taskTitle}</h2>
-              <p className="text-[15px] text-[#09090b] tracking-[0.4px] leading-[22px]">
+              <h2 className="text-2xl font-normal text-[#18181b] tracking-[0.4px] leading-[22px]">{taskTitle}</h2>
+              <p className="text-[15px] text-[#18181b] tracking-[0.4px] leading-[22px]">
                 {getTaskDescription(taskTitle)}
               </p>
             </>
@@ -1025,18 +1025,18 @@ export default function MultiFileUploadPanel({
                 <div className="space-y-4 pt-2">
                   {/* Subtask Title & Description */}
                   <div className="space-y-2">
-                    <h3 className="text-base font-normal text-[#09090b] leading-[1.2]">{currentSubtask.title}</h3>
-                    <p className="text-sm text-[#52525b] leading-[1.4]">{currentSubtask.description}</p>
+                    <h3 className="text-base font-normal text-[#18181b] leading-[1.2]">{currentSubtask.title}</h3>
+                    <p className="text-sm text-[#6b7280] leading-[1.4]">{currentSubtask.description}</p>
                   </div>
 
                   {/* Upload Drop Zone */}
                   <div 
-                    className={`bg-[#f6f6f6] border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 transition-colors ${
+                    className={`bg-[#f9fafb] dark:bg-[#1e2129] border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 transition-colors ${
                       currentSubtask.notApplicable 
                         ? 'opacity-40 pointer-events-none border-[#d4d4d8]' 
                         : isDragging 
-                          ? 'bg-[#e4e4e7] border-[#71717a]' 
-                          : 'border-[#a7a7a7]'
+                          ? 'bg-[#e4e4e7] border-[#6b7280]' 
+                          : 'border-[#9ca3af]'
                     }`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -1047,7 +1047,7 @@ export default function MultiFileUploadPanel({
                         <path d={svgPathsUpload.p1363c030} fill="black" />
                       </svg>
                     </div>
-                    <p className="text-sm text-[#0d062d]">Drag & drop file here</p>
+                    <p className="text-sm text-[#18181b]">Drag & drop file here</p>
                     <button 
                       onClick={handleBrowseClick}
                       className="bg-card border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-[var(--app-background)] transition-colors"
@@ -1067,7 +1067,7 @@ export default function MultiFileUploadPanel({
                   <div className={`flex items-center justify-between text-sm ${currentSubtask.notApplicable ? 'opacity-40' : ''}`}>
                     <div>
                       <span className="text-foreground">Status: </span>
-                      <span className={currentSubtask.notApplicable ? 'text-[#6b7280]' : currentFiles.length > 0 ? 'text-[#00bc06]' : 'text-[#dc2626]'}>
+                      <span className={currentSubtask.notApplicable ? 'text-[#6b7280]' : currentFiles.length > 0 ? 'text-[#16a34a]' : 'text-[#dc2626]'}>
                         {currentSubtask.notApplicable ? 'Not applicable' : currentFiles.length > 0 ? `${currentFiles.length} files uploaded` : 'Missing files'}
                       </span>
                     </div>
@@ -1096,14 +1096,14 @@ export default function MultiFileUploadPanel({
                         <div className="relative size-8 shrink-0 z-10">
                           {file.isUploading && typeof file.progress === 'number' && file.progress < 100
                             ? <Upload className="size-8 text-[#3b82f6] animate-pulse" />
-                            : (() => { const Icon = fileIcon(file.name); return <Icon className="size-8 text-[#52525b]" strokeWidth={1.5} />; })()
+                            : (() => { const Icon = fileIcon(file.name); return <Icon className="size-8 text-[#6b7280]" strokeWidth={1.5} />; })()
                           }
                         </div>
 
                         {/* File Info */}
                         <div className="flex-1 min-w-0 z-10">
-                          <p className="text-sm text-[#212121] truncate">{file.name}</p>
-                          <p className="text-[11px] text-[#8c8c8c]">
+                          <p className="text-sm text-[#18181b] truncate">{file.name}</p>
+                          <p className="text-[11px] text-[#9ca3af]">
                             {file.category} • {(file.size / 1000000).toFixed(1)}MB
                           </p>
                         </div>
@@ -1132,7 +1132,7 @@ export default function MultiFileUploadPanel({
                             </button>
                             <button
                               onClick={() => handleDeleteClick(file.id, true)}
-                              className="shrink-0 hover:bg-[#fee] rounded p-1 transition-colors"
+                              className="shrink-0 hover:bg-[#fef2f2] rounded p-1 transition-colors"
                               title="Delete file"
                             >
                               <div className="size-5">
@@ -1154,7 +1154,7 @@ export default function MultiFileUploadPanel({
                         type="checkbox"
                         checked={currentSubtask.notApplicable || false}
                         onChange={() => toggleNotApplicable(currentSubtask.id)}
-                        className="size-5 border-2 border-[#71717a] rounded bg-card checked:border-[#71717a] cursor-pointer focus:outline-none focus:border-[#fc6] transition-colors"
+                        className="size-5 border-2 border-[#6b7280] rounded bg-card checked:border-[#6b7280] cursor-pointer focus:outline-none focus:border-[#fc6] transition-colors"
                         style={{
                           appearance: 'none',
                           WebkitAppearance: 'none',
@@ -1178,8 +1178,8 @@ export default function MultiFileUploadPanel({
             <div className="space-y-3 pt-3">
               {/* Upload Drop Zone */}
               <div 
-                className={`bg-[#f6f6f6] border-2 border-dashed border-[#a7a7a7] rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors ${
-                  isDragging ? 'bg-[#e4e4e7] border-[#71717a]' : ''
+                className={`bg-[#f9fafb] dark:bg-[#1e2129] border-2 border-dashed border-[#9ca3af] rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-colors ${
+                  isDragging ? 'bg-[#e4e4e7] border-[#6b7280]' : ''
                 }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -1190,7 +1190,7 @@ export default function MultiFileUploadPanel({
                     <path d={svgPathsUpload.p1363c030} fill="black" />
                   </svg>
                 </div>
-                <p className="text-sm text-[#0d062d]">Drag & drop file here</p>
+                <p className="text-sm text-[#18181b]">Drag & drop file here</p>
                 <button 
                   onClick={handleBrowseClick}
                   className="bg-card border border-[#cdd7e1] px-4 py-2 rounded-md text-sm font-medium text-foreground hover:bg-[var(--app-background)] transition-colors"
@@ -1210,7 +1210,7 @@ export default function MultiFileUploadPanel({
               <div className="flex items-center justify-between text-sm">
                 <div>
                   <span className="text-foreground">Status: </span>
-                  <span className={uploadedFiles.length > 0 ? 'text-[#00bc06]' : 'text-[#dc2626]'}>
+                  <span className={uploadedFiles.length > 0 ? 'text-[#16a34a]' : 'text-[#dc2626]'}>
                     {uploadedFiles.length > 0 ? `${uploadedFiles.length} files uploaded` : 'Missing files'}
                   </span>
                 </div>
@@ -1250,8 +1250,8 @@ export default function MultiFileUploadPanel({
 
                     {/* File Info */}
                     <div className="flex-1 min-w-0 z-10">
-                      <p className="text-sm text-[#212121] truncate">{file.name}</p>
-                      <p className="text-[11px] text-[#8c8c8c]">
+                      <p className="text-sm text-[#18181b] truncate">{file.name}</p>
+                      <p className="text-[11px] text-[#9ca3af]">
                         {file.category} • {(file.size / 1000000).toFixed(1)}MB
                       </p>
                     </div>
@@ -1280,7 +1280,7 @@ export default function MultiFileUploadPanel({
                         </button>
                         <button
                           onClick={() => handleDeleteClick(file.id, false)}
-                          className="shrink-0 hover:bg-[#fee] rounded p-1 transition-colors"
+                          className="shrink-0 hover:bg-[#fef2f2] rounded p-1 transition-colors"
                           title="Delete file"
                         >
                           <div className="size-5">
@@ -1310,8 +1310,8 @@ export default function MultiFileUploadPanel({
           {activeTab === 'details' && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <CalendarIcon size={20} className="text-[#09090b]" />
-                <span className="text-sm text-[#09090b] w-[104px]">Due Date</span>
+                <CalendarIcon size={20} className="text-[#18181b]" />
+                <span className="text-sm text-[#18181b] w-[104px]">Due Date</span>
                 <DueDatePicker
                   value={dueDate}
                   onSelect={(date) => setDueDate(date)}
@@ -1344,8 +1344,8 @@ export default function MultiFileUploadPanel({
 
               {!simplifiedFields && (
               <div className="flex items-center gap-2">
-                <User size={20} className="text-[#09090b]" />
-                <span className="text-sm text-[#09090b] w-[104px]">Assigned to</span>
+                <User size={20} className="text-[#18181b]" />
+                <span className="text-sm text-[#18181b] w-[104px]">Assigned to</span>
                 <Popover open={assignedOpen} onOpenChange={setAssignedOpen}>
                   <PopoverTrigger asChild>
                     <button className="flex-1 max-w-[240px] bg-card border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#fc6] flex items-center justify-between hover:bg-[var(--app-background)] transition-colors">
@@ -1410,8 +1410,8 @@ export default function MultiFileUploadPanel({
 
               {!simplifiedFields && (
               <div className="flex items-start gap-2">
-                <Users size={20} className="text-[#09090b] mt-2" />
-                <span className="text-sm text-[#09090b] w-[104px] mt-2">Collaborators</span>
+                <Users size={20} className="text-[#18181b] mt-2" />
+                <span className="text-sm text-[#18181b] w-[104px] mt-2">Collaborators</span>
                 <div className="flex-1 max-w-[240px] space-y-2">
                   <Popover open={collaboratorsOpen} onOpenChange={setCollaboratorsOpen}>
                     <PopoverTrigger asChild>
@@ -1459,7 +1459,7 @@ export default function MultiFileUploadPanel({
                       {collaborators.map((collab) => (
                         <div
                           key={collab.name}
-                          className="bg-secondary px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-[#e5e7eb] transition-colors"
+                          className="bg-secondary px-3 py-1.5 rounded text-sm flex items-center gap-1.5 hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] transition-colors"
                         >
                           <UserAvatar user={collab} />
                           <button
@@ -1481,25 +1481,25 @@ export default function MultiFileUploadPanel({
 
               {initialTaskType === 'system' && (
                 <div className="flex items-start gap-2">
-                  <Copy size={20} className="text-[#09090b] mt-1" />
-                  <span className="text-sm text-[#09090b] w-[104px] mt-1">Duplicated in</span>
+                  <Copy size={20} className="text-[#18181b] mt-1" />
+                  <span className="text-sm text-[#18181b] w-[104px] mt-1">Duplicated in</span>
                   <div className="flex-1 space-y-2">
                     <div className="bg-secondary px-2 py-1 rounded-lg inline-block">
-                      <span className="text-sm text-[#09090b]">OSV 2025: Accessible Locations</span>
+                      <span className="text-sm text-[#18181b]">OSV 2025: Accessible Locations</span>
                     </div>
                     <div className="bg-secondary px-2 py-1 rounded-lg inline-block">
-                      <span className="text-sm text-[#09090b]">OSV 2025: Hours of Operation</span>
+                      <span className="text-sm text-[#18181b]">OSV 2025: Hours of Operation</span>
                     </div>
                     <div className="bg-secondary px-2 py-1 rounded-lg inline-block">
-                      <span className="text-sm text-[#09090b]">OSV 2025: Collaborative Relationships</span>
+                      <span className="text-sm text-[#18181b]">OSV 2025: Collaborative Relationships</span>
                     </div>
                   </div>
                 </div>
               )}
 
               <div className="flex items-center gap-2">
-                <UserPlus size={20} className="text-[#09090b]" />
-                <span className="text-sm text-[#09090b] w-[104px]">Created by</span>
+                <UserPlus size={20} className="text-[#18181b]" />
+                <span className="text-sm text-[#18181b] w-[104px]">Created by</span>
                 <UserAvatar user={{ initials: initialCreatedBy?.initials || 'RL', name: initialCreatedBy?.name || 'Reglantern RL' }} />
               </div>
             </div>
@@ -1512,7 +1512,7 @@ export default function MultiFileUploadPanel({
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="w-full text-base text-[#52525b] tracking-[0.4px] bg-[var(--app-background)] border border-border rounded-md px-3 py-2 focus:bg-card focus:border-[#fc6] focus:outline-none resize-none transition-colors"
+                className="w-full text-base text-[#6b7280] tracking-[0.4px] bg-[var(--app-background)] border border-border rounded-md px-3 py-2 focus:bg-card focus:border-[#fc6] focus:outline-none resize-none transition-colors"
                 placeholder="Add a comment..."
                 rows={2}
               />
@@ -1522,7 +1522,7 @@ export default function MultiFileUploadPanel({
               </div>
 
               {comments.length === 0 ? (
-                <div className="text-center py-12 text-[#6b7280] border border-border rounded-lg bg-[#fafafa]">
+                <div className="text-center py-12 text-[#6b7280] border border-border rounded-lg bg-[#f9fafb]">
                   <p>No comments yet. Be the first to comment!</p>
                 </div>
               ) : (
@@ -1541,7 +1541,7 @@ export default function MultiFileUploadPanel({
                             <span className="text-sm font-medium text-foreground">{comment.user.name}</span>
                             <span className="text-xs text-[#6b7280]">{formatCommentTimestamp(comment.timestamp)}</span>
                           </div>
-                          <p className="text-sm text-[#09090b] whitespace-pre-wrap">{comment.text}</p>
+                          <p className="text-sm text-[#18181b] whitespace-pre-wrap">{comment.text}</p>
                         </div>
                       </div>
                     </div>
@@ -1568,7 +1568,7 @@ export default function MultiFileUploadPanel({
       {deleteConfirmFile && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50" onClick={handleCancelDelete}>
           <div className="bg-card rounded-lg shadow-2xl p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold text-[#09090b] mb-2">Delete File</h3>
+            <h3 className="text-lg font-semibold text-[#18181b] mb-2">Delete File</h3>
             <p className="text-[14px] text-muted-foreground mb-6">
               Are you sure you want to delete this file? This action cannot be undone.
             </p>

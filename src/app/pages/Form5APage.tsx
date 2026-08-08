@@ -193,7 +193,7 @@ function Form5AEditor({ form, onChange }: { form: Form5AForm; onChange: (next: F
           <div className="flex items-center justify-between mb-3">
             <div>
               <h2 className="text-[15px] font-semibold text-[#18181b] dark:text-[#f4f4f5]">Add Most Recent Form 5A</h2>
-              <p className="text-[13px] text-[#71717a]">
+              <p className="text-[13px] text-[#6b7280]">
                 Attach your health center&apos;s existing (complete or incomplete) Form 5A for reference while you complete the grid below.
               </p>
             </div>
@@ -267,7 +267,7 @@ function Form5AEditor({ form, onChange }: { form: Form5AForm; onChange: (next: F
 
         {/* Service grid */}
         {grouped.length === 0 && query ? (
-          <p className="text-[13px] text-[#71717a] dark:text-[#52525b] text-center py-8">
+          <p className="text-[13px] text-[#6b7280] dark:text-[#a1a1aa] text-center py-8">
             No services match &ldquo;{query}&rdquo;.
           </p>
         ) : grouped.map(({ section, services }) => (
@@ -279,7 +279,7 @@ function Form5AEditor({ form, onChange }: { form: Form5AForm; onChange: (next: F
                 return (
                   <div key={service.key}>
                     {showGroupHeader && (
-                      <div className="px-3 py-2 bg-[#f9fafb] dark:bg-[#161a20] border-b border-[#e4e4e7] dark:border-[#2a2f3a] text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5]">
+                      <div className="px-3 py-2 bg-[#f9fafb] dark:bg-[#1e2129] border-b border-[#e4e4e7] dark:border-[#2a2f3a] text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5]">
                         {service.group}
                       </div>
                     )}
@@ -324,7 +324,7 @@ function PageChrome({
         <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px]">
           Form 5A - Column View
         </h1>
-        <p className="text-[13px] text-[#71717a] mt-0.5">
+        <p className="text-[13px] text-[#6b7280] mt-0.5">
           Services Provided{healthCenter ? ` · ${healthCenter}` : ''}
         </p>
       </div>
@@ -364,12 +364,12 @@ function ColumnLegend({ section }: { section: string }) {
   return (
     <>
       <div className="flex items-center gap-3 bg-[#f4f4f5] dark:bg-[#2a2f3a] px-3 pt-2 pb-[9px] border-b border-[#e4e4e7] dark:border-[#3a4455]">
-        <p className="flex-1 min-w-0 text-[10px] font-semibold text-[#52525b] dark:text-[#d4d4d8] uppercase tracking-[0.37px] leading-[15px]">
+        <p className="flex-1 min-w-0 text-[10px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-[0.37px] leading-[15px]">
           Service Type
         </p>
         <div className="w-[300px] shrink-0" />
         <div className="w-[660px] text-center">
-          <p className="text-[10px] font-semibold text-[#52525b] dark:text-[#d4d4d8] uppercase tracking-[0.37px] leading-[15px]">
+          <p className="text-[10px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-[0.37px] leading-[15px]">
             Service Delivery Methods
           </p>
         </div>
@@ -377,7 +377,7 @@ function ColumnLegend({ section }: { section: string }) {
       <div className="flex items-stretch gap-3 px-3 bg-white dark:bg-[#1c1f26] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
         <div className="flex-1 min-w-0 py-3">
           <p className="text-[16px] font-medium text-[#18181b] dark:text-[#f4f4f5] leading-[22px]">{section}</p>
-          <p className="text-[15px] text-[#71717a] dark:text-[#a1a1aa] leading-[22px] tracking-[0.065px] mt-0.5">
+          <p className="text-[15px] text-[#6b7280] dark:text-[#a1a1aa] leading-[22px] tracking-[0.065px] mt-0.5">
             {SECTION_DESCRIPTIONS[section] ?? ''}
           </p>
         </div>
@@ -388,7 +388,7 @@ function ColumnLegend({ section }: { section: string }) {
               key={col.key}
               className="w-[220px] flex flex-col justify-center text-center px-2 py-2 border-l border-[#e4e4e7] dark:border-[#2a2f3a]"
             >
-              <p className="text-[10px] font-semibold text-[#71717a] dark:text-[#a1a1aa] uppercase tracking-[0.37px] leading-[15px]">
+              <p className="text-[10px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-[0.37px] leading-[15px]">
                 {COLUMN_HEADER_EYEBROW[col.key]}
               </p>
               <p className="text-[13px] font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[16px] tracking-[-0.076px] mt-1.5">
@@ -452,7 +452,7 @@ function ServiceRow({
         >
           <ChevronDown
             size={16}
-            className={`shrink-0 mt-0.5 text-[#71717a] transition-transform ${expanded ? 'rotate-180' : ''}`}
+            className={`shrink-0 mt-0.5 text-[#6b7280] transition-transform ${expanded ? 'rotate-180' : ''}`}
           />
           {indented && <span className="text-[#9ca3af] mt-0.5">•</span>}
           <span className="text-[14px] text-[#18181b] dark:text-[#f4f4f5] min-w-0 line-clamp-2">
@@ -486,7 +486,7 @@ function ServiceRow({
               onOpenAssign();
             }}
             title="Assign"
-            className="flex items-center gap-[6px] text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+            className="flex items-center gap-[6px] text-[12px] font-medium text-[#6b7280] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
           >
             {service.assignedTo ? 'Assigned' : 'Assign'}
             {service.assignedTo ? (
@@ -504,7 +504,7 @@ function ServiceRow({
               onOpenComments();
             }}
             title="Comments"
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-[#6b7280] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
           >
             <span className="flex items-center gap-0.5">
               {commentCount > 0 ? <MessageSquareText size={13} /> : <MessageSquare size={13} />}
@@ -519,7 +519,7 @@ function ServiceRow({
               onOpenDueDate();
             }}
             title="Due date"
-            className="flex items-center gap-1 pr-1 text-[12px] font-medium text-[#71717a] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
+            className="flex items-center gap-1 pr-1 text-[12px] font-medium text-[#6b7280] cursor-pointer rounded hover:text-[#18181b] dark:hover:text-[#f4f4f5] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-colors whitespace-nowrap"
           >
             <Calendar size={13} />
             {service.dueDate || 'Due date'}
@@ -542,7 +542,7 @@ function ServiceRow({
       </div>
 
       {expanded && (
-        <div className="px-3 pb-6 pt-4 bg-[#fafafa] dark:bg-[#161a20] border-t border-[#e4e4e7] dark:border-[#2a2f3a]">
+        <div className="px-3 pb-6 pt-4 bg-[#f9fafb] dark:bg-[#1e2129] border-t border-[#e4e4e7] dark:border-[#2a2f3a]">
           <ColumnDetailEditor service={service} onUpdateColumn={onUpdateColumn} />
         </div>
       )}

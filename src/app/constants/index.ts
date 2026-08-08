@@ -69,7 +69,7 @@ export const SAVE_INDICATOR_DURATION = 3000;
 // Colors
 export const COLORS = {
   primary: '#fc6',
-  primaryHover: '#ffcc77',
+  primaryHover: '#eab308',
   primaryText: '#18181b',
   background: '#f9fafb',
   headerBg: '#32383e',

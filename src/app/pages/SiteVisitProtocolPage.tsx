@@ -5,7 +5,7 @@ export function SiteVisitProtocolPage() {
       <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px]">
         Site Visit Protocol Checklist
       </h1>
-      <p className="text-[13px] text-[#71717a] dark:text-[#a1a1aa] mt-0.5">
+      <p className="text-[13px] text-[#6b7280] dark:text-[#a1a1aa] mt-0.5">
         Prepare for and track an on-site HRSA program review.
       </p>
     </div>

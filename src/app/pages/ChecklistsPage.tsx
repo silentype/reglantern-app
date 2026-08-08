@@ -103,7 +103,7 @@ export function ChecklistsPage({ slug, healthCenter, form5a, onForm5AChange }: C
         <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
           Tools
         </h1>
-        <p className="text-sm font-medium text-[#71717a] dark:text-[#a1a1aa] leading-[14px]">
+        <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
           Select a checklist or form to get started
         </p>
       </div>
@@ -122,18 +122,18 @@ export function ChecklistsPage({ slug, healthCenter, form5a, onForm5AChange }: C
                 onClick={() => navigate(`/checklists/${tool.slug}`)}
                 className="p-5 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1e2129] cursor-pointer hover:border-[#fc6] hover:shadow-[0px_1px_3px_0px_rgba(0,0,0,0.05)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1 transition-all text-left"
               >
-                <tool.icon size={20} strokeWidth={2} className="text-[#71717a] dark:text-[#a1a1aa] mb-3" />
+                <tool.icon size={20} strokeWidth={2} className="text-[#6b7280] dark:text-[#a1a1aa] mb-3" />
                 <h3 className="font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[16px] leading-[24px] mb-1">
                   {tool.name}
                 </h3>
-                <p className="text-[14px] text-[#71717a] dark:text-[#a1a1aa] line-clamp-2 leading-[20px] mb-3">
+                <p className="text-[14px] text-[#6b7280] dark:text-[#a1a1aa] line-clamp-2 leading-[20px] mb-3">
                   {tool.description}
                 </p>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-1.5 bg-[#e4e4e7] dark:bg-[#2a2f3a] rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
                   </div>
-                  <span className="text-[11px] text-[#71717a] dark:text-[#a1a1aa] shrink-0">{label}</span>
+                  <span className="text-[11px] text-[#6b7280] dark:text-[#a1a1aa] shrink-0">{label}</span>
                 </div>
               </button>
             );
