@@ -17,6 +17,7 @@ import { SearchInput } from '../components/design-system/SearchInput';
 import { FilterChip } from '../components/design-system/FilterChip';
 import { Card } from '../components/design-system/Card';
 import { Button } from '../components/design-system/Button';
+import { PageHeader } from '../components/design-system/PageHeader';
 import { Tab, TabStrip } from '../components/design-system/Tab';
 import { Avatar } from '../components/design-system/Avatar';
 import { FileRow } from '../components/design-system/FileRow';
@@ -319,23 +320,21 @@ function PageChrome({
   onExport: (kind: 'Notes' | 'CSV') => void;
 }) {
   return (
-    <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a] flex items-start justify-between">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px]">
-          Form 5A - Column View
-        </h1>
-        <p className="text-[13px] text-[#6b7280] mt-0.5">
-          Services Provided{healthCenter ? ` · ${healthCenter}` : ''}
-        </p>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <Button variant="secondary" size="sm" onClick={() => onExport('Notes')}>
-          Notes Export
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => onExport('CSV')}>
-          CSV Export
-        </Button>
-      </div>
+    <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+      <PageHeader
+        title="Form 5A - Column View"
+        description={`Services Provided${healthCenter ? ` · ${healthCenter}` : ''}`}
+        actions={
+          <>
+            <Button variant="secondary" size="sm" onClick={() => onExport('Notes')}>
+              Notes Export
+            </Button>
+            <Button variant="secondary" size="sm" onClick={() => onExport('CSV')}>
+              CSV Export
+            </Button>
+          </>
+        }
+      />
     </div>
   );
 }

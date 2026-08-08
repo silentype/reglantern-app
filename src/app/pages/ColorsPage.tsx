@@ -106,7 +106,7 @@ const GRADIENTS: { name: string; from: string; to: string }[] = [
 export function ColorsPage() {
   return (
     <div className="h-full flex flex-col bg-[#f9fafb]">
-      <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
+      <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
         <p className="text-[11px] font-medium text-[#6b7280] uppercase tracking-wide mb-[2px]">Test Page</p>
         <h1 className="text-[20px] font-semibold text-[#18181b] leading-[28px]">Colors</h1>
         <p className="mt-[4px] text-[13px] text-[#6b7280]">

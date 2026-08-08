@@ -51,7 +51,7 @@ export const TitleOnly: Story = { args: { title: 'Settings' } };
  * Canonical sticky page chrome — copy this pattern exactly on every list/landing page.
  *
  * Rules:
- * - Outer div: `sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]`
+ * - Outer div: `sticky top-0 z-30 bg-white px-[24px] pt-[24px] pb-0 border-b border-[#e4e4e7]`
  * - PageHeader: `flex items-end justify-between gap-4` (handled internally)
  * - Filter/search bar wrapper: `flex items-center gap-2 overflow-x-auto scrollbar-none mt-[16px] mb-[22px]`
  * - Action buttons: `<Button size="sm">`
@@ -60,7 +60,7 @@ export const TitleOnly: Story = { args: { title: 'Settings' } };
 export const StickyPageChrome: Story = {
   parameters: { backgrounds: { default: 'app' } },
   render: () => (
-    <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7]">
+    <div className="sticky top-0 z-30 bg-white px-[24px] pt-[24px] pb-0 border-b border-[#e4e4e7]">
       <PageHeader
         title="Health Centers"
         description="Manage health center profiles and compliance settings."

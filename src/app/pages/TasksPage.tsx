@@ -420,7 +420,7 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
   return (
     <div className="h-full flex flex-col">
       {/* Sticky Top Section - Header, Description, Filters, Column Headers */}
-      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[24px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
         <TasksHeader tableSaveStatus={tableSaveStatus} onAddTask={onAddTask} />
 
         {/* Horizontal Filter Bar - Chip/Tag Style */}

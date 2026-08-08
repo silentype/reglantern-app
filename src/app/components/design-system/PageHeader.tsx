@@ -22,9 +22,9 @@ export function PageHeader({ title, description, actions, eyebrow, className }: 
     <div className={clsx('flex items-end justify-between gap-4', className)}>
       <div className="min-w-0">
         {eyebrow && <div className="mb-2">{eyebrow}</div>}
-        <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-1">{title}</h1>
+        <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">{title}</h1>
         {description && (
-          <p className="text-sm font-medium text-[#6b7280] leading-[14px]">{description}</p>
+          <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">{description}</p>
         )}
       </div>
       {actions && <div className="flex items-center gap-3 shrink-0">{actions}</div>}

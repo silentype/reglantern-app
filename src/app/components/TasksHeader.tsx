@@ -13,7 +13,7 @@ export const TasksHeader = memo(function TasksHeader({ tableSaveStatus, onAddTas
     <div className="flex items-end justify-between gap-4">
       <div className="flex-1">
         <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">Tasks</h1>
-        <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
+        <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">
           Create, manage and track tasks. Assign responsibilities, set deadlines, and monitor completion status.
         </p>
       </div>

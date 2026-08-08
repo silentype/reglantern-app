@@ -88,11 +88,11 @@ export function SettingsPage({
 
   return (
     <div className="h-full flex flex-col">
-      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7]">
+      <div className="sticky top-0 z-30 bg-white px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7]">
         <h1 className="text-2xl font-semibold text-[#18181b] leading-[32px] tracking-[0.4px] mb-2">
           Settings
         </h1>
-        <p className="text-sm font-medium text-[#6b7280] leading-[14px]">
+        <p className="text-sm font-light text-[#6b7280] leading-[16px]">
           Manage catalogs and global configuration.
         </p>
       </div>

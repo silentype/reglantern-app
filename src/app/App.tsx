@@ -76,6 +76,9 @@ const TypographyPage = lazy(() =>
 const ColorsPage = lazy(() =>
   import('./pages/ColorsPage').then((m) => ({ default: m.ColorsPage }))
 );
+const ComponentsPage = lazy(() =>
+  import('./pages/ComponentsPage').then((m) => ({ default: m.ComponentsPage }))
+);
 
 // MultiFileUploadPanel only mounts when a task / new-task panel is open.
 // Keeping it eager would pull 1.6k lines + the relative-due-date picker into
@@ -917,6 +920,8 @@ export default function App() {
             <TypographyPage />
           ) : currentPage === 'test' && itemSeg === 'colors' ? (
             <ColorsPage />
+          ) : currentPage === 'test' && itemSeg === 'components' ? (
+            <ComponentsPage />
           ) : currentPage === 'test' ? (
             <CompactRowTestPage
               tasks={visibleTasks}

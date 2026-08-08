@@ -433,7 +433,7 @@ export function AdminPage({
         {/* Sticky Top Section - Header. No bottom border here -- the
             table section runs straight into the header on the same
             page background. */}
-        <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+        <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[24px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
           <div className="mb-1 flex items-end justify-between gap-4">
             <div className="flex-1 min-w-0">
               <BackButton onClick={() => { onSelectProject(null); setTaskSearch(''); }} className="mb-3">
@@ -443,7 +443,7 @@ export function AdminPage({
                 {selectedProject.name}
               </h1>
               {selectedProject.description && (
-                <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
+                <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">
                   {selectedProject.description}
                 </p>
               )}
@@ -683,11 +683,11 @@ export function AdminPage({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[24px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
         <div className="flex items-end justify-between gap-4 mb-1">
           <div>
             <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">Project Builder</h1>
-            <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
+            <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">
               Create and manage projects with custom tasks
             </p>
           </div>

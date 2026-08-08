@@ -93,7 +93,7 @@ export function TypographyPage() {
   return (
     <div className="h-full flex flex-col bg-[#f9fafb]">
       {/* ── Page header ───────────────────────────────────────────────── */}
-      <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
+      <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
         <p className="text-[11px] font-medium text-[#6b7280] uppercase tracking-wide mb-[2px]">Test Page</p>
         <h1 className="text-[20px] font-semibold text-[#18181b] leading-[28px]">Typography</h1>
         <p className="mt-[4px] text-[13px] text-[#6b7280]">
@@ -103,14 +103,14 @@ export function TypographyPage() {
 
       {/* ── Body ──────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto px-[24px] py-6 max-w-[900px]">
-        <div className="mb-6 px-4 py-3 rounded-[6px] bg-[#eff6ff] border border-[#bfdbfe] text-[13px] text-[#1e40af]">
+        <div className="mb-6 px-4 py-3 rounded-[6px] bg-[#dbeafe] border border-[#e4e4e7] text-[13px] text-[#1e40af]">
           <span className="font-semibold">Font family:</span> <code className="text-[12px]">{FONT_FAMILY}</code>
           <p className="mt-1.5 text-[#1e40af]">
             <span className="font-semibold">Geist Sans</span> — self-hosted via{' '}
             <code className="text-[12px]">@fontsource/geist-sans</code>, imported in{' '}
             <code className="text-[12px]">src/styles/fonts.css</code> and applied on <code className="text-[12px]">body</code>{' '}
-            in <code className="text-[12px]">theme.css</code>. Weights 400/500/600/700 are loaded, matching the
-            app&rsquo;s font-normal/medium/semibold/bold usage. Chosen to complement the Avenir Next logo wordmark —
+            in <code className="text-[12px]">theme.css</code>. Weights 300/400/500/600/700 are loaded, matching the
+            app&rsquo;s font-light/normal/medium/semibold/bold usage. Chosen to complement the Avenir Next logo wordmark —
             geometric and clean like Avenir Next, but distinct from it and free to self-host (SIL Open Font License,
             by Vercel). The Tailwind system-font stack after it is only a fallback for the brief moment before the
             webfont loads.
@@ -190,26 +190,14 @@ export function TypographyPage() {
         <SectionHeading>Paragraph / body text</SectionHeading>
         <div className="flex flex-col gap-3">
           <SpecRow
-            label="p — primary"
-            source="design-system/EmptyState.tsx"
-            size="14px"
-            weight="500 (medium)"
-            color="#18181b"
-            preview={<p className="text-[14px] font-medium text-[#18181b]">Primary body copy</p>}
-          />
-          <SpecRow
-            label="p — secondary"
-            source="design-system/PageHeader.tsx description"
+            label="p"
+            source="design-system/PageHeader.tsx description, EmptyState.tsx"
             size="14px (text-sm)"
-            weight="500 (medium)"
+            weight="300 (light)"
             color="#6b7280"
-            lineHeight="14px"
-            preview={
-              <p className="text-sm font-medium text-[#6b7280] leading-[14px]">
-                Secondary / muted description text
-              </p>
-            }
-            note="Also seen at 13px (EmptyState description) — muted copy sits in the 13–14px range."
+            lineHeight="16px"
+            preview={<p className="text-sm font-light text-[#6b7280] leading-[16px]">Body / description copy</p>}
+            note="Consolidated to a single style — previously a darker 'primary' variant (#18181b), a 13px EmptyState-description variant, and inconsistent line-heights (14px/none) all existed; everything now uses this one."
           />
         </div>
 

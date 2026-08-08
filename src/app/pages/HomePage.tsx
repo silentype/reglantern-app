@@ -460,7 +460,7 @@ function AdminDashboard({
       <div className="flex-1 flex flex-col">
 
         {/* ── Sticky header ── */}
-        <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+        <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[24px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
 
           {/* Title + date */}
           <div className="flex items-end justify-between gap-4 mb-1">
@@ -468,7 +468,7 @@ function AdminDashboard({
               <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
                 {greeting()}, {currentUserName.split(' ')[0]}
               </h1>
-              <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
+              <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">
                 Review your health centers and projects, or jump to any open tasks
               </p>
             </div>

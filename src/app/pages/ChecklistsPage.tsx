@@ -99,11 +99,11 @@ export function ChecklistsPage({ slug, healthCenter, form5a, onForm5AChange }: C
 
   return (
     <div className="h-full flex flex-col">
-      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
         <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
           Tools
         </h1>
-        <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
+        <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">
           Select a checklist or form to get started
         </p>
       </div>

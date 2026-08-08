@@ -310,13 +310,13 @@ export function ComplianceReviewPage() {
   if (!framework) {
     return (
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+        <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[24px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
           <div className="flex items-end justify-between gap-4 mb-1">
             <div>
               <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
                 Compliance Review
               </h1>
-              <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
+              <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">
                 Select a framework to begin your review
               </p>
             </div>
@@ -368,7 +368,7 @@ export function ComplianceReviewPage() {
   return (
     <div className="h-full flex flex-col bg-white dark:bg-[#111318] relative">
       {/* Page Header */}
-      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a] flex items-end justify-between">
+      <div className="sticky top-0 z-30 bg-white dark:bg-[#111318] px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a] flex items-end justify-between">
         <div>
           <BackButton onClick={() => navigate('/admin/compliance-review')} className="mb-3">
             Compliance Review
@@ -376,7 +376,7 @@ export function ComplianceReviewPage() {
           <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px] mb-1">
             {framework.name}
           </h1>
-          <p className="text-sm font-medium text-[#6b7280] dark:text-[#a1a1aa] leading-[14px]">
+          <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">
             Walk through each chapter and confirm compliance for every element
           </p>
         </div>

@@ -752,7 +752,7 @@ export function HealthCenterAdminPage({
   if (selectedCenter) {
     return (
       <div className="h-full flex flex-col">
-        <div className="sticky top-0 z-30 bg-card px-[24px] pt-[22px] pb-0 border-b border-border">
+        <div className="sticky top-0 z-30 bg-card px-[24px] pt-[24px] pb-0 border-b border-border">
           <BackButton onClick={() => onSelectCenter(null)} className="mb-3">
             Health Centers
           </BackButton>
@@ -836,7 +836,7 @@ export function HealthCenterAdminPage({
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-card px-[24px] pt-[22px] pb-0 border-b border-border">
+      <div className="sticky top-0 z-30 bg-card px-[24px] pt-[24px] pb-0 border-b border-border">
         <div className="flex items-end justify-between gap-4 mb-1">
           <div>
             <h1 className="text-2xl font-semibold text-foreground leading-[32px] tracking-[0.4px] mb-1">

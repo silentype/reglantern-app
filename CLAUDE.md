@@ -281,12 +281,14 @@ Never introduce a new hex color without adding it to this table (and to `eslint-
 
 Every page header uses these exact values:
 - Horizontal padding: `px-[24px]`
-- Top padding: `pt-[22px]`
+- Top padding: `pt-[24px]`
 - Bottom padding: `pb-[16px]`
 - Bottom border: `border-b border-[#e4e4e7]`
 - Scrollable body: `px-[24px] py-6`
 
 Never vary these per page. If a page looks tight or loose, adjust content inside the body — not the chrome padding.
+
+A handful of pages (Admin, Home, Tasks, Compliance Review, Health Center Admin) use `pb-0` instead of `pb-[16px]` — those have a tab/filter row sitting flush under the title with no gap, which is intentional; leave that variant alone unless the tab row itself is being redesigned.
 
 ### Selector cards (landing pages)
 

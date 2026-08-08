@@ -148,7 +148,7 @@ export function ComplianceReviewTasksPage() {
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/* Page header */}
-        <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
+        <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
           <div className="mb-[10px]">
             <BackButton onClick={() => navigate('/admin/compliance-review')}>Compliance Review</BackButton>
           </div>
@@ -215,8 +215,8 @@ export function ComplianceReviewTasksPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-[60px] text-center max-w-[400px]">
-              <p className="text-[14px] font-medium text-[#18181b] mb-[4px]">No tasks yet</p>
-              <p className="text-[13px] text-[#6b7280]">
+              <p className="text-sm font-light text-[#6b7280] leading-[16px] mb-[4px]">No tasks yet</p>
+              <p className="text-sm font-light text-[#6b7280] leading-[16px]">
                 Add tasks to track compliance work for this chapter.
               </p>
             </div>

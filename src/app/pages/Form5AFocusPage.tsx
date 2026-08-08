@@ -17,6 +17,7 @@ import { SearchInput } from '../components/design-system/SearchInput';
 import { Avatar } from '../components/design-system/Avatar';
 import { StatusBadge } from '../components/design-system/StatusBadge';
 import { EmptyState } from '../components/design-system/EmptyState';
+import { PageHeader } from '../components/design-system/PageHeader';
 import { CheckboxIcon } from '../components/task-table/CheckboxIcon';
 import { ColumnEntryBody, taskIdFor } from './Form5AColumnEditor';
 import {
@@ -42,7 +43,7 @@ export function Form5AFocusPage({ healthCenter, form, onChange }: Form5AFocusPag
   if (!healthCenter) {
     return (
       <div className="h-full flex flex-col">
-        <PageHeader healthCenter={null} />
+        <FormPageHeader healthCenter={null} />
         <div className="px-[24px] py-6">
           <EmptyState
             icon={<Building2 size={28} />}
@@ -144,7 +145,7 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
 
   return (
     <div className="h-full flex flex-col">
-      <PageHeader healthCenter={healthCenter} />
+      <FormPageHeader healthCenter={healthCenter} />
       <div className="flex-1 flex min-h-0">
         {/* Sidebar — service list */}
         <div className="w-[300px] shrink-0 border-r border-[#e4e4e7] dark:border-[#2a2f3a] flex flex-col">
@@ -350,15 +351,13 @@ function Form5AFocusEditor({ form, onChange }: { form: Form5AForm; onChange: (ne
   );
 }
 
-function PageHeader({ healthCenter }: { healthCenter: string | null }) {
+function FormPageHeader({ healthCenter }: { healthCenter: string | null }) {
   return (
-    <div className="px-[24px] pt-[22px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
-      <h1 className="text-2xl font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[32px] tracking-[0.4px]">
-        Form 5A
-      </h1>
-      <p className="text-[13px] text-[#6b7280] mt-0.5">
-        Focus View{healthCenter ? ` · ${healthCenter}` : ''}
-      </p>
+    <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+      <PageHeader
+        title="Form 5A"
+        description={`Focus View${healthCenter ? ` · ${healthCenter}` : ''}`}
+      />
     </div>
   );
 }
