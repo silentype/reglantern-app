@@ -23,7 +23,7 @@ export const SortButton = memo(
         onClick={handleClick}
       >
         {Icon && <Icon size={14} className="text-[#18181b] dark:text-[#f4f4f5]" />}
-        <span className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[20px] text-[14px]">
+        <span className="font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[20px] text-[14px]">
           {label}
         </span>
         {currentColumn === sortColumn ? (

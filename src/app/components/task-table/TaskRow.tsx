@@ -295,7 +295,7 @@ export const TaskRow = memo(function TaskRow({
           <div className="flex-1 min-w-0">
             <button
               onClick={onClick}
-              className="font-['Geist:Regular',sans-serif] font-normal text-[#18181b] dark:text-[#f4f4f5] text-[14px] leading-[20px] text-left w-full overflow-hidden text-ellipsis"
+              className="font-normal text-[#18181b] dark:text-[#f4f4f5] text-[14px] leading-[20px] text-left w-full overflow-hidden text-ellipsis"
               style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
             >
               {task.title}
@@ -333,7 +333,7 @@ export const TaskRow = memo(function TaskRow({
         </div>
         <div className="space-y-3 pl-8">
           <div className="flex flex-col gap-1">
-            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
+            <label className="font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
               Due Date
             </label>
             <Popover>
@@ -348,14 +348,14 @@ export const TaskRow = memo(function TaskRow({
                       const rel = formatRelativeDate(task.dueDate);
                       return (
                         <span
-                          className={`font-['Geist:Medium',sans-serif] font-medium text-[14px] ${rel.color}`}
+                          className={`font-medium text-[14px] ${rel.color}`}
                         >
                           {rel.text}
                         </span>
                       );
                     })()
                   ) : (
-                    <span className="font-['Geist:Regular',sans-serif] font-normal text-[#9ca3af] text-[14px]">
+                    <span className="font-normal text-[#9ca3af] text-[14px]">
                       Set Due Date
                     </span>
                   )}
@@ -375,7 +375,7 @@ export const TaskRow = memo(function TaskRow({
             </Popover>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
+            <label className="font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
               Assigned To
             </label>
             <Select
@@ -389,7 +389,7 @@ export const TaskRow = memo(function TaskRow({
                 {task.assignedTo ? (
                   <UserAvatar user={task.assignedTo} />
                 ) : (
-                  <span className="font-['Geist:Regular',sans-serif] font-normal text-[#9ca3af] text-[14px]">
+                  <span className="font-normal text-[#9ca3af] text-[14px]">
                     Assign User
                   </span>
                 )}
@@ -405,7 +405,7 @@ export const TaskRow = memo(function TaskRow({
             </Select>
           </div>
           <div className="flex flex-col gap-1">
-            <label className="font-['Geist:SemiBold',sans-serif] font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
+            <label className="font-semibold text-[#18181b] dark:text-[#f4f4f5] text-[12px] leading-[20px]">
               Health Center
             </label>
             <Select
@@ -417,11 +417,11 @@ export const TaskRow = memo(function TaskRow({
                 onClick={(e) => e.stopPropagation()}
               >
                 {task.healthCenter ? (
-                  <span className="font-['Geist:Medium',sans-serif] font-medium text-[#18181b] text-[14px]">
+                  <span className="font-medium text-[#18181b] text-[14px]">
                     {task.healthCenter}
                   </span>
                 ) : (
-                  <span className="font-['Geist:Medium',sans-serif] font-medium text-[#9ca3af] text-[14px]">
+                  <span className="font-medium text-[#9ca3af] text-[14px]">
                     Select Health Center
                   </span>
                 )}

@@ -208,7 +208,7 @@ export const DueDateCell = memo(function DueDateCell({
                 onBlur={commitInlineDueDate}
                 placeholder="Select due date"
                 maxLength={10}
-                className="flex-1 min-w-0 bg-transparent border-0 outline-none font-['Geist:Regular',sans-serif] font-normal text-[#18181b] dark:text-[#f4f4f5] placeholder:text-[#9ca3af] dark:placeholder:text-[#6b7280] text-[14px]"
+                className="flex-1 min-w-0 bg-transparent border-0 outline-none font-normal text-[#18181b] dark:text-[#f4f4f5] placeholder:text-[#9ca3af] dark:placeholder:text-[#6b7280] text-[14px]"
               />
               <ChevronDown className="size-[16px] text-[#18181B] dark:text-[#f4f4f5] shrink-0 ml-1" />
             </div>

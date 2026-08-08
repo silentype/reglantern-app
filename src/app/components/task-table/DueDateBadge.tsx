@@ -38,7 +38,7 @@ export const DueDateBadge = memo(
             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[#fecaca] bg-[#fef2f2]"
             title="The task this due date depended on was removed. Click to fix the rule."
           >
-            <span className="font-['Geist:Medium',sans-serif] font-medium text-[#b91c1c] text-[13px] leading-tight">
+            <span className="font-medium text-[#b91c1c] text-[13px] leading-tight">
               Reference broken
             </span>
             <ChevronDown className="size-[14px] text-[#b91c1c]" />
@@ -53,7 +53,7 @@ export const DueDateBadge = memo(
               title={dueDate ? `Resolves to ${dueDate}` : 'Rule does not resolve yet'}
             >
               <span
-                className={`font-['Geist:Medium',sans-serif] font-medium leading-tight ${relativeInfo?.color ?? 'text-[#18181b]'} text-[13px] whitespace-nowrap`}
+                className={`font-medium leading-tight ${relativeInfo?.color ?? 'text-[#18181b]'} text-[13px] whitespace-nowrap`}
               >
                 {ruleSummary}
               </span>
@@ -67,7 +67,7 @@ export const DueDateBadge = memo(
               title={dueDate}
             >
               <span
-                className={`font-['Geist:Medium',sans-serif] font-medium leading-tight ${relativeInfo.color} text-[13px]`}
+                className={`font-medium leading-tight ${relativeInfo.color} text-[13px]`}
               >
                 {relativeInfo.text}
               </span>
@@ -76,7 +76,7 @@ export const DueDateBadge = memo(
           </>
         ) : (
           <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-[#e4e4e7] bg-white">
-            <span className="font-['Geist:Regular',sans-serif] font-normal text-[#6b7280] text-[13px] leading-tight">
+            <span className="font-normal text-[#6b7280] text-[13px] leading-tight">
               Select due date
             </span>
             <ChevronDown className="size-[14px] text-[#6b7280]" />

@@ -146,7 +146,7 @@ export const SideNavigation = memo(function SideNavigation({ pageType, selectedI
 
   return (
     <div
-      className={`bg-[#f4f4f5] dark:bg-[#1c1f26] h-[calc(100vh-80px)] flex flex-col justify-between fixed left-0 top-[80px] z-40 transition-all duration-300 ease-in-out ${
+      className={`bg-[#f4f4f5] dark:bg-[#1c1f26] border-r border-[#e4e4e7] dark:border-[#2a2f3a] h-[calc(100vh-80px)] flex flex-col justify-between fixed left-0 top-[80px] z-40 transition-all duration-300 ease-in-out ${
         isOpen ? 'w-[280px]' : 'w-[66px]'
       }`}
     >

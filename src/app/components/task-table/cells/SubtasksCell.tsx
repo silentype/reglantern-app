@@ -23,11 +23,11 @@ export const SubtasksCell = memo(function SubtasksCell({ task, col }: SubtasksCe
       />
       <div className="flex items-center justify-between w-full relative z-10">
         {task.subtasks && task.subtasks.length > 0 ? (
-          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#18181b] dark:text-[#f4f4f5] text-[13px]">
+          <span className="font-medium text-[#18181b] dark:text-[#f4f4f5] text-[13px]">
             {task.subtasks.length} Subtasks
           </span>
         ) : (
-          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#9ca3af] text-[14px]">—</span>
+          <span className="font-medium text-[#9ca3af] text-[14px]">—</span>
         )}
       </div>
     </div>

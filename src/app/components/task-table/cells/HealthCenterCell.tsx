@@ -23,11 +23,11 @@ export const HealthCenterCell = memo(function HealthCenterCell({ task, col }: He
       />
       <div className="flex items-center justify-between w-full relative z-10">
         {task.healthCenter ? (
-          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#18181b] text-[13px]">
+          <span className="font-medium text-[#18181b] text-[13px]">
             {task.healthCenter}
           </span>
         ) : (
-          <span className="font-['Geist:Medium',sans-serif] font-medium text-[#9ca3af] text-[14px]">—</span>
+          <span className="font-medium text-[#9ca3af] text-[14px]">—</span>
         )}
       </div>
     </div>

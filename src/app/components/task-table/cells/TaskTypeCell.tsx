@@ -40,11 +40,11 @@ export const TaskTypeCell = memo(function TaskTypeCell({
         >
           <div className="flex items-center justify-between w-full">
             {task.taskType ? (
-              <span className="font-['Geist:Medium',sans-serif] font-medium text-[#18181b] text-[13px]">
+              <span className="font-medium text-[#18181b] text-[13px]">
                 {task.taskType}
               </span>
             ) : (
-              <span className="font-['Geist:Medium',sans-serif] font-medium text-[#9ca3af] text-[14px]">
+              <span className="font-medium text-[#9ca3af] text-[14px]">
                 Select Task Type
               </span>
             )}

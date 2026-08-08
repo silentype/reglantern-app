@@ -155,6 +155,14 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Geist Sans', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  }
+
+  /* sonner injects its own font-family on [data-sonner-toaster] via a <style>
+     tag at runtime, after this stylesheet has already loaded — same-specificity
+     cascade order would let it win over ours without !important here. */
+  [data-sonner-toaster] {
+    font-family: 'Geist Sans', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
   }
 
   /**

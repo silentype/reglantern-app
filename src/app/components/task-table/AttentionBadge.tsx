@@ -17,7 +17,7 @@ export const AttentionBadge = memo(({ attention }: { attention: Task['attention'
         )}
       </div>
       <span
-        className="font-['Inter:Medium',sans-serif] font-medium text-[12px]"
+        className="font-medium text-[12px]"
         style={{ color: attention.type === 'needs' ? '#8745AE' : '#DC2626' }}
       >
         {attention.count} {attention.type === 'needs' ? 'Needs Attention' : 'Missing Files'}

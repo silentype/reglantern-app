@@ -22,7 +22,7 @@ export const TitleCell = memo(function TitleCell({ task, col, onClick }: TitleCe
         aria-hidden="true"
         className="absolute border-[#cdd7e1] dark:border-[#2a2f3a] border-r border-solid inset-0 pointer-events-none"
       />
-      <div className="flex flex-[1_0_0] flex-col font-['Geist:Regular',sans-serif] font-normal justify-center leading-[0] min-h-px min-w-px relative text-[#18181b] dark:text-[#f4f4f5] text-[0px] z-10">
+      <div className="flex flex-[1_0_0] flex-col font-normal justify-center leading-[0] min-h-px min-w-px relative text-[#18181b] dark:text-[#f4f4f5] text-[0px] z-10">
         <p className="decoration-solid leading-[20px] text-[14px] whitespace-nowrap overflow-hidden text-ellipsis">
           {task.title}
         </p>

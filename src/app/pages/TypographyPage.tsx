@@ -14,7 +14,7 @@ import { Pill, type PillColor } from '../components/design-system/Pill';
 import { FilterChip } from '../components/design-system/FilterChip';
 
 const FONT_FAMILY =
-  'ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
+  '\'Geist Sans\', ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
 
 interface SpecRowProps {
   label: string;
@@ -104,10 +104,27 @@ export function TypographyPage() {
       {/* ── Body ──────────────────────────────────────────────────────── */}
       <div className="flex-1 overflow-auto px-[24px] py-6 max-w-[900px]">
         <div className="mb-6 px-4 py-3 rounded-[6px] bg-[#eff6ff] border border-[#bfdbfe] text-[13px] text-[#1e40af]">
-          <span className="font-semibold">Font family:</span>{' '}
-          <code className="text-[12px]">{FONT_FAMILY}</code> — Tailwind&rsquo;s default sans-serif stack. No custom
-          font is loaded (<code className="text-[12px]">src/styles/fonts.css</code> is empty), so every style below
-          uses this same family.
+          <span className="font-semibold">Font family:</span> <code className="text-[12px]">{FONT_FAMILY}</code>
+          <p className="mt-1.5 text-[#1e40af]">
+            <span className="font-semibold">Geist Sans</span> — self-hosted via{' '}
+            <code className="text-[12px]">@fontsource/geist-sans</code>, imported in{' '}
+            <code className="text-[12px]">src/styles/fonts.css</code> and applied on <code className="text-[12px]">body</code>{' '}
+            in <code className="text-[12px]">theme.css</code>. Weights 400/500/600/700 are loaded, matching the
+            app&rsquo;s font-normal/medium/semibold/bold usage. Chosen to complement the Avenir Next logo wordmark —
+            geometric and clean like Avenir Next, but distinct from it and free to self-host (SIL Open Font License,
+            by Vercel). The Tailwind system-font stack after it is only a fallback for the brief moment before the
+            webfont loads.
+          </p>
+          <p className="mt-1.5 text-[#1e40af]">
+            Also fixed while wiring this up: 24 elements in <code className="text-[12px]">task-table/</code> already
+            referenced <code className="text-[12px]">font-[&apos;Geist:Regular&apos;,sans-serif]</code> (and one{' '}
+            <code className="text-[12px]">Inter:Medium</code>) from the original Figma export — that syntax was
+            never valid CSS and silently fell back to the system default the whole time. Removed the dead class
+            fragments; the real Tailwind weight utility already sitting next to each one (
+            <code className="text-[12px]">font-normal</code>/<code className="text-[12px]">font-medium</code>/
+            <code className="text-[12px]">font-semibold</code>) now correctly picks up Geist Sans via the global{' '}
+            <code className="text-[12px]">body</code> rule.
+          </p>
         </div>
 
         <SectionHeading>Headings</SectionHeading>

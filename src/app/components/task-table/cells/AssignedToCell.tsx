@@ -54,7 +54,7 @@ export const AssignedToCell = memo(function AssignedToCell({
               {task.assignedTo ? (
                 <UserAvatar user={task.assignedTo} />
               ) : (
-                <span className="font-['Geist:Regular',sans-serif] font-normal text-[#9ca3af] text-[14px]">
+                <span className="font-normal text-[#9ca3af] text-[14px]">
                   Assign User
                 </span>
               )}
