@@ -27,9 +27,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from '../components/ui/command';
@@ -38,6 +36,7 @@ import { Calendar } from '../components/ui/calendar';
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 import { TasksHeader } from '../components/TasksHeader';
 import { SearchInput } from '../components/design-system/SearchInput';
+import { MultiSelectFilterChip } from '../components/design-system/MultiSelectFilterChip';
 
 import {
   AVAILABLE_USERS,
@@ -532,267 +531,79 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               </Popover>
 
               {/* Assigned To Chip */}
-              <Popover open={assignedToOpen} onOpenChange={setAssignedToOpen}>
-                <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !assignedToFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
-                    <User className="h-3.5 w-3.5" />
-                    Assigned {!assignedToFilter.includes('all') && `(${assignedToFilter.length})`}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search users..." />
-                    <CommandList>
-                      <CommandEmpty>No users found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            toggleAssignedToFilter('all');
-                            setAssignedToOpen(false);
-                          }}
-                        >
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                            assignedToFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                          }`}>
-                            {assignedToFilter.includes('all') && (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </div>
-                          All Users
-                        </CommandItem>
-                        <CommandItem
-                          value="unassigned"
-                          onSelect={() => toggleAssignedToFilter('unassigned')}
-                        >
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                            assignedToFilter.includes('unassigned') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                          }`}>
-                            {assignedToFilter.includes('unassigned') && (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </div>
-                          Unassigned
-                        </CommandItem>
-                        {AVAILABLE_USERS.map((user) => (
-                          <CommandItem
-                            key={user.name}
-                            value={user.name}
-                            onSelect={() => toggleAssignedToFilter(user.name)}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              assignedToFilter.includes(user.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {assignedToFilter.includes(user.name) && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            {user.name}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <MultiSelectFilterChip
+                icon={<User className="h-3.5 w-3.5" />}
+                label="Assigned"
+                selected={assignedToFilter}
+                onToggle={toggleAssignedToFilter}
+                open={assignedToOpen}
+                onOpenChange={setAssignedToOpen}
+                allLabel="All Users"
+                searchPlaceholder="Search users..."
+                emptyLabel="No users found."
+                options={[
+                  { value: 'unassigned', label: 'Unassigned' },
+                  ...AVAILABLE_USERS.map((user) => ({ value: user.name, label: user.name })),
+                ]}
+              />
 
               {/* Project Chip */}
-              <Popover open={projectOpen} onOpenChange={setProjectOpen}>
-                <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !projectFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
-                    <FolderOpen className="h-3.5 w-3.5" />
-                    Project {!projectFilter.includes('all') && `(${projectFilter.length})`}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search projects..." />
-                    <CommandList>
-                      <CommandEmpty>No projects found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem value="all" onSelect={() => { toggleProjectFilter('all'); setProjectOpen(false); }}>
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${ projectFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]' }`}>
-                            {projectFilter.includes('all') && <Check className="h-3 w-3" />}
-                          </div>
-                          All Projects
-                        </CommandItem>
-                        {projectOptions.map((project) => (
-                          <CommandItem key={project} value={project} onSelect={() => toggleProjectFilter(project)}>
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${ projectFilter.includes(project) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]' }`}>
-                              {projectFilter.includes(project) && <Check className="h-3 w-3" />}
-                            </div>
-                            {project}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <MultiSelectFilterChip
+                icon={<FolderOpen className="h-3.5 w-3.5" />}
+                label="Project"
+                selected={projectFilter}
+                onToggle={toggleProjectFilter}
+                open={projectOpen}
+                onOpenChange={setProjectOpen}
+                allLabel="All Projects"
+                searchPlaceholder="Search projects..."
+                emptyLabel="No projects found."
+                options={projectOptions.map((project) => ({ value: project, label: project }))}
+              />
 
               {/* Category Chip */}
-              <Popover open={categoryOpen} onOpenChange={setCategoryOpen}>
-                <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !categoryFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
-                    <Tag className="h-3.5 w-3.5" />
-                    Category {!categoryFilter.includes('all') && `(${categoryFilter.length})`}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search categories..." />
-                    <CommandList>
-                      <CommandEmpty>No categories found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            toggleCategoryFilter('all');
-                            setCategoryOpen(false);
-                          }}
-                        >
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                            categoryFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                          }`}>
-                            {categoryFilter.includes('all') && (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </div>
-                          All Categories
-                        </CommandItem>
-                        {categoryOptions.map((category) => (
-                          <CommandItem
-                            key={category}
-                            value={category}
-                            onSelect={() => toggleCategoryFilter(category)}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              categoryFilter.includes(category) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {categoryFilter.includes(category) && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            {category}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <MultiSelectFilterChip
+                icon={<Tag className="h-3.5 w-3.5" />}
+                label="Category"
+                selected={categoryFilter}
+                onToggle={toggleCategoryFilter}
+                open={categoryOpen}
+                onOpenChange={setCategoryOpen}
+                allLabel="All Categories"
+                searchPlaceholder="Search categories..."
+                emptyLabel="No categories found."
+                options={categoryOptions.map((category) => ({ value: category, label: category }))}
+              />
 
               {/* Health Center Chip */}
-              <Popover open={healthCenterOpen} onOpenChange={setHealthCenterOpen}>
-                <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !healthCenterFilter.includes('All Health Centers') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
-                    <Building2 className="h-3.5 w-3.5" />
-                    Health Center {!healthCenterFilter.includes('All Health Centers') && `(${healthCenterFilter.length})`}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search health centers..." />
-                    <CommandList>
-                      <CommandEmpty>No health centers found.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            toggleHealthCenterFilter('All Health Centers');
-                            setHealthCenterOpen(false);
-                          }}
-                        >
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                            healthCenterFilter.includes('All Health Centers') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                          }`}>
-                            {healthCenterFilter.includes('All Health Centers') && (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </div>
-                          All Health Centers
-                        </CommandItem>
-                        {HEALTH_CENTERS.map((center) => (
-                          <CommandItem
-                            key={center}
-                            value={center}
-                            onSelect={() => toggleHealthCenterFilter(center)}
-                          >
-                            <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                              healthCenterFilter.includes(center) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                            }`}>
-                              {healthCenterFilter.includes(center) && (
-                                <Check className="h-3 w-3" />
-                              )}
-                            </div>
-                            {center}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <MultiSelectFilterChip
+                icon={<Building2 className="h-3.5 w-3.5" />}
+                label="Health Center"
+                selected={healthCenterFilter}
+                onToggle={toggleHealthCenterFilter}
+                open={healthCenterOpen}
+                onOpenChange={setHealthCenterOpen}
+                allValue="All Health Centers"
+                allLabel="All Health Centers"
+                searchPlaceholder="Search health centers..."
+                emptyLabel="No health centers found."
+                options={HEALTH_CENTERS.map((center) => ({ value: center, label: center }))}
+              />
 
               {/* Needs Attention Chip */}
-              <Popover open={needsAttentionOpenChip} onOpenChange={setNeedsAttentionOpenChip}>
-                <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ !needsAttentionFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    Needs Attention {!needsAttentionFilter.includes('all') && `(${needsAttentionFilter.length})`}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
-                  <Command>
-                    <CommandList>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            toggleNeedsAttentionFilter('all');
-                            setNeedsAttentionOpenChip(false);
-                          }}
-                        >
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                            needsAttentionFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                          }`}>
-                            {needsAttentionFilter.includes('all') && (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </div>
-                          All
-                        </CommandItem>
-                        <CommandItem
-                          value="needs"
-                          onSelect={() => toggleNeedsAttentionFilter('needs')}
-                        >
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                            needsAttentionFilter.includes('needs') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                          }`}>
-                            {needsAttentionFilter.includes('needs') && (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </div>
-                          Files need attention
-                        </CommandItem>
-                        <CommandItem
-                          value="missing"
-                          onSelect={() => toggleNeedsAttentionFilter('missing')}
-                        >
-                          <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${
-                            needsAttentionFilter.includes('missing') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'
-                          }`}>
-                            {needsAttentionFilter.includes('missing') && (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </div>
-                          Missing Files
-                        </CommandItem>
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <MultiSelectFilterChip
+                icon={<AlertCircle className="h-3.5 w-3.5" />}
+                label="Needs Attention"
+                selected={needsAttentionFilter}
+                onToggle={toggleNeedsAttentionFilter}
+                open={needsAttentionOpenChip}
+                onOpenChange={setNeedsAttentionOpenChip}
+                showSearch={false}
+                options={[
+                  { value: 'needs', label: 'Files need attention' },
+                  { value: 'missing', label: 'Missing Files' },
+                ]}
+              />
 
               {/* Clear All Button */}
               {activeFilterCount > 0 && (

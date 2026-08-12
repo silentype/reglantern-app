@@ -39,17 +39,17 @@ function RadioOption({ label, selected, onClick }: { label: ReactNode; selected:
       aria-checked={selected}
       onClick={onClick}
       className={clsx(
-        'flex items-center gap-3 px-5 py-3 rounded-md border transition-colors cursor-pointer text-[14px] font-medium min-w-[180px]',
+        'flex items-center justify-center gap-2 px-3 py-2 rounded-md border transition-colors cursor-pointer text-[14px] font-medium',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
         selected
-          ? 'bg-white border-[#fc6] text-[#18181b]'
-          : 'bg-white border-[#e4e4e7] text-[#18181b] hover:border-[#cdd7e1]'
+          ? 'bg-white dark:bg-[#1c1f26] border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
+          : 'bg-white dark:bg-[#1c1f26] border-[#e4e4e7] dark:border-[#2a2f3a] text-[#18181b] dark:text-[#f4f4f5] hover:border-[#cdd7e1] dark:hover:border-[#3a4455]'
       )}
     >
       <span
         className={clsx(
           'inline-flex items-center justify-center size-5 rounded-full border-2 transition-colors',
-          selected ? 'border-[#fc6]' : 'border-[#cdd7e1]'
+          selected ? 'border-[#fc6]' : 'border-[#cdd7e1] dark:border-[#2a2f3a]'
         )}
       >
         {selected && <span className="size-2.5 rounded-full bg-[#fc6]" />}

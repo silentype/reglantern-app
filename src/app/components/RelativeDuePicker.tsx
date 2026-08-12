@@ -395,12 +395,12 @@ export function RelativeDuePicker({
   // Vertical-row layout for the Trigger section: label fixed-width on
   // the left, control filling the remaining width on the right.
   const rowCls = 'flex items-center gap-2';
-  const rowLabelCls = 'w-[88px] shrink-0 text-[12px] font-medium text-[#6b7280]';
+  const rowLabelCls = 'w-[88px] shrink-0 text-[12px] font-medium text-[#6b7280] dark:text-[#a1a1aa]';
 
   return (
     <div className={`p-4 w-full flex flex-col gap-4 ${className ?? ''}`}>
       <div>
-        <h3 className="text-sm font-semibold text-[#18181b] mb-2">Timing</h3>
+        <h3 className="text-sm font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Timing</h3>
         <div className={rowCls}>
           <label className={rowLabelCls}>Due</label>
           <div className="flex-1 flex items-center gap-2">
@@ -409,7 +409,7 @@ export function RelativeDuePicker({
               min={1}
               value={amount}
               onChange={(e) => setAmount(Math.max(1, Number(e.target.value) || 1))}
-              className="w-16 h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
+              className="w-16 h-8 px-2 text-sm text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md focus:outline-none focus:border-[#fc6]"
             />
             <div className="w-28">
               <UISelect
@@ -446,14 +446,14 @@ export function RelativeDuePicker({
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-[#18181b] mb-2">Trigger</h3>
+        <h3 className="text-sm font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Trigger</h3>
         {initialReferenceMissing && (
-          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
+          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] dark:border-[#7f1d1d] bg-[#fef2f2] dark:bg-[#2d1010] text-[12px] text-[#b91c1c]">
             The previously-selected task was removed. Pick a new reference or switch to a different type.
           </div>
         )}
         {initialHCFieldMissing && (
-          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] bg-[#fef2f2] text-[12px] text-[#b91c1c]">
+          <div className="mb-2 px-2.5 py-2 rounded-md border border-[#fecaca] dark:border-[#7f1d1d] bg-[#fef2f2] dark:bg-[#2d1010] text-[12px] text-[#b91c1c]">
             The previously-selected health-center reference is no longer available. Pick a new one or switch to a different type.
           </div>
         )}
@@ -536,7 +536,7 @@ export function RelativeDuePicker({
                       const n = Number(e.target.value);
                       if (Number.isInteger(n)) setFixedDay(Math.min(31, Math.max(1, n)));
                     }}
-                    className="w-full h-8 px-2 text-sm border border-[#e4e4e7] rounded-md focus:outline-none focus:border-[#fc6]"
+                    className="w-full h-8 px-2 text-sm text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md focus:outline-none focus:border-[#fc6]"
                   />
                 </div>
               </div>

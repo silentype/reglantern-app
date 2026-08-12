@@ -37,7 +37,7 @@ export function Pagination({
         {prevLabel}
       </Button>
       {!hideCounter && (
-        <div className="text-[14px] font-medium text-[#6b7280]">
+        <div className="text-[14px] font-medium text-[#6b7280] dark:text-[#a1a1aa]">
           {current}/{total}
         </div>
       )}

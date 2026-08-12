@@ -52,14 +52,14 @@ export function FileRow({
 }: FileRowProps) {
   return (
     <div
-      className={`flex items-center gap-3 p-3 bg-white border border-[#e4e4e7] rounded-md ${className ?? ''}`}
+      className={`flex items-center gap-3 p-3 bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md ${className ?? ''}`}
     >
-      <div className="shrink-0 size-8 rounded bg-[#f4f4f5] flex items-center justify-center">
-        {icon ?? (() => { const Icon = fileIcon(name); return <Icon className="size-4 text-[#6b7280]" strokeWidth={2} />; })()}
+      <div className="shrink-0 size-8 rounded bg-[#f4f4f5] dark:bg-[#2a2f3a] flex items-center justify-center">
+        {icon ?? (() => { const Icon = fileIcon(name); return <Icon className="size-4 text-[#6b7280] dark:text-[#a1a1aa]" strokeWidth={2} />; })()}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[14px] font-medium text-[#18181b] truncate">{name}</div>
-        <div className="text-[12px] text-[#6b7280]">
+        <div className="text-[14px] font-medium text-[#18181b] dark:text-[#f4f4f5] truncate">{name}</div>
+        <div className="text-[12px] text-[#6b7280] dark:text-[#a1a1aa]">
           {category ? `${category} · ` : ''}{formatSize(size)}
         </div>
       </div>
@@ -75,7 +75,7 @@ export function FileRow({
             type="button"
             onClick={onOpenInNew}
             aria-label={`Open ${name} in new window`}
-            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
+            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] dark:border-[#2a2f3a] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#f9fafb] dark:hover:bg-[#111318] hover:text-[#18181b] dark:hover:text-[#f4f4f5] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
             title="Open in new window"
           >
             <ExternalLink className="size-3.5" />
@@ -86,7 +86,7 @@ export function FileRow({
             type="button"
             onClick={onDelete}
             aria-label={`Delete ${name}`}
-            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] text-[#dc2626] hover:bg-[#fee2e2] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
+            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] dark:border-[#2a2f3a] text-[#dc2626] hover:bg-[#fee2e2] dark:hover:bg-[#2d1010] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
           >
             <Trash2 className="size-3.5" />
           </button>

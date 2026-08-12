@@ -29,9 +29,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       <select
         ref={ref}
         className={clsx(
-          'w-full appearance-none rounded-md border border-[#e4e4e7] bg-white text-[#18181b] cursor-pointer transition-colors',
-          'hover:border-[#cdd7e1] focus:outline-none focus:border-[#fc6] focus:ring-2 focus:ring-[#fc6]/30',
-          'disabled:bg-[#f4f4f5] disabled:text-[#a1a1aa] disabled:cursor-not-allowed',
+          'w-full appearance-none rounded-md border border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1c1f26] text-[#18181b] dark:text-[#f4f4f5] cursor-pointer transition-colors',
+          'hover:border-[#cdd7e1] dark:hover:border-[#3a4455] focus:outline-none focus:border-[#fc6] focus:ring-2 focus:ring-[#fc6]/30',
+          'disabled:bg-[#f4f4f5] dark:disabled:bg-[#1c1f26] disabled:text-[#a1a1aa] disabled:cursor-not-allowed',
           SIZE_CLASSES[size]
         )}
         {...props}
@@ -40,7 +40,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       </select>
       <ChevronDown
         className={clsx(
-          'absolute top-1/2 -translate-y-1/2 text-[#6b7280] pointer-events-none',
+          'absolute top-1/2 -translate-y-1/2 text-[#6b7280] dark:text-[#a1a1aa] pointer-events-none',
           ICON_POS[size]
         )}
       />

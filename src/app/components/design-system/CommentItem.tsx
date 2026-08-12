@@ -22,12 +22,12 @@ export function CommentItem({ author, timestamp, children, actions, className }:
       <div className="min-w-0 flex-1">
         <header className="flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
-            <span className="text-[14px] font-semibold text-[#18181b]">{author.name}</span>
-            <span className="text-[12px] text-[#6b7280]">{timestamp}</span>
+            <span className="text-[14px] font-semibold text-[#18181b] dark:text-[#f4f4f5]">{author.name}</span>
+            <span className="text-[12px] text-[#6b7280] dark:text-[#a1a1aa]">{timestamp}</span>
           </div>
           {actions}
         </header>
-        <div className="mt-1 text-[14px] text-[#18181b] whitespace-pre-wrap">
+        <div className="mt-1 text-[14px] text-[#18181b] dark:text-[#f4f4f5] whitespace-pre-wrap">
           {children}
         </div>
       </div>

@@ -20,7 +20,7 @@ export function AvatarStack({ users, size = 'sm', max = 3, className }: AvatarSt
           name={u.name}
           color={u.color}
           size={size}
-          className="ring-2 ring-white"
+          className="ring-2 ring-white dark:ring-[#111318]"
         />
       ))}
       {overflow > 0 && (

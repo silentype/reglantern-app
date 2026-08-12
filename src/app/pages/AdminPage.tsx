@@ -42,6 +42,8 @@ import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 import { Button } from '../components/design-system/Button';
 import { BackButton } from '../components/design-system/BackButton';
 import { SearchInput } from '../components/design-system/SearchInput';
+import { Input } from '../components/design-system/Input';
+import { Textarea } from '../components/design-system/Textarea';
 
 import { HEALTH_CENTERS } from '../constants';
 import { resolveTaskDueDates, findTasksAnchoredTo } from '../utils/helpers';
@@ -504,35 +506,26 @@ export function AdminPage({
                 Edit project
               </h2>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
-                    Project name <span className="text-[#dc2626]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={editProjectDraft.name}
-                    onChange={(e) =>
-                      setEditProjectDraft((prev) => (prev ? { ...prev, name: e.target.value } : prev))
-                    }
-                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
-                    placeholder="Project name"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
-                    Description
-                  </label>
-                  <textarea
-                    value={editProjectDraft.description}
-                    onChange={(e) =>
-                      setEditProjectDraft((prev) => (prev ? { ...prev, description: e.target.value } : prev))
-                    }
-                    className="w-full px-3 py-2 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
-                    placeholder="Add a description"
-                    rows={3}
-                  />
-                </div>
+                <Input
+                  label="Project name"
+                  required
+                  type="text"
+                  value={editProjectDraft.name}
+                  onChange={(e) =>
+                    setEditProjectDraft((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                  }
+                  placeholder="Project name"
+                  autoFocus
+                />
+                <Textarea
+                  label="Description"
+                  value={editProjectDraft.description}
+                  onChange={(e) =>
+                    setEditProjectDraft((prev) => (prev ? { ...prev, description: e.target.value } : prev))
+                  }
+                  placeholder="Add a description"
+                  rows={3}
+                />
                 <div>
                   <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
                     Status
@@ -732,31 +725,22 @@ export function AdminPage({
             >
               <h2 className="text-[18px] font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-4">Create Project</h2>
               <div className="space-y-4">
-                <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
-                    Project name <span className="text-[#dc2626]">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={newProject.name}
-                    onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                    className="w-full h-[40px] px-3 py-2 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
-                    placeholder="Project name"
-                    autoFocus
-                  />
-                </div>
-                <div>
-                  <label className="block text-[13px] font-medium text-[#18181b] dark:text-[#f4f4f5] mb-1.5">
-                    Description
-                  </label>
-                  <textarea
-                    value={newProject.description}
-                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-[6px] focus:outline-none focus:border-[#fc6] transition-colors text-[14px]"
-                    placeholder="Add a description"
-                    rows={3}
-                  />
-                </div>
+                <Input
+                  label="Project name"
+                  required
+                  type="text"
+                  value={newProject.name}
+                  onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
+                  placeholder="Project name"
+                  autoFocus
+                />
+                <Textarea
+                  label="Description"
+                  value={newProject.description}
+                  onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                  placeholder="Add a description"
+                  rows={3}
+                />
               </div>
               <div className="flex justify-end gap-2 pt-5">
                 <Button

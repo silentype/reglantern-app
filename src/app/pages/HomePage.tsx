@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { Pill, type PillColor } from '../components/design-system/Pill';
 import { Button } from '../components/design-system/Button';
+import { ProgressBar } from '../components/design-system/ProgressBar';
+import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
 
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import {
@@ -104,18 +106,6 @@ function sortProjects(projects: Project[], sort: ProjectSort, dir: 'asc' | 'desc
     default:
       return copy.sort((a, b) => sign * a.name.localeCompare(b.name));
   }
-}
-
-function ProgressBar({ done, total, color = '#fc6' }: { done: number; total: number; color?: string }) {
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 bg-[#e4e4e7] dark:bg-[#2a2f3a] rounded-full overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-      </div>
-      <span className="text-xs text-[#6b7280] dark:text-[#a1a1aa] shrink-0">{done}/{total}</span>
-    </div>
-  );
 }
 
 // Derive a project's status from task completion. Drives the colored progress
@@ -497,18 +487,15 @@ function AdminDashboard({
           </div>
 
           {/* Underline tabs */}
-          <div className="-mb-px flex gap-0 mt-[16px]">
-            {(['projects', 'health-centers'] as AdminTab[]).map(tab => (
-              <button key={tab} onClick={() => handleTabChange(tab)}
-                className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === tab
-                    ? 'border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
-                    : 'border-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] hover:border-[#e4e4e7] dark:hover:border-[#2a2f3a]'
-                }`}>
-                {tab === 'health-centers' ? 'Health Centers' : 'Projects'}
-              </button>
-            ))}
-          </div>
+          <UnderlineTabs
+            className="mt-[16px]"
+            items={[
+              { value: 'projects', label: 'Projects' },
+              { value: 'health-centers', label: 'Health Centers' },
+            ]}
+            active={activeTab}
+            onChange={(v) => handleTabChange(v as AdminTab)}
+          />
 
         </div>
 

@@ -49,6 +49,8 @@ import { Button } from '../components/design-system/Button';
 import { BackButton } from '../components/design-system/BackButton';
 import { SearchInput } from '../components/design-system/SearchInput';
 import { Select } from '../components/design-system/Select';
+import { Textarea } from '../components/design-system/Textarea';
+import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
 import type {
   HealthCenter,
   HealthCenterDateFieldDef,
@@ -552,7 +554,7 @@ function TechnologyTab({ data, onChange }: {
         </FieldGrid>
         <div className="mt-4">
           <Field label="LMS Notes">
-            <textarea value={data.lmsNotes} onChange={(e) => onChange({ lmsNotes: e.target.value })} rows={3} className="w-full px-3 py-2 border border-border rounded-[6px] text-[14px] text-foreground placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-card resize-none" />
+            <Textarea value={data.lmsNotes} onChange={(e) => onChange({ lmsNotes: e.target.value })} rows={3} />
           </Field>
         </div>
       </SectionCard>
@@ -591,7 +593,7 @@ function SalesTab({ data, onChange }: {
         </FieldGrid>
       </SectionCard>
       <SectionCard title="Marketing Notes">
-        <textarea value={data.marketingNotes} onChange={(e) => onChange({ marketingNotes: e.target.value })} rows={4} placeholder="Notes visible to marketing team…" className="w-full px-3 py-2 border border-border rounded-[6px] text-[14px] text-foreground placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-card resize-none" />
+        <Textarea value={data.marketingNotes} onChange={(e) => onChange({ marketingNotes: e.target.value })} rows={4} placeholder="Notes visible to marketing team…" />
       </SectionCard>
     </>
   );
@@ -765,21 +767,11 @@ export function HealthCenterAdminPage({
           <p className="text-sm font-medium text-muted-foreground leading-[14px] mb-4">
             {selectedCenter.city}, {selectedCenter.state}
           </p>
-          <div className="flex gap-0 -mb-px">
-            {TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => navigateToTab(tab)}
-                className={`px-4 py-2 text-[13px] font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  activeTab === tab
-                    ? 'border-[#fc6] text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+          <UnderlineTabs
+            items={TABS.map((tab) => ({ value: tab, label: tab }))}
+            active={activeTab}
+            onChange={(v) => navigateToTab(v as Tab)}
+          />
         </div>
 
         <div className="flex-1 overflow-auto px-[24px] py-6">
@@ -814,12 +806,11 @@ export function HealthCenterAdminPage({
             )}
             {activeTab === 'Notes' && (
               <SectionCard title="General Notes">
-                <textarea
+                <Textarea
                   value={selectedCenter.notes}
                   onChange={(e) => patchCenter(selectedCenter.name, 'notes', e.target.value as HealthCenter['notes'])}
                   rows={12}
                   placeholder="Enter any general notes about this health center…"
-                  className="w-full px-3 py-2 border border-border rounded-[6px] text-[14px] text-foreground placeholder:text-[#a1a1aa] focus:outline-none focus:border-[#fc6] transition-colors bg-card resize-none"
                 />
               </SectionCard>
             )}

@@ -26,15 +26,15 @@ export const DateChip = forwardRef<HTMLButtonElement, DateChipProps>(
           'inline-flex items-center gap-2 px-3 h-[36px] rounded-md text-[14px] transition-colors cursor-pointer',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6] focus-visible:ring-offset-1',
           highlighted
-            ? 'bg-white border border-[#fc6] text-[#18181b]'
-            : 'bg-white border border-[#e4e4e7] hover:border-[#cdd7e1]',
-          !hasValue && !highlighted && 'text-[#6b7280]',
+            ? 'bg-white dark:bg-[#1c1f26] border border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
+            : 'bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] hover:border-[#cdd7e1] dark:hover:border-[#3a4455]',
+          !hasValue && !highlighted && 'text-[#6b7280] dark:text-[#a1a1aa]',
           className
         )}
         {...props}
       >
-        <Calendar className="size-4 shrink-0 text-[#6b7280]" />
-        <span className={clsx(hasValue ? 'text-[#18181b]' : 'text-[#6b7280]')}>
+        <Calendar className="size-4 shrink-0 text-[#6b7280] dark:text-[#a1a1aa]" />
+        <span className={clsx(hasValue ? 'text-[#18181b] dark:text-[#f4f4f5]' : 'text-[#6b7280] dark:text-[#a1a1aa]')}>
           {value ?? placeholder}
         </span>
       </button>

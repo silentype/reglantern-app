@@ -6,7 +6,8 @@
  * /test/typography — same "pull from the real source" philosophy.
  */
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { Star, Inbox, Settings, User, LogOut } from 'lucide-react';
 
 import { Avatar } from '../components/design-system/Avatar';
@@ -14,7 +15,9 @@ import { AvatarStack } from '../components/design-system/AvatarStack';
 import { BackButton } from '../components/design-system/BackButton';
 import { Breadcrumb } from '../components/design-system/Breadcrumb';
 import { Button } from '../components/design-system/Button';
-import { Card, CardHeader, CardBody, CardFooter } from '../components/design-system/Card';
+import { Card } from '../components/design-system/Card';
+import { ProgressBar } from '../components/design-system/ProgressBar';
+import { MultiSelectFilterChip } from '../components/design-system/MultiSelectFilterChip';
 import { CommentItem } from '../components/design-system/CommentItem';
 import { DateChip } from '../components/design-system/DateChip';
 import { EmptyState } from '../components/design-system/EmptyState';
@@ -22,6 +25,8 @@ import { FileRow } from '../components/design-system/FileRow';
 import { FileUploadDropzone } from '../components/design-system/FileUploadDropzone';
 import { DocumentPreviewModal } from '../components/multi-file-upload-panel/DocumentPreviewModal';
 import { FilterChip } from '../components/design-system/FilterChip';
+import { Input } from '../components/design-system/Input';
+import { Textarea } from '../components/design-system/Textarea';
 import { PageHeader } from '../components/design-system/PageHeader';
 import { Pagination } from '../components/design-system/Pagination';
 import { Pill, type PillColor } from '../components/design-system/Pill';
@@ -29,6 +34,7 @@ import { SearchInput } from '../components/design-system/SearchInput';
 import { Select } from '../components/design-system/Select';
 import { StatusBadge, type TaskStatus } from '../components/design-system/StatusBadge';
 import { Tab, TabStrip } from '../components/design-system/Tab';
+import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
 import { TopNavButton } from '../components/design-system/TopNavButton';
 import { YesNoCard, type YesNoValue } from '../components/design-system/YesNoCard';
 
@@ -78,7 +84,7 @@ import {
 function SectionHeading({ children, source }: { children: ReactNode; source: string }) {
   return (
     <div className="mt-8 mb-3 first:mt-0 flex items-baseline justify-between gap-3">
-      <h2 className="text-[13px] font-semibold text-[#18181b]">{children}</h2>
+      <h2 className="text-[13px] font-semibold text-[#18181b] dark:text-[#f4f4f5]">{children}</h2>
       <code className="text-[11px] text-[#9ca3af]">{source}</code>
     </div>
   );
@@ -87,7 +93,7 @@ function SectionHeading({ children, source }: { children: ReactNode; source: str
 function Swatch({ children, dark }: { children: ReactNode; dark?: boolean }) {
   return (
     <div
-      className={`border border-[#e4e4e7] rounded-[6px] p-4 flex flex-wrap items-center gap-3 ${dark ? 'bg-[#32383e]' : 'bg-white'}`}
+      className={`border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] p-4 flex flex-wrap items-center gap-3 ${dark ? 'bg-[#32383e]' : 'bg-white dark:bg-[#1e2129]'}`}
     >
       {children}
     </div>
@@ -110,13 +116,37 @@ export function ComponentsPage() {
   const [taskCompleted, setTaskCompleted] = useState(false);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Force the Due Date Picker swatch open on load — its popover content
+  // (Quick Select / Custom Date / Calendar) is the point of the demo, not
+  // the trigger button, so it shouldn't require a click to see.
+  useEffect(() => {
+    if (searchParams.get('dueDateDemo') !== 'open') {
+      const params = new URLSearchParams(searchParams);
+      params.set('dueDateDemo', 'open');
+      setSearchParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [msfOpen, setMsfOpen] = useState(false);
+  const [msfSelected, setMsfSelected] = useState<string[]>(['all']);
+  const [inputValue, setInputValue] = useState('340B Pharmacy Compliance Audit');
+  const [textareaValue, setTextareaValue] = useState('');
+  const [underlineTab, setUnderlineTab] = useState('projects');
+  const toggleMsf = (value: string) => {
+    if (value === 'all') return setMsfSelected(['all']);
+    setMsfSelected((prev) => {
+      const next = prev.includes('all') ? [value] : prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value];
+      return next.length === 0 ? ['all'] : next;
+    });
+  };
 
   return (
-    <div className="h-full flex flex-col bg-[#f9fafb]">
-      <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] bg-white shrink-0">
-        <p className="text-[11px] font-medium text-[#6b7280] uppercase tracking-wide mb-[2px]">Test Page</p>
-        <h1 className="text-[20px] font-semibold text-[#18181b] leading-[28px]">Components</h1>
-        <p className="mt-[4px] text-[13px] text-[#6b7280]">
+    <div className="h-full flex flex-col bg-[#f9fafb] dark:bg-[#111318]">
+      <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#111318] shrink-0">
+        <p className="text-[11px] font-medium text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mb-[2px]">Test Page</p>
+        <h1 className="text-[20px] font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[28px]">Components</h1>
+        <p className="mt-[4px] text-[13px] text-[#6b7280] dark:text-[#a1a1aa]">
           Every design-system primitive, rendered live with real props — not screenshots.
         </p>
       </div>
@@ -124,10 +154,27 @@ export function ComponentsPage() {
       <div className="flex-1 overflow-auto px-[24px] py-6 max-w-[1000px]">
         <SectionHeading source="design-system/Avatar.tsx">Avatar</SectionHeading>
         <Swatch>
-          <Avatar initials="TF" name="Tim Freeman" size="sm" />
-          <Avatar initials="EC" name="Emily Chen" size="md" />
-          <Avatar initials="DB" name="David Brown" size="lg" />
-          <Avatar initials="RP" name="Robert Park" size="md" color="#fc6" />
+          <div className="flex flex-col items-center gap-2 text-center">
+            <Avatar initials="TF" name="Tim Freeman" size="sm" />
+            <span className="text-[11px] text-[#6b7280] max-w-[140px]">
+              <span className="font-semibold text-[#18181b] dark:text-[#f4f4f5]">sm</span> — inline list rows: task-table, Form 5A
+              assignee, side-panel file/subtask rows, TopNav dropdown rows
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <Avatar initials="EC" name="Emily Chen" size="md" />
+            <span className="text-[11px] text-[#6b7280] max-w-[140px]">
+              <span className="font-semibold text-[#18181b] dark:text-[#f4f4f5]">md</span> (default) — content byline: CommentItem
+              author avatar
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <Avatar initials="DB" name="David Brown" size="lg" />
+            <span className="text-[11px] text-[#6b7280] max-w-[140px]">
+              <span className="font-semibold text-[#18181b] dark:text-[#f4f4f5]">lg</span> — used once: the signed-in user's own
+              avatar button in TopNav
+            </span>
+          </div>
         </Swatch>
 
         <SectionHeading source="design-system/AvatarStack.tsx">Avatar Stack</SectionHeading>
@@ -172,18 +219,31 @@ export function ComponentsPage() {
 
         <SectionHeading source="design-system/Card.tsx">Card</SectionHeading>
         <Swatch>
-          <Card className="w-[260px]" elevated>
-            <CardHeader>
-              <p className="text-[14px] font-semibold text-[#18181b]">340B Pharmacy Audit</p>
-            </CardHeader>
-            <CardBody>
-              <p className="text-[13px] text-[#6b7280]">5 of 12 tasks complete</p>
-            </CardBody>
-            <CardFooter>
-              <span>Downtown Medical Center</span>
-              <StatusBadge status="In Progress" />
-            </CardFooter>
+          <Card interactive className="p-5 w-[280px] text-left">
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <p className="text-sm font-semibold text-[#18181b] dark:text-[#f4f4f5] truncate">340B Pharmacy Compliance Audit</p>
+            </div>
+            <ProgressBar done={5} total={12} color="#fc6" />
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <Pill color="yellow">In Progress</Pill>
+              <span className="text-xs text-[#6b7280] dark:text-[#a1a1aa] truncate text-right">Downtown Medical Center</span>
+            </div>
           </Card>
+          <span className="text-[12px] text-[#9ca3af] max-w-[280px]">
+            Matches the real project-card pattern on the Home page (HomePage.tsx) — plain Card + ProgressBar + status
+            Pill. Card also exports CardHeader/CardBody/CardFooter subcomponents, but nothing in the app actually
+            uses them yet — the one other real Card usage (Form5APage.tsx) is just `&lt;Card className="p-5"&gt;` with
+            its own hand-composed content, same as here.
+          </span>
+        </Swatch>
+
+        <SectionHeading source="design-system/ProgressBar.tsx">Progress Bar</SectionHeading>
+        <Swatch>
+          <div className="flex flex-col gap-3 w-full max-w-[280px]">
+            <ProgressBar done={0} total={8} color="#a1a1aa" />
+            <ProgressBar done={5} total={12} color="#fc6" />
+            <ProgressBar done={8} total={8} color="#16a34a" />
+          </div>
         </Swatch>
 
         <SectionHeading source="design-system/CommentItem.tsx">Comment Item</SectionHeading>
@@ -242,26 +302,51 @@ export function ComponentsPage() {
           </FilterChip>
         </Swatch>
 
-        <SectionHeading source="design-system/PageHeader.tsx">Page Header — with back button</SectionHeading>
+        <SectionHeading source="design-system/MultiSelectFilterChip.tsx">Multi-Select Filter Chip</SectionHeading>
         <Swatch>
-          <PageHeader
-            eyebrow={<BackButton onClick={() => {}}>Project Builder</BackButton>}
-            title="340B Pharmacy Compliance Audit"
-            description="Downtown Medical Center · Due 07/23/2026"
-            actions={<Button variant="primary">Save</Button>}
-            className="w-full"
+          <MultiSelectFilterChip
+            icon={<User className="h-3.5 w-3.5" />}
+            label="Assigned"
+            selected={msfSelected}
+            onToggle={toggleMsf}
+            open={msfOpen}
+            onOpenChange={setMsfOpen}
+            allLabel="All Users"
+            searchPlaceholder="Search users..."
+            options={[
+              { value: 'Tim Freeman', label: 'Tim Freeman' },
+              { value: 'Emily Chen', label: 'Emily Chen' },
+              { value: 'David Brown', label: 'David Brown' },
+            ]}
           />
         </Swatch>
 
+        <SectionHeading source="design-system/PageHeader.tsx">Page Header — with back button</SectionHeading>
+        <div className="border border-[#e4e4e7] rounded-[6px] overflow-hidden">
+          <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#111318]">
+            <PageHeader
+              eyebrow={<BackButton onClick={() => {}}>Project Builder</BackButton>}
+              title="340B Pharmacy Compliance Audit"
+              description="Downtown Medical Center · Due 07/23/2026"
+              actions={<Button variant="primary">Save</Button>}
+            />
+          </div>
+        </div>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          Shown inside the real page-chrome wrapper every page uses — px-[24px] pt-[24px] pb-[16px] border-b —
+          not just the raw component, since PageHeader is never used without it.
+        </p>
+
         <SectionHeading source="design-system/PageHeader.tsx">Page Header — without back button</SectionHeading>
-        <Swatch>
-          <PageHeader
-            title="Health Center Fields"
-            description="Global catalog of fields available to every project."
-            actions={<Button variant="primary">Add Field</Button>}
-            className="w-full"
-          />
-        </Swatch>
+        <div className="border border-[#e4e4e7] rounded-[6px] overflow-hidden">
+          <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#111318]">
+            <PageHeader
+              title="Health Center Fields"
+              description="Global catalog of fields available to every project."
+              actions={<Button variant="primary">Add Field</Button>}
+            />
+          </div>
+        </div>
 
         <SectionHeading source="design-system/Pagination.tsx">Pagination</SectionHeading>
         <Swatch>
@@ -291,7 +376,33 @@ export function ComponentsPage() {
             onClear={() => setSearch('')}
             placeholder="Search tasks…"
           />
-          <SearchInput size="md" placeholder="Search (md)…" />
+        </Swatch>
+
+        <SectionHeading source="design-system/Input.tsx">Input</SectionHeading>
+        <Swatch>
+          <div className="flex flex-wrap gap-4 w-full">
+            <Input
+              label="Project name"
+              required
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Project name"
+              containerClassName="w-[220px]"
+            />
+            <Input label="Locked field" value="Read-only value" disabled containerClassName="w-[220px]" />
+            <Input label="Project name" required error="Project name is required" value="" readOnly containerClassName="w-[220px]" />
+          </div>
+        </Swatch>
+
+        <SectionHeading source="design-system/Textarea.tsx">Textarea</SectionHeading>
+        <Swatch>
+          <Textarea
+            label="Description"
+            value={textareaValue}
+            onChange={(e) => setTextareaValue(e.target.value)}
+            placeholder="Add a description"
+            containerClassName="w-full max-w-[320px]"
+          />
         </Swatch>
 
         <SectionHeading source="design-system/Select.tsx">Select</SectionHeading>
@@ -321,6 +432,23 @@ export function ComponentsPage() {
           </TabStrip>
         </Swatch>
 
+        <SectionHeading source="design-system/UnderlineTabs.tsx">Underline Tabs</SectionHeading>
+        <Swatch>
+          <UnderlineTabs
+            className="w-full"
+            items={[
+              { value: 'projects', label: 'Projects' },
+              { value: 'health-centers', label: 'Health Centers' },
+            ]}
+            active={underlineTab}
+            onChange={setUnderlineTab}
+          />
+        </Swatch>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          Bottom-border style — distinct from the segmented-control Tab/TabStrip above. Used on Home (Projects /
+          Health Centers), Health Center Admin (detail tabs), and Compliance Review (Tasks / Preview).
+        </p>
+
         <SectionHeading source="design-system/TopNavButton.tsx">TopNav Button</SectionHeading>
         <Swatch dark>
           <TopNavButton active>Tasks</TopNavButton>
@@ -332,7 +460,7 @@ export function ComponentsPage() {
           <YesNoCard value={yesNo} onChange={setYesNo} />
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] uppercase tracking-wide mt-10 mb-3">App shell</h2>
+        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">App shell</h2>
 
         <SectionHeading source="components/TopNav.tsx">Top Navigation</SectionHeading>
         <div className="border border-[#e4e4e7] rounded-[6px] overflow-x-auto">
@@ -354,7 +482,7 @@ export function ComponentsPage() {
         </div>
 
         <SectionHeading source="components/SideNavigation.tsx">Side Navigation</SectionHeading>
-        <div className="px-4 py-3 border border-[#e4e4e7] rounded-[6px] bg-white text-[13px] text-[#6b7280]">
+        <div className="px-4 py-3 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1e2129] text-[13px] text-[#6b7280] dark:text-[#a1a1aa]">
           Not embedded live here — it renders with <code className="text-[12px]">fixed left-0 top-[80px]</code>{' '}
           positioning against the viewport (see <code className="text-[12px]">SideNavigation.tsx:149</code>), so a
           second instance would overlay this app&rsquo;s real left rail rather than sit inside this card. You&rsquo;re
@@ -373,14 +501,15 @@ export function ComponentsPage() {
           <SaveIndicator status="saved" />
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] uppercase tracking-wide mt-10 mb-3">Date selection</h2>
+        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">Date selection</h2>
 
         <SectionHeading source="components/DueDatePicker.tsx">Due Date Picker</SectionHeading>
         <Swatch>
           <DueDatePicker
             value={dueDateValue}
             onSelect={setDueDateValue}
-            triggerClassName="flex items-center gap-1 px-3 py-1.5 border border-[#e4e4e7] rounded-[6px] text-[13px] text-[#18181b] bg-white"
+            triggerClassName="flex items-center gap-1 px-3 py-1.5 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] text-[13px] text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26]"
+            urlParam="dueDateDemo"
           />
         </Swatch>
 
@@ -397,7 +526,14 @@ export function ComponentsPage() {
 
         <SectionHeading source="components/ui/calendar.tsx">Calendar (Radix / react-day-picker)</SectionHeading>
         <Swatch>
-          <UICalendar mode="single" className="border border-[#e4e4e7] rounded-[6px] bg-white" />
+          <UIPopover>
+            <UIPopoverTrigger asChild>
+              <Button variant="secondary" size="sm">Open calendar</Button>
+            </UIPopoverTrigger>
+            <UIPopoverContent className="w-auto p-0" align="start">
+              <UICalendar mode="single" className="bg-white dark:bg-[#1c1f26]" />
+            </UIPopoverContent>
+          </UIPopover>
         </Swatch>
 
         <SectionHeading source="components/ui/popover.tsx">Popover (Radix)</SectionHeading>
@@ -406,14 +542,14 @@ export function ComponentsPage() {
             <UIPopoverTrigger asChild>
               <Button variant="secondary" size="sm">Open popover</Button>
             </UIPopoverTrigger>
-            <UIPopoverContent className="text-[13px] text-[#18181b]">
+            <UIPopoverContent className="text-[13px] text-[#18181b] dark:text-[#f4f4f5]">
               Generic floating content anchored to its trigger — the base primitive
               behind <code className="text-[12px]">DueDatePicker</code>.
             </UIPopoverContent>
           </UIPopover>
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] uppercase tracking-wide mt-10 mb-3">Dropdown &amp; input primitives (Radix)</h2>
+        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">Dropdown &amp; input primitives (Radix)</h2>
 
         <SectionHeading source="components/ui/dropdown-menu.tsx">Dropdown Menu</SectionHeading>
         <Swatch>
@@ -471,7 +607,7 @@ export function ComponentsPage() {
           </UICommand>
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] uppercase tracking-wide mt-10 mb-3">Task table primitives</h2>
+        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">Task table primitives</h2>
 
         <SectionHeading source="task-table/UserAvatar.tsx">User Avatar (row-level)</SectionHeading>
         <Swatch>
@@ -499,7 +635,7 @@ export function ComponentsPage() {
 
         <SectionHeading source="task-table/QuickDateButton.tsx">Quick Date Button</SectionHeading>
         <Swatch>
-          <div className="w-[140px] bg-white">
+          <div className="w-[140px] bg-white dark:bg-[#1c1f26]">
             <QuickDateButton label="Today" onClick={() => {}} />
             <QuickDateButton label="In 7 days" onClick={() => {}} />
           </div>
@@ -518,10 +654,10 @@ export function ComponentsPage() {
           <DueDateBadge ruleBroken ruleSummary="7 days after Kickoff" onOpenChange={() => {}} />
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] uppercase tracking-wide mt-10 mb-3">Task overlay panel</h2>
+        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">Task overlay panel</h2>
 
         <SectionHeading source="components/MultiFileUploadPanel.tsx">Task Overlay Panel</SectionHeading>
-        <div className="px-4 py-3 border border-[#e4e4e7] rounded-[6px] bg-white text-[13px] text-[#6b7280]">
+        <div className="px-4 py-3 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1e2129] text-[13px] text-[#6b7280] dark:text-[#a1a1aa]">
           The right-hand sliding panel itself isn&rsquo;t embedded here — like Side Navigation, it&rsquo;s a
           fixed-position, full-height overlay (and, per <code className="text-[12px]">CLAUDE.md</code>, still a
           ~1,500-line god component composing its own file-upload, subtask, and comment state) rather than a small

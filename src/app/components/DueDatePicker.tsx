@@ -93,8 +93,8 @@ export function DueDatePicker({
           className={triggerClassName}
           onClick={(e) => e.stopPropagation()}
         >
-          {displayValue || (value ? value : <span className="text-[#6b7280]">{placeholder}</span>)}
-          <ChevronDown className="size-[16px] text-[#6b7280] ml-1" />
+          {displayValue || (value ? value : <span className="text-[#6b7280] dark:text-[#a1a1aa]">{placeholder}</span>)}
+          <ChevronDown className="size-[16px] text-[#6b7280] dark:text-[#a1a1aa] ml-1" />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -104,7 +104,7 @@ export function DueDatePicker({
         collisionPadding={16}
       >
         {relative && (
-          <div className="sticky top-0 z-10 bg-white px-3 pt-3 pb-2 border-b border-[#e4e4e7]">
+          <div className="sticky top-0 z-10 bg-white dark:bg-[#1e2129] px-3 pt-3 pb-2 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
             <TabStrip>
               <Tab active={dateMode === 'relative'} onClick={() => setDateMode('relative')}>
                 Relative to
@@ -132,11 +132,11 @@ export function DueDatePicker({
         ) : (
         <div className="flex">
           {/* Left Side - Quick Select */}
-          <div className="p-3 border-r border-[#e4e4e7] w-[180px]">
-            <div className="text-xs font-semibold text-[#18181b] mb-2">Quick Select</div>
+          <div className="p-3 border-r border-[#e4e4e7] dark:border-[#2a2f3a] w-[180px]">
+            <div className="text-xs font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Quick Select</div>
             <div className="flex flex-col gap-1">
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addDays(new Date(), 7), 'MM/dd/yyyy');
                   onSelect('7d');
@@ -147,7 +147,7 @@ export function DueDatePicker({
                 Within 7 days
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addDays(new Date(), 14), 'MM/dd/yyyy');
                   onSelect('14d');
@@ -158,7 +158,7 @@ export function DueDatePicker({
                 Within 14 days
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addMonths(new Date(), 1), 'MM/dd/yyyy');
                   onSelect('1m');
@@ -169,7 +169,7 @@ export function DueDatePicker({
                 Within 1 month
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addMonths(new Date(), 3), 'MM/dd/yyyy');
                   onSelect('3m');
@@ -180,7 +180,7 @@ export function DueDatePicker({
                 Within 3 months
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addMonths(new Date(), 6), 'MM/dd/yyyy');
                   onSelect('6m');
@@ -191,7 +191,7 @@ export function DueDatePicker({
                 Within 6 months
               </button>
               <button
-                className="w-full text-left px-3 py-2 text-xs bg-white hover:bg-[#f4f4f5] rounded transition-colors"
+                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
                 onClick={() => {
                   const newDate = format(addYears(new Date(), 1), 'MM/dd/yyyy');
                   onSelect('1y');
@@ -207,8 +207,8 @@ export function DueDatePicker({
           {/* Right Side - Type Date & Calendar */}
           <div className="flex flex-col">
             {/* Manual Input */}
-            <div className="p-3 border-b border-[#e4e4e7]">
-              <div className="text-xs font-semibold text-[#18181b] mb-2">Custom Date</div>
+            <div className="p-3 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+              <div className="text-xs font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Custom Date</div>
               <input
                 ref={inputRef}
                 type="text"
@@ -233,7 +233,7 @@ export function DueDatePicker({
                 }}
                 placeholder="mm/dd/yyyy"
                 maxLength={10}
-                className="w-full px-3 py-2 text-sm border border-[#e4e4e7] rounded focus:outline-none focus:border-[#fc6]"
+                className="w-full px-3 py-2 text-sm text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded focus:outline-none focus:border-[#fc6]"
               />
             </div>
 

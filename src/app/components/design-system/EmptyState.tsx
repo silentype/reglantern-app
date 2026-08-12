@@ -23,13 +23,13 @@ export function EmptyState({ title, description, icon, action, className }: Empt
     <div
       className={clsx(
         'flex flex-col items-center justify-center text-center gap-2 py-12 px-6',
-        'border border-[#e4e4e7] rounded-lg bg-[#f9fafb] text-[#6b7280]',
+        'border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-lg bg-[#f9fafb] dark:bg-[#111318] text-[#6b7280] dark:text-[#a1a1aa]',
         className
       )}
     >
       {icon && <div className="text-[#9ca3af] mb-1" aria-hidden="true">{icon}</div>}
-      <p className="text-sm font-light text-[#6b7280] leading-[16px]">{title}</p>
-      {description && <p className="text-sm font-light text-[#6b7280] leading-[16px] max-w-sm">{description}</p>}
+      <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px]">{title}</p>
+      {description && <p className="text-sm font-light text-[#6b7280] dark:text-[#a1a1aa] leading-[16px] max-w-sm">{description}</p>}
       {action && <div className="mt-2">{action}</div>}
     </div>
   );

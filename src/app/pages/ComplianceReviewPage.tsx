@@ -10,7 +10,10 @@ import { Pagination } from '../components/design-system/Pagination';
 import { UserAvatar } from '../components/task-table/UserAvatar';
 import { FileRow } from '../components/design-system/FileRow';
 import { BackButton } from '../components/design-system/BackButton';
+import { Breadcrumb } from '../components/design-system/Breadcrumb';
+import { Textarea } from '../components/design-system/Textarea';
 import { SearchInput } from '../components/design-system/SearchInput';
+import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
 import { getFileType } from '../components/multi-file-upload-panel/helpers';
 import type { UploadedFile } from '../components/multi-file-upload-panel/types';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -446,30 +449,10 @@ export function ComplianceReviewPage() {
           {currentQuestion ? (
             <div className="max-w-2xl">
               {/* Breadcrumb */}
-              <div className="flex gap-[10px] items-center mb-3 flex-wrap">
-                {currentQuestion.breadcrumb.split(' > ').map((part, index, arr) => (
-                  <div key={index} className="flex gap-[10px] items-center">
-                    <p
-                      className="font-normal text-[14px] leading-[20px] whitespace-nowrap"
-                      style={{ color: index === arr.length - 1 ? '#18181b' : '#6b7280' }}
-                    >
-                      {part}
-                    </p>
-                    {index < arr.length - 1 && (
-                      <div className="size-[24px] flex items-center justify-center">
-                        <svg className="block size-[8px]" fill="none" viewBox="0 0 8 14">
-                          <path
-                            clipRule="evenodd"
-                            d="M0.292893 0.292893C0.683418 -0.0976311 1.31658 -0.0976311 1.70711 0.292893L7.70711 6.29289C8.09763 6.68342 8.09763 7.31658 7.70711 7.70711L1.70711 13.7071C1.31658 14.0976 0.683418 14.0976 0.292893 13.7071C-0.0976311 13.3166 -0.0976311 12.6834 0.292893 12.2929L5.58579 7L0.292893 1.70711C-0.0976311 1.31658 -0.0976311 0.683418 0.292893 0.292893Z"
-                            fill="#6b7280"
-                            fillRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <Breadcrumb
+                className="mb-3 flex-wrap"
+                items={currentQuestion.breadcrumb.split(' > ').map((part) => ({ label: part }))}
+              />
 
               {/* Question */}
               <h2 className="text-[22px] font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-4">{currentQuestion.text}</h2>
@@ -480,17 +463,17 @@ export function ComplianceReviewPage() {
                   onClick={() => handleAnswerChange('yes')}
                   className={`flex items-center gap-3 px-5 py-3 rounded-lg border-2 transition-all ${
                     currentAnswer?.answer === 'yes'
-                      ? 'border-green-500 bg-green-50 dark:bg-green-950/30'
+                      ? 'border-[#16a34a] bg-[#dcfce7] dark:bg-[#2a3a2a]'
                       : 'border-[#e4e4e7] dark:border-[#2a2f3a] hover:border-[#d4d4d8] dark:hover:border-[#3f4756]'
                   }`}
                 >
                   <div
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      currentAnswer?.answer === 'yes' ? 'border-green-500' : 'border-[#6b7280]'
+                      currentAnswer?.answer === 'yes' ? 'border-[#16a34a]' : 'border-[#6b7280]'
                     }`}
                   >
                     {currentAnswer?.answer === 'yes' && (
-                      <div className="w-3 h-3 rounded-full bg-green-500" />
+                      <div className="w-3 h-3 rounded-full bg-[#16a34a]" />
                     )}
                   </div>
                   <span className="font-medium text-[#18181b] dark:text-[#f4f4f5]">Yes</span>
@@ -500,17 +483,17 @@ export function ComplianceReviewPage() {
                   onClick={() => handleAnswerChange('no')}
                   className={`flex items-center gap-3 px-5 py-3 rounded-lg border-2 transition-all ${
                     currentAnswer?.answer === 'no'
-                      ? 'border-red-500 bg-red-50 dark:bg-red-950/30'
+                      ? 'border-[#dc2626] bg-[#fef2f2] dark:bg-[#2d1010]'
                       : 'border-[#e4e4e7] dark:border-[#2a2f3a] hover:border-[#d4d4d8] dark:hover:border-[#3f4756]'
                   }`}
                 >
                   <div
                     className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      currentAnswer?.answer === 'no' ? 'border-red-500' : 'border-[#6b7280]'
+                      currentAnswer?.answer === 'no' ? 'border-[#dc2626]' : 'border-[#6b7280]'
                     }`}
                   >
                     {currentAnswer?.answer === 'no' && (
-                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <div className="w-3 h-3 rounded-full bg-[#dc2626]" />
                     )}
                   </div>
                   <span className="font-medium text-[#18181b] dark:text-[#f4f4f5]">No</span>
@@ -518,15 +501,14 @@ export function ComplianceReviewPage() {
               </div>
 
               {/* Explanation */}
-              <div className="mb-5">
-                <label className="block text-[13px] font-medium text-[#6b7280] dark:text-[#a1a1aa] mb-1.5">Explanation</label>
-                <textarea
-                  value={currentAnswer?.explanation || ''}
-                  onChange={(e) => handleExplanationChange(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-[#e4e4e7] dark:border-[#2a2f3a] dark:bg-[#1c1f26] dark:text-[#f4f4f5] rounded-lg focus:outline-none focus:border-[#fc6] transition-colors text-[14px] min-h-[100px]"
-                  placeholder="Provide additional context or explanation..."
-                />
-              </div>
+              <Textarea
+                label="Explanation"
+                value={currentAnswer?.explanation || ''}
+                onChange={(e) => handleExplanationChange(e.target.value)}
+                placeholder="Provide additional context or explanation..."
+                className="min-h-[100px]"
+                containerClassName="mb-5"
+              />
 
               {/* Progress + Pagination */}
               <div className="pt-4 border-t border-[#e4e4e7] dark:border-[#2a2f3a]">
@@ -584,28 +566,14 @@ export function ComplianceReviewPage() {
           {/* Tab bar + filters */}
           <div className="flex-none border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#1e2129]">
             <div className="flex items-center px-4 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
-              <button
-                onClick={() => setRightTab('tasks')}
-                className={`py-2.5 px-4 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
-                  rightTab === 'tasks'
-                    ? 'border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
-                    : 'border-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5]'
-                }`}
-              >
-                Tasks
-              </button>
-              {previewFile && (
-                <button
-                  onClick={() => setRightTab('preview')}
-                  className={`py-2.5 px-4 text-[13px] font-medium border-b-2 -mb-px transition-colors ${
-                    rightTab === 'preview'
-                      ? 'border-[#fc6] text-[#18181b] dark:text-[#f4f4f5]'
-                      : 'border-transparent text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5]'
-                  }`}
-                >
-                  {previewFile.name}
-                </button>
-              )}
+              <UnderlineTabs
+                items={[
+                  { value: 'tasks', label: 'Tasks' },
+                  ...(previewFile ? [{ value: 'preview', label: previewFile.name }] : []),
+                ]}
+                active={rightTab}
+                onChange={(v) => setRightTab(v as 'tasks' | 'preview')}
+              />
               <div className="ml-auto shrink-0 py-1.5">
                 <button
                   onClick={handleDownloadAll}

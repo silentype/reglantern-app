@@ -28,19 +28,19 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
           <button
             type="button"
             onClick={item.onClick}
-            className="text-[#6b7280] hover:text-[#18181b] transition-colors focus:outline-none focus-visible:underline"
+            className="text-[14px] font-medium text-[#6b7280] dark:text-[#a1a1aa] hover:text-[#18181b] dark:hover:text-[#f4f4f5] transition-colors focus:outline-none focus-visible:underline"
           >
             {item.label}
           </button>
         ) : (
-          <span className={isLast ? 'text-[#18181b] font-medium' : 'text-[#6b7280]'}>
+          <span className={clsx('text-[14px] font-medium', isLast ? 'text-[#18181b] dark:text-[#f4f4f5]' : 'text-[#6b7280] dark:text-[#a1a1aa]')}>
             {item.label}
           </span>
         );
         return (
           <Fragment key={i}>
             {content}
-            {!isLast && <ChevronRight className="size-4 text-[#cdd7e1]" aria-hidden />}
+            {!isLast && <ChevronRight className="size-4 text-[#cdd7e1] dark:text-[#2a2f3a]" aria-hidden />}
           </Fragment>
         );
       })}
