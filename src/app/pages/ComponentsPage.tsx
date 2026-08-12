@@ -4,39 +4,50 @@
  * Live catalog of every design-system primitive in src/app/components/design-system/,
  * rendered with real props rather than screenshots. Companion to /test/colors and
  * /test/typography — same "pull from the real source" philosophy.
+ *
+ * Grouped by purpose (Actions, Form Fields, Selection & Filters, Navigation,
+ * Status & Progress, People & Comments, Layout & Content, Files), not alphabetically —
+ * same grouping approach as the app-shell/task-table sections further down the page.
  */
 
 import { ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { Star, Inbox, Settings, User, LogOut } from 'lucide-react';
 
+import { Button } from '../components/design-system/Button';
+import { BackButton } from '../components/design-system/BackButton';
+import { TopNavButton } from '../components/design-system/TopNavButton';
+
+import { Input } from '../components/design-system/Input';
+import { Textarea } from '../components/design-system/Textarea';
+import { Select } from '../components/design-system/Select';
+import { SearchInput } from '../components/design-system/SearchInput';
+import { DateChip } from '../components/design-system/DateChip';
+
+import { FilterChip } from '../components/design-system/FilterChip';
+import { MultiSelectFilterChip } from '../components/design-system/MultiSelectFilterChip';
+import { YesNoCard, type YesNoValue } from '../components/design-system/YesNoCard';
+
+import { Breadcrumb } from '../components/design-system/Breadcrumb';
+import { Pagination } from '../components/design-system/Pagination';
+import { Tab, TabStrip } from '../components/design-system/Tab';
+import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
+
+import { Pill, type PillColor } from '../components/design-system/Pill';
+import { StatusBadge, type TaskStatus } from '../components/design-system/StatusBadge';
+import { ProgressBar } from '../components/design-system/ProgressBar';
+
 import { Avatar } from '../components/design-system/Avatar';
 import { AvatarStack } from '../components/design-system/AvatarStack';
-import { BackButton } from '../components/design-system/BackButton';
-import { Breadcrumb } from '../components/design-system/Breadcrumb';
-import { Button } from '../components/design-system/Button';
-import { Card } from '../components/design-system/Card';
-import { ProgressBar } from '../components/design-system/ProgressBar';
-import { MultiSelectFilterChip } from '../components/design-system/MultiSelectFilterChip';
 import { CommentItem } from '../components/design-system/CommentItem';
-import { DateChip } from '../components/design-system/DateChip';
+
+import { Card } from '../components/design-system/Card';
+import { PageHeader } from '../components/design-system/PageHeader';
 import { EmptyState } from '../components/design-system/EmptyState';
+
 import { FileRow } from '../components/design-system/FileRow';
 import { FileUploadDropzone } from '../components/design-system/FileUploadDropzone';
 import { DocumentPreviewModal } from '../components/multi-file-upload-panel/DocumentPreviewModal';
-import { FilterChip } from '../components/design-system/FilterChip';
-import { Input } from '../components/design-system/Input';
-import { Textarea } from '../components/design-system/Textarea';
-import { PageHeader } from '../components/design-system/PageHeader';
-import { Pagination } from '../components/design-system/Pagination';
-import { Pill, type PillColor } from '../components/design-system/Pill';
-import { SearchInput } from '../components/design-system/SearchInput';
-import { Select } from '../components/design-system/Select';
-import { StatusBadge, type TaskStatus } from '../components/design-system/StatusBadge';
-import { Tab, TabStrip } from '../components/design-system/Tab';
-import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
-import { TopNavButton } from '../components/design-system/TopNavButton';
-import { YesNoCard, type YesNoValue } from '../components/design-system/YesNoCard';
 
 import { TopNav } from '../components/TopNav';
 import { TasksHeader } from '../components/TasksHeader';
@@ -81,9 +92,17 @@ import {
   CommandItem as UICommandItem,
 } from '../components/ui/command';
 
+function GroupHeading({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3 first:mt-0">
+      {children}
+    </h2>
+  );
+}
+
 function SectionHeading({ children, source }: { children: ReactNode; source: string }) {
   return (
-    <div className="mt-8 mb-3 first:mt-0 flex items-baseline justify-between gap-3">
+    <div className="mt-8 mb-3 flex items-baseline justify-between gap-3">
       <h2 className="text-[13px] font-semibold text-[#18181b] dark:text-[#f4f4f5]">{children}</h2>
       <code className="text-[11px] text-[#9ca3af]">{source}</code>
     </div>
@@ -152,6 +171,201 @@ export function ComponentsPage() {
       </div>
 
       <div className="flex-1 overflow-auto px-[24px] py-6 max-w-[1000px]">
+        <GroupHeading>Actions</GroupHeading>
+
+        <SectionHeading source="design-system/Button.tsx">Button</SectionHeading>
+        <Swatch>
+          <Button variant="primary">Primary</Button>
+          <Button variant="secondary">Secondary</Button>
+          <Button variant="ghost">Ghost</Button>
+          <Button variant="danger">Danger</Button>
+          <Button variant="primary" size="sm">Small</Button>
+          <Button variant="primary" disabled>Disabled</Button>
+        </Swatch>
+
+        <SectionHeading source="design-system/BackButton.tsx">Back Button</SectionHeading>
+        <Swatch>
+          <BackButton onClick={() => {}}>Project Builder</BackButton>
+        </Swatch>
+
+        <SectionHeading source="design-system/TopNavButton.tsx">TopNav Button</SectionHeading>
+        <Swatch dark>
+          <TopNavButton active>Tasks</TopNavButton>
+          <TopNavButton>Admin</TopNavButton>
+        </Swatch>
+
+        <GroupHeading>Form Fields</GroupHeading>
+
+        <SectionHeading source="design-system/Input.tsx">Input</SectionHeading>
+        <Swatch>
+          <div className="flex flex-wrap gap-4 w-full">
+            <Input
+              label="Project name"
+              required
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Project name"
+              containerClassName="w-[220px]"
+            />
+            <Input label="Locked field" value="Read-only value" disabled containerClassName="w-[220px]" />
+            <Input label="Project name" required error="Project name is required" value="" readOnly containerClassName="w-[220px]" />
+          </div>
+        </Swatch>
+
+        <SectionHeading source="design-system/Textarea.tsx">Textarea</SectionHeading>
+        <Swatch>
+          <Textarea
+            label="Description"
+            value={textareaValue}
+            onChange={(e) => setTextareaValue(e.target.value)}
+            placeholder="Add a description"
+            containerClassName="w-full max-w-[320px]"
+          />
+        </Swatch>
+
+        <SectionHeading source="design-system/Select.tsx">Select</SectionHeading>
+        <Swatch>
+          <Select value={selectValue} onChange={(e) => setSelectValue(e.target.value)} className="w-[200px]">
+            <option value="clinical">Clinical</option>
+            <option value="fiscal">Fiscal</option>
+            <option value="governance">Governance</option>
+          </Select>
+        </Swatch>
+
+        <SectionHeading source="design-system/SearchInput.tsx">Search Input</SectionHeading>
+        <Swatch>
+          <SearchInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onClear={() => setSearch('')}
+            placeholder="Search tasks…"
+          />
+        </Swatch>
+
+        <SectionHeading source="design-system/DateChip.tsx">Date Chip</SectionHeading>
+        <Swatch>
+          <DateChip value="07/23/2026" onClick={() => {}} />
+          <DateChip placeholder="Select Date" onClick={() => {}} />
+          <DateChip value="07/23/2026" highlighted onClick={() => {}} />
+        </Swatch>
+
+        <GroupHeading>Selection &amp; Filters</GroupHeading>
+
+        <SectionHeading source="design-system/FilterChip.tsx">Filter Chip</SectionHeading>
+        <Swatch>
+          <FilterChip active={filterActive} count={12} onClick={() => setFilterActive((v) => !v)}>
+            In Progress
+          </FilterChip>
+          <FilterChip active={!filterActive} count={4} onClick={() => setFilterActive((v) => !v)}>
+            Complete
+          </FilterChip>
+        </Swatch>
+
+        <SectionHeading source="design-system/MultiSelectFilterChip.tsx">Multi-Select Filter Chip</SectionHeading>
+        <Swatch>
+          <MultiSelectFilterChip
+            icon={<User className="h-3.5 w-3.5" />}
+            label="Assigned"
+            selected={msfSelected}
+            onToggle={toggleMsf}
+            open={msfOpen}
+            onOpenChange={setMsfOpen}
+            allLabel="All Users"
+            searchPlaceholder="Search users..."
+            options={[
+              { value: 'Tim Freeman', label: 'Tim Freeman' },
+              { value: 'Emily Chen', label: 'Emily Chen' },
+              { value: 'David Brown', label: 'David Brown' },
+            ]}
+          />
+        </Swatch>
+
+        <SectionHeading source="design-system/YesNoCard.tsx">Yes / No Card</SectionHeading>
+        <Swatch>
+          <YesNoCard value={yesNo} onChange={setYesNo} />
+        </Swatch>
+
+        <GroupHeading>Navigation</GroupHeading>
+
+        <SectionHeading source="design-system/Breadcrumb.tsx">Breadcrumb</SectionHeading>
+        <Swatch>
+          <Breadcrumb
+            items={[
+              { label: 'Chapter 3', onClick: () => {} },
+              { label: 'Element b', onClick: () => {} },
+              { label: 'Meeting Minutes' },
+            ]}
+          />
+        </Swatch>
+
+        <SectionHeading source="design-system/Pagination.tsx">Pagination</SectionHeading>
+        <Swatch>
+          <Pagination
+            current={page}
+            total={6}
+            onPrev={() => setPage((p) => Math.max(1, p - 1))}
+            onNext={() => setPage((p) => Math.min(6, p + 1))}
+            className="w-full"
+          />
+        </Swatch>
+
+        <SectionHeading source="design-system/Tab.tsx">Tab / Tab Strip</SectionHeading>
+        <Swatch>
+          <TabStrip className="w-full max-w-[360px]">
+            {['details', 'comments', 'activity'].map((t) => (
+              <Tab key={t} active={activeTab === t} onClick={() => setActiveTab(t)}>
+                {t[0].toUpperCase() + t.slice(1)}
+              </Tab>
+            ))}
+          </TabStrip>
+        </Swatch>
+
+        <SectionHeading source="design-system/UnderlineTabs.tsx">Underline Tabs</SectionHeading>
+        <Swatch>
+          <UnderlineTabs
+            className="w-full"
+            items={[
+              { value: 'projects', label: 'Projects' },
+              { value: 'health-centers', label: 'Health Centers' },
+            ]}
+            active={underlineTab}
+            onChange={setUnderlineTab}
+          />
+        </Swatch>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          Bottom-border style — distinct from the segmented-control Tab/TabStrip above. Used on Home (Projects /
+          Health Centers), Health Center Admin (detail tabs), and Compliance Review (Tasks / Preview).
+        </p>
+
+        <GroupHeading>Status &amp; Progress</GroupHeading>
+
+        <SectionHeading source="design-system/Pill.tsx">Pill</SectionHeading>
+        <Swatch>
+          {PILL_COLORS.map((c) => (
+            <Pill key={c} color={c}>
+              {c[0].toUpperCase() + c.slice(1)}
+            </Pill>
+          ))}
+        </Swatch>
+
+        <SectionHeading source="design-system/StatusBadge.tsx">Status Badge</SectionHeading>
+        <Swatch>
+          {STATUSES.map((s) => (
+            <StatusBadge key={s} status={s} />
+          ))}
+        </Swatch>
+
+        <SectionHeading source="design-system/ProgressBar.tsx">Progress Bar</SectionHeading>
+        <Swatch>
+          <div className="flex flex-col gap-3 w-full max-w-[280px]">
+            <ProgressBar done={0} total={8} color="#a1a1aa" />
+            <ProgressBar done={5} total={12} color="#fc6" />
+            <ProgressBar done={8} total={8} color="#16a34a" />
+          </div>
+        </Swatch>
+
+        <GroupHeading>People &amp; Comments</GroupHeading>
+
         <SectionHeading source="design-system/Avatar.tsx">Avatar</SectionHeading>
         <Swatch>
           <div className="flex flex-col items-center gap-2 text-center">
@@ -191,31 +405,14 @@ export function ComponentsPage() {
           />
         </Swatch>
 
-        <SectionHeading source="design-system/BackButton.tsx">Back Button</SectionHeading>
+        <SectionHeading source="design-system/CommentItem.tsx">Comment Item</SectionHeading>
         <Swatch>
-          <BackButton onClick={() => {}}>Project Builder</BackButton>
+          <CommentItem author={{ initials: 'TF', name: 'Tim Freeman' }} timestamp="2h ago">
+            Uploaded the revised policy doc — ready for another look.
+          </CommentItem>
         </Swatch>
 
-        <SectionHeading source="design-system/Breadcrumb.tsx">Breadcrumb</SectionHeading>
-        <Swatch>
-          <Breadcrumb
-            items={[
-              { label: 'Chapter 3', onClick: () => {} },
-              { label: 'Element b', onClick: () => {} },
-              { label: 'Meeting Minutes' },
-            ]}
-          />
-        </Swatch>
-
-        <SectionHeading source="design-system/Button.tsx">Button</SectionHeading>
-        <Swatch>
-          <Button variant="primary">Primary</Button>
-          <Button variant="secondary">Secondary</Button>
-          <Button variant="ghost">Ghost</Button>
-          <Button variant="danger">Danger</Button>
-          <Button variant="primary" size="sm">Small</Button>
-          <Button variant="primary" disabled>Disabled</Button>
-        </Swatch>
+        <GroupHeading>Layout &amp; Content</GroupHeading>
 
         <SectionHeading source="design-system/Card.tsx">Card</SectionHeading>
         <Swatch>
@@ -235,90 +432,6 @@ export function ComponentsPage() {
             uses them yet — the one other real Card usage (Form5APage.tsx) is just `&lt;Card className="p-5"&gt;` with
             its own hand-composed content, same as here.
           </span>
-        </Swatch>
-
-        <SectionHeading source="design-system/ProgressBar.tsx">Progress Bar</SectionHeading>
-        <Swatch>
-          <div className="flex flex-col gap-3 w-full max-w-[280px]">
-            <ProgressBar done={0} total={8} color="#a1a1aa" />
-            <ProgressBar done={5} total={12} color="#fc6" />
-            <ProgressBar done={8} total={8} color="#16a34a" />
-          </div>
-        </Swatch>
-
-        <SectionHeading source="design-system/CommentItem.tsx">Comment Item</SectionHeading>
-        <Swatch>
-          <CommentItem author={{ initials: 'TF', name: 'Tim Freeman' }} timestamp="2h ago">
-            Uploaded the revised policy doc — ready for another look.
-          </CommentItem>
-        </Swatch>
-
-        <SectionHeading source="design-system/DateChip.tsx">Date Chip</SectionHeading>
-        <Swatch>
-          <DateChip value="07/23/2026" onClick={() => {}} />
-          <DateChip placeholder="Select Date" onClick={() => {}} />
-          <DateChip value="07/23/2026" highlighted onClick={() => {}} />
-        </Swatch>
-
-        <SectionHeading source="design-system/EmptyState.tsx">Empty State</SectionHeading>
-        <Swatch>
-          <EmptyState
-            icon={<Inbox className="size-6" />}
-            title="No comments yet"
-            description="Comments left on this task will show up here."
-            action={<Button variant="secondary" size="sm">Add comment</Button>}
-            className="w-full"
-          />
-        </Swatch>
-
-        <SectionHeading source="design-system/FileRow.tsx">File Row</SectionHeading>
-        <Swatch>
-          <FileRow
-            name="Site-Visit-Protocol.pdf"
-            size={482_000}
-            category="Documentation"
-            onPreview={() => {}}
-            onDownload={() => {}}
-            onDelete={() => {}}
-            className="w-full"
-          />
-        </Swatch>
-
-        <SectionHeading source="design-system/FileUploadDropzone.tsx">File Upload Dropzone</SectionHeading>
-        <Swatch>
-          <FileUploadDropzone onFiles={() => {}} className="w-full" />
-        </Swatch>
-        <Swatch>
-          <FileUploadDropzone onFiles={() => {}} compact className="w-full" />
-        </Swatch>
-
-        <SectionHeading source="design-system/FilterChip.tsx">Filter Chip</SectionHeading>
-        <Swatch>
-          <FilterChip active={filterActive} count={12} onClick={() => setFilterActive((v) => !v)}>
-            In Progress
-          </FilterChip>
-          <FilterChip active={!filterActive} count={4} onClick={() => setFilterActive((v) => !v)}>
-            Complete
-          </FilterChip>
-        </Swatch>
-
-        <SectionHeading source="design-system/MultiSelectFilterChip.tsx">Multi-Select Filter Chip</SectionHeading>
-        <Swatch>
-          <MultiSelectFilterChip
-            icon={<User className="h-3.5 w-3.5" />}
-            label="Assigned"
-            selected={msfSelected}
-            onToggle={toggleMsf}
-            open={msfOpen}
-            onOpenChange={setMsfOpen}
-            allLabel="All Users"
-            searchPlaceholder="Search users..."
-            options={[
-              { value: 'Tim Freeman', label: 'Tim Freeman' },
-              { value: 'Emily Chen', label: 'Emily Chen' },
-              { value: 'David Brown', label: 'David Brown' },
-            ]}
-          />
         </Swatch>
 
         <SectionHeading source="design-system/PageHeader.tsx">Page Header — with back button</SectionHeading>
@@ -348,119 +461,41 @@ export function ComponentsPage() {
           </div>
         </div>
 
-        <SectionHeading source="design-system/Pagination.tsx">Pagination</SectionHeading>
+        <SectionHeading source="design-system/EmptyState.tsx">Empty State</SectionHeading>
         <Swatch>
-          <Pagination
-            current={page}
-            total={6}
-            onPrev={() => setPage((p) => Math.max(1, p - 1))}
-            onNext={() => setPage((p) => Math.min(6, p + 1))}
+          <EmptyState
+            icon={<Inbox className="size-6" />}
+            title="No comments yet"
+            description="Comments left on this task will show up here."
+            action={<Button variant="secondary" size="sm">Add comment</Button>}
             className="w-full"
           />
         </Swatch>
 
-        <SectionHeading source="design-system/Pill.tsx">Pill</SectionHeading>
-        <Swatch>
-          {PILL_COLORS.map((c) => (
-            <Pill key={c} color={c}>
-              {c[0].toUpperCase() + c.slice(1)}
-            </Pill>
-          ))}
-        </Swatch>
+        <GroupHeading>Files</GroupHeading>
 
-        <SectionHeading source="design-system/SearchInput.tsx">Search Input</SectionHeading>
+        <SectionHeading source="design-system/FileRow.tsx">File Row</SectionHeading>
         <Swatch>
-          <SearchInput
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClear={() => setSearch('')}
-            placeholder="Search tasks…"
-          />
-        </Swatch>
-
-        <SectionHeading source="design-system/Input.tsx">Input</SectionHeading>
-        <Swatch>
-          <div className="flex flex-wrap gap-4 w-full">
-            <Input
-              label="Project name"
-              required
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Project name"
-              containerClassName="w-[220px]"
-            />
-            <Input label="Locked field" value="Read-only value" disabled containerClassName="w-[220px]" />
-            <Input label="Project name" required error="Project name is required" value="" readOnly containerClassName="w-[220px]" />
-          </div>
-        </Swatch>
-
-        <SectionHeading source="design-system/Textarea.tsx">Textarea</SectionHeading>
-        <Swatch>
-          <Textarea
-            label="Description"
-            value={textareaValue}
-            onChange={(e) => setTextareaValue(e.target.value)}
-            placeholder="Add a description"
-            containerClassName="w-full max-w-[320px]"
-          />
-        </Swatch>
-
-        <SectionHeading source="design-system/Select.tsx">Select</SectionHeading>
-        <Swatch>
-          <Select value={selectValue} onChange={(e) => setSelectValue(e.target.value)} className="w-[200px]">
-            <option value="clinical">Clinical</option>
-            <option value="fiscal">Fiscal</option>
-            <option value="governance">Governance</option>
-          </Select>
-        </Swatch>
-
-        <SectionHeading source="design-system/StatusBadge.tsx">Status Badge</SectionHeading>
-        <Swatch>
-          {STATUSES.map((s) => (
-            <StatusBadge key={s} status={s} />
-          ))}
-        </Swatch>
-
-        <SectionHeading source="design-system/Tab.tsx">Tab / Tab Strip</SectionHeading>
-        <Swatch>
-          <TabStrip className="w-full max-w-[360px]">
-            {['details', 'comments', 'activity'].map((t) => (
-              <Tab key={t} active={activeTab === t} onClick={() => setActiveTab(t)}>
-                {t[0].toUpperCase() + t.slice(1)}
-              </Tab>
-            ))}
-          </TabStrip>
-        </Swatch>
-
-        <SectionHeading source="design-system/UnderlineTabs.tsx">Underline Tabs</SectionHeading>
-        <Swatch>
-          <UnderlineTabs
+          <FileRow
+            name="Site-Visit-Protocol.pdf"
+            size={482_000}
+            category="Documentation"
+            onPreview={() => {}}
+            onDownload={() => {}}
+            onDelete={() => {}}
             className="w-full"
-            items={[
-              { value: 'projects', label: 'Projects' },
-              { value: 'health-centers', label: 'Health Centers' },
-            ]}
-            active={underlineTab}
-            onChange={setUnderlineTab}
           />
         </Swatch>
-        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
-          Bottom-border style — distinct from the segmented-control Tab/TabStrip above. Used on Home (Projects /
-          Health Centers), Health Center Admin (detail tabs), and Compliance Review (Tasks / Preview).
-        </p>
 
-        <SectionHeading source="design-system/TopNavButton.tsx">TopNav Button</SectionHeading>
-        <Swatch dark>
-          <TopNavButton active>Tasks</TopNavButton>
-          <TopNavButton>Admin</TopNavButton>
-        </Swatch>
-
-        <SectionHeading source="design-system/YesNoCard.tsx">Yes / No Card</SectionHeading>
+        <SectionHeading source="design-system/FileUploadDropzone.tsx">File Upload Dropzone</SectionHeading>
         <Swatch>
-          <YesNoCard value={yesNo} onChange={setYesNo} />
+          <FileUploadDropzone onFiles={() => {}} className="w-full" />
+        </Swatch>
+        <Swatch>
+          <FileUploadDropzone onFiles={() => {}} compact className="w-full" />
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">App shell</h2>
+        <GroupHeading>App shell</GroupHeading>
 
         <SectionHeading source="components/TopNav.tsx">Top Navigation</SectionHeading>
         <div className="border border-[#e4e4e7] rounded-[6px] overflow-x-auto">
@@ -501,7 +536,7 @@ export function ComponentsPage() {
           <SaveIndicator status="saved" />
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">Date selection</h2>
+        <GroupHeading>Date selection</GroupHeading>
 
         <SectionHeading source="components/DueDatePicker.tsx">Due Date Picker</SectionHeading>
         <Swatch>
@@ -549,7 +584,7 @@ export function ComponentsPage() {
           </UIPopover>
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">Dropdown &amp; input primitives (Radix)</h2>
+        <GroupHeading>Dropdown &amp; input primitives (Radix)</GroupHeading>
 
         <SectionHeading source="components/ui/dropdown-menu.tsx">Dropdown Menu</SectionHeading>
         <Swatch>
@@ -607,7 +642,7 @@ export function ComponentsPage() {
           </UICommand>
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">Task table primitives</h2>
+        <GroupHeading>Task table primitives</GroupHeading>
 
         <SectionHeading source="task-table/UserAvatar.tsx">User Avatar (row-level)</SectionHeading>
         <Swatch>
@@ -654,7 +689,7 @@ export function ComponentsPage() {
           <DueDateBadge ruleBroken ruleSummary="7 days after Kickoff" onOpenChange={() => {}} />
         </Swatch>
 
-        <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3">Task overlay panel</h2>
+        <GroupHeading>Task overlay panel</GroupHeading>
 
         <SectionHeading source="components/MultiFileUploadPanel.tsx">Task Overlay Panel</SectionHeading>
         <div className="px-4 py-3 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1e2129] text-[13px] text-[#6b7280] dark:text-[#a1a1aa]">
