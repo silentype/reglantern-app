@@ -98,11 +98,6 @@ const CATEGORY_TAGS = [
 
 const AVATAR_PALETTE = ['#fde68a', '#fecaca', '#bfdbfe', '#bbf7d0', '#fbcfe8', '#ddd6fe', '#fed7aa', '#a5f3fc', '#e9d5ff', '#fef9c3'];
 
-const GRADIENTS: { name: string; from: string; to: string }[] = [
-  { name: 'Grey', from: '#f0f0f0', to: '#e0e0e0' },
-  { name: 'Blue', from: '#e8f4f8', to: '#d0e8f0' },
-];
-
 export function ColorsPage() {
   return (
     <div className="h-full flex flex-col bg-[#f9fafb]">
@@ -195,13 +190,22 @@ export function ColorsPage() {
         <SectionHeading>Category tags</SectionHeading>
         <div className="flex flex-wrap gap-3">
           {CATEGORY_TAGS.map(({ label, bg, text }) => (
-            <span
-              key={label}
-              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium"
-              style={{ backgroundColor: bg, color: text }}
-            >
-              {label}
-            </span>
+            <div key={label} className="w-[184px] border border-[#e4e4e7] rounded-[6px] bg-white p-3 flex flex-col gap-2">
+              <span
+                className="inline-flex items-center self-start px-2.5 py-1 rounded-md text-xs font-medium"
+                style={{ backgroundColor: bg, color: text }}
+              >
+                {label}
+              </span>
+              <span className="flex items-center gap-1.5 text-[11px] text-[#6b7280]">
+                <span className="inline-block size-[9px] rounded-full border border-[#e4e4e7]" style={{ backgroundColor: bg }} />
+                {bg}
+              </span>
+              <span className="flex items-center gap-1.5 text-[11px] text-[#6b7280]">
+                <span className="inline-block size-[9px] rounded-full border border-[#e4e4e7]" style={{ backgroundColor: text }} />
+                {text}
+              </span>
+            </div>
           ))}
         </div>
 
@@ -217,21 +221,6 @@ export function ColorsPage() {
           ))}
         </div>
 
-        <SectionHeading>Decorative gradients</SectionHeading>
-        <div className="flex flex-wrap gap-3">
-          {GRADIENTS.map(({ name, from, to }) => (
-            <div key={name} className="w-[184px] shrink-0 border border-[#e4e4e7] rounded-[6px] bg-white overflow-hidden">
-              <div
-                className="h-[72px]"
-                style={{ backgroundImage: `linear-gradient(to bottom right, ${from}, ${to})` }}
-              />
-              <div className="px-3 py-2">
-                <p className="text-[13px] font-semibold text-[#18181b] leading-tight">{name}</p>
-                <p className="text-[11px] text-[#9ca3af] font-mono">{from} → {to}</p>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
