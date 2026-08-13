@@ -75,7 +75,7 @@ export function TopNav({
   const hcLabel = selectedHC ?? 'All Health Centers';
 
   return (
-    <header className="bg-[#32383e] h-[80px] flex items-center justify-between pl-6 pr-5 shrink-0 z-50">
+    <header className="bg-[#373f51] h-[80px] flex items-center justify-between pl-6 pr-5 shrink-0 z-50">
       <div className="flex items-center gap-7">
         {/* Health Center selector — interactive for admins, locked for members */}
         <div ref={hcRef} className="relative">
@@ -99,7 +99,7 @@ export function TopNav({
                   {isAdmin && (
                     <button
                       onClick={() => { onHCChange?.(null); setHcDropOpen(false); }}
-                      className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-[#32383e] transition-colors ${
+                      className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-[#373f51] transition-colors ${
                         selectedHC === null ? 'text-[#fc6]' : 'text-[#d4d4d8]'
                       }`}
                     >
@@ -111,7 +111,7 @@ export function TopNav({
                     <button
                       key={name}
                       onClick={() => { onHCChange?.(name); setHcDropOpen(false); }}
-                      className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-[#32383e] transition-colors ${
+                      className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-[#373f51] transition-colors ${
                         selectedHC === name ? 'text-[#fc6]' : 'text-[#d4d4d8]'
                       }`}
                     >
@@ -199,7 +199,7 @@ export function TopNav({
                     <button
                       key={u.name}
                       onClick={() => { onUserChange(u.name); setAvatarDropOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#32383e] transition-colors text-left"
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 hover:bg-[#373f51] transition-colors text-left"
                     >
                       <Avatar initials={u.initials} name={u.name} size="sm" color="#9ca3af" className="font-bold shrink-0" />
                       <span className="text-sm text-[#d4d4d8] truncate">{u.name}</span>

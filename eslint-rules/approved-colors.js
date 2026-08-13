@@ -21,7 +21,7 @@ export const APPROVED_COLORS = [
   '#e4e4e7', '#2a2f3a', '#cdd7e1', '#d4d4d8', '#3f4756', '#3a4455', '#3d444b',
 
   // Surface / background
-  '#f9fafb', '#111318', '#1c1f26', '#1e2129', '#32383e', '#232a30',
+  '#f9fafb', '#111318', '#1c1f26', '#1e2129', '#373f51', '#232a30',
 
   // Status / semantic
   '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d', '#fef2f2', '#fee2e2', '#fecaca', '#2d1010',

@@ -163,7 +163,7 @@ Seed data in `src/app/data/initialTasks.ts`. Relative-due-date resolution lives 
 
 ### Styling & tokens
 - Design tokens in `src/styles/theme.css` as CSS custom properties (`--brand-yellow`, `--header-dark`, `--app-background`, …) plus shadcn variables (`--background`, `--foreground`, `--primary`, …).
-- Brand yellow: `#fc6` (hover `#ffcc77`). Header: `#32383e`. App bg: `#f9fafb`. Sidebar bg: `#f4f4f5`.
+- Brand yellow: `#fc6` (hover `#ffcc77`). Header: `#373f51`. App bg: `#f9fafb`. Sidebar bg: `#f4f4f5`.
 - `src/app/constants/index.ts` exports a `COLORS` object for TS — keep in sync with `theme.css`.
 - Tailwind v4 picks up classes via `@source '../**/*.{js,ts,jsx,tsx}'` in `tailwind.css`. **Do not add a `tailwind.config.js`.**
 
@@ -253,7 +253,7 @@ Do not use inline `<svg>` + `<path>` for icons that lucide covers. If lucide doe
 | Surface — page / card / dropzone | `#f9fafb` | `#111318` |
 | Surface — sidebar / row | `#f4f4f5` | `#1c1f26` |
 | Surface — elevated card (dark only) | — | `#1e2129` |
-| Surface — header dark (always-dark) | `#32383e` | — |
+| Surface — header dark (always-dark) | `#373f51` | — |
 | Surface — TopNav dropdown bg (always-dark) | `#232a30` | — |
 | Text — TopNav inactive (always-dark) | `#b8bcc2` | — |
 | Danger | `#dc2626` | — |

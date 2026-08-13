@@ -72,7 +72,7 @@ export const COLORS = {
   primaryHover: '#eab308',
   primaryText: '#18181b',
   background: '#f9fafb',
-  headerBg: '#32383e',
+  headerBg: '#373f51',
   border: '#e4e4e7',
   focusBorder: '#fc6',
   selectedBorder: '#47515B',

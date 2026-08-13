@@ -49,7 +49,7 @@ const PALETTE: { group: string; swatches: { name: string; value: string; textDar
   {
     group: 'Chrome',
     swatches: [
-      { name: 'Header dark',  value: '#32383e' },
+      { name: 'Header dark',  value: '#373f51' },
     ],
   },
   {

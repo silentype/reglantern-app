@@ -116,7 +116,7 @@ function LoginScreen({ onAuth }: { onAuth: () => void }) {
   };
 
   return (
-    <div className="h-screen bg-[#32383e] flex flex-col items-center justify-center gap-6">
+    <div className="h-screen bg-[#373f51] flex flex-col items-center justify-center gap-6">
       <img
         src={new URL('./../../assets/5c768d7f259dcbb31703dfef4853e9bbf108c1dc.png', import.meta.url).href}
         alt="RegLantern"

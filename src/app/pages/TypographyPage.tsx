@@ -205,11 +205,11 @@ export function TypographyPage() {
         <div className="flex flex-col gap-3">
           <SpecRow
             label="Top nav item"
-            source="TopNavButton.tsx (dark #32383e header)"
+            source="TopNavButton.tsx (dark #373f51 header)"
             size="14px (text-sm)"
             weight="500 (medium)"
             color="#b8bcc2 inactive / #ffffff active"
-            previewBg="#32383e"
+            previewBg="#373f51"
             preview={
               <div className="flex items-center gap-6">
                 <span className="text-sm font-medium text-[#b8bcc2]">Tasks</span>

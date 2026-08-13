@@ -13,7 +13,7 @@ const COLOR_GROUPS: Array<{ heading: string; tokens: Array<{ name: string; value
     tokens: [
       { name: 'App Background', value: '#f9fafb', text: '#18181b' },
       { name: 'Sidebar BG', value: '#f4f4f5', text: '#18181b' },
-      { name: 'Header Dark', value: '#32383e', text: '#ffffff' },
+      { name: 'Header Dark', value: '#373f51', text: '#ffffff' },
       { name: 'Selected Gray', value: '#47515b', text: '#ffffff' },
       { name: 'White', value: '#ffffff', text: '#18181b' },
     ],

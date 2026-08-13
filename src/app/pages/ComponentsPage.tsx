@@ -112,7 +112,7 @@ function SectionHeading({ children, source }: { children: ReactNode; source: str
 function Swatch({ children, dark }: { children: ReactNode; dark?: boolean }) {
   return (
     <div
-      className={`border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] p-4 flex flex-wrap items-center gap-3 ${dark ? 'bg-[#32383e]' : 'bg-white dark:bg-[#1e2129]'}`}
+      className={`border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] p-4 flex flex-wrap items-center gap-3 ${dark ? 'bg-[#373f51]' : 'bg-white dark:bg-[#1e2129]'}`}
     >
       {children}
     </div>

@@ -153,7 +153,7 @@ export function ColorsPage() {
             { name: 'Surface Page / Card / Dropzone', hex: '#f9fafb', dark: { hex: '#111318' } },
             { name: 'Surface Sidebar / Row', hex: '#f4f4f5', dark: { hex: '#1c1f26' } },
             { name: 'Surface Elevated Card', hex: '#1e2129', dark: 'always-dark' },
-            { name: 'Surface Header Dark', hex: '#32383e', dark: 'always-dark' },
+            { name: 'Surface Header Dark', hex: '#373f51', dark: 'always-dark' },
             { name: 'Surface TopNav Dropdown', hex: '#232a30', dark: 'always-dark' },
             { name: 'Surface Selected Nav (Dark)', hex: '#2a3a4a', dark: 'always-dark' },
             { name: 'Surface Success Tint (Dark)', hex: '#2a3a2a', dark: 'always-dark' },
