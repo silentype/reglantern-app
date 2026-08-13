@@ -33,32 +33,32 @@ function DarkHalf({ dark }: { dark: Dark }) {
   if (dark === 'none' || dark === 'always-dark') {
     const label = dark === 'none' ? 'No Dark Mode' : 'Always dark';
     return (
-      <div className="w-1/2 h-[56px] flex items-center justify-center p-1.5 bg-[#f4f4f5] border-l border-[#e4e4e7]">
-        <span className="text-[9px] text-[#9ca3af] italic text-center leading-tight">{label}</span>
+      <div className="w-1/2 h-[72px] flex items-center justify-center p-2 bg-[#f4f4f5] border-l border-[#e4e4e7]">
+        <span className="text-[10px] text-[#9ca3af] italic text-center leading-tight">{label}</span>
       </div>
     );
   }
   return (
     <div
-      className="w-1/2 h-[56px] flex items-end p-2 border-l border-black/10"
+      className="w-1/2 h-[72px] flex items-end p-2.5 border-l border-black/10"
       style={{ backgroundColor: dark.hex, color: contrastText(dark.hex) }}
     >
-      <span className="text-[10px] font-mono opacity-80 truncate">{dark.hex}</span>
+      <span className="text-[11px] font-mono opacity-80 truncate">{dark.hex}</span>
     </div>
   );
 }
 
 function SwatchCard({ name, hex, dark }: Swatch) {
   return (
-    <div className="w-[152px] shrink-0 border border-[#e4e4e7] rounded-[6px] bg-white overflow-hidden">
+    <div className="w-[184px] shrink-0 border border-[#e4e4e7] rounded-[6px] bg-white overflow-hidden">
       <div className="flex">
-        <div className="w-1/2 h-[56px] flex items-end p-2" style={{ backgroundColor: hex, color: contrastText(hex) }}>
-          <span className="text-[10px] font-mono opacity-80 truncate">{hex}</span>
+        <div className="w-1/2 h-[72px] flex items-end p-2.5" style={{ backgroundColor: hex, color: contrastText(hex) }}>
+          <span className="text-[11px] font-mono opacity-80 truncate">{hex}</span>
         </div>
         <DarkHalf dark={dark} />
       </div>
-      <div className="px-2 py-1.5">
-        <p className="text-[11px] font-semibold text-[#18181b] leading-tight">{name}</p>
+      <div className="px-3 py-2">
+        <p className="text-[13px] font-semibold text-[#18181b] leading-tight">{name}</p>
       </div>
     </div>
   );
@@ -70,7 +70,7 @@ function SectionHeading({ children }: { children: ReactNode }) {
 
 function Group({ swatches }: { swatches: Swatch[] }) {
   return (
-    <div className="flex flex-wrap gap-2.5">
+    <div className="flex flex-wrap gap-3">
       {swatches.map((s) => (
         <SwatchCard key={s.name + s.hex} {...s} />
       ))}
@@ -176,16 +176,16 @@ export function ColorsPage() {
         />
 
         <SectionHeading>Tag / pill pairs</SectionHeading>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-3">
           {PILL_PAIRS.map(({ color, label, bg, text }) => (
-            <div key={color} className="w-[152px] border border-[#e4e4e7] rounded-[6px] bg-white p-2.5 flex flex-col gap-1.5">
+            <div key={color} className="w-[184px] border border-[#e4e4e7] rounded-[6px] bg-white p-3 flex flex-col gap-2">
               <Pill color={color}>{label}</Pill>
-              <span className="flex items-center gap-1 text-[10px] text-[#6b7280]">
-                <span className="inline-block size-[8px] rounded-full border border-[#e4e4e7]" style={{ backgroundColor: bg }} />
+              <span className="flex items-center gap-1.5 text-[11px] text-[#6b7280]">
+                <span className="inline-block size-[9px] rounded-full border border-[#e4e4e7]" style={{ backgroundColor: bg }} />
                 {bg}
               </span>
-              <span className="flex items-center gap-1 text-[10px] text-[#6b7280]">
-                <span className="inline-block size-[8px] rounded-full border border-[#e4e4e7]" style={{ backgroundColor: text }} />
+              <span className="flex items-center gap-1.5 text-[11px] text-[#6b7280]">
+                <span className="inline-block size-[9px] rounded-full border border-[#e4e4e7]" style={{ backgroundColor: text }} />
                 {text}
               </span>
             </div>
@@ -193,7 +193,7 @@ export function ColorsPage() {
         </div>
 
         <SectionHeading>Category tags</SectionHeading>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-3">
           {CATEGORY_TAGS.map(({ label, bg, text }) => (
             <span
               key={label}
@@ -218,16 +218,16 @@ export function ColorsPage() {
         </div>
 
         <SectionHeading>Decorative gradients</SectionHeading>
-        <div className="flex flex-wrap gap-2.5">
+        <div className="flex flex-wrap gap-3">
           {GRADIENTS.map(({ name, from, to }) => (
-            <div key={name} className="w-[152px] shrink-0 border border-[#e4e4e7] rounded-[6px] bg-white overflow-hidden">
+            <div key={name} className="w-[184px] shrink-0 border border-[#e4e4e7] rounded-[6px] bg-white overflow-hidden">
               <div
-                className="h-[56px]"
+                className="h-[72px]"
                 style={{ backgroundImage: `linear-gradient(to bottom right, ${from}, ${to})` }}
               />
-              <div className="px-2 py-1.5">
-                <p className="text-[11px] font-semibold text-[#18181b] leading-tight">{name}</p>
-                <p className="text-[10px] text-[#9ca3af] font-mono">{from} → {to}</p>
+              <div className="px-3 py-2">
+                <p className="text-[13px] font-semibold text-[#18181b] leading-tight">{name}</p>
+                <p className="text-[11px] text-[#9ca3af] font-mono">{from} → {to}</p>
               </div>
             </div>
           ))}
