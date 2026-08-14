@@ -6,15 +6,19 @@
  * /test/typography — same "pull from the real source" philosophy.
  *
  * Grouped by purpose (Actions, Form Fields, Selection & Filters, Navigation,
- * Status & Progress, People & Comments, Layout & Content, Files), not alphabetically —
- * same grouping approach as the app-shell/task-table sections further down the page.
+ * Status & Progress, People & Comments, Layout & Content, Files, App shell, Date
+ * selection, Dropdown & input primitives, Task table primitives, Task overlay
+ * panel), not alphabetically. Groups are presented as tabs (UnderlineTabs, the
+ * same page-level tab pattern as Home and Health Center Admin) rather than one
+ * long scroll — active tab is mirrored to the `tab` URL search param.
  */
 
 import { ReactNode, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { Star, Inbox, Settings, User, LogOut } from 'lucide-react';
+import { Star, Inbox, Settings, User, LogOut, Plus, ExternalLink, Trash2 } from 'lucide-react';
 
 import { Button } from '../components/design-system/Button';
+import { IconButton } from '../components/design-system/IconButton';
 import { BackButton } from '../components/design-system/BackButton';
 import { TopNavButton } from '../components/design-system/TopNavButton';
 
@@ -92,14 +96,6 @@ import {
   CommandItem as UICommandItem,
 } from '../components/ui/command';
 
-function GroupHeading({ children }: { children: ReactNode }) {
-  return (
-    <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3 first:mt-0">
-      {children}
-    </h2>
-  );
-}
-
 function SectionHeading({ children, source }: { children: ReactNode; source: string }) {
   return (
     <div className="mt-8 mb-3 flex items-baseline justify-between gap-3">
@@ -122,6 +118,23 @@ function Swatch({ children, dark }: { children: ReactNode; dark?: boolean }) {
 const PILL_COLORS: PillColor[] = ['neutral', 'yellow', 'green', 'blue', 'red', 'purple'];
 const STATUSES: TaskStatus[] = ['In Progress', 'Complete', 'Blocked', 'Not Started'];
 
+const CATEGORIES = [
+  { id: 'actions', label: 'Actions' },
+  { id: 'form-fields', label: 'Form Fields' },
+  { id: 'selection-filters', label: 'Selection & Filters' },
+  { id: 'navigation', label: 'Navigation' },
+  { id: 'status-progress', label: 'Status & Progress' },
+  { id: 'people-comments', label: 'People & Comments' },
+  { id: 'layout-content', label: 'Layout & Content' },
+  { id: 'files', label: 'Files' },
+  { id: 'app-shell', label: 'App shell' },
+  { id: 'date-selection', label: 'Date selection' },
+  { id: 'dropdown-input', label: 'Dropdown & input primitives' },
+  { id: 'task-table', label: 'Task table primitives' },
+  { id: 'task-overlay', label: 'Task overlay panel' },
+] as const;
+type ComponentCategory = (typeof CATEGORIES)[number]['id'];
+
 export function ComponentsPage() {
   const [search, setSearch] = useState('due date');
   const [selectValue, setSelectValue] = useState('clinical');
@@ -136,6 +149,12 @@ export function ComponentsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const activeCategory = (searchParams.get('tab') as ComponentCategory | null) ?? CATEGORIES[0].id;
+  const handleCategoryChange = (id: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('tab', id);
+    setSearchParams(params);
+  };
   // Force the Due Date Picker swatch open on load — its popover content
   // (Quick Select / Custom Date / Calendar) is the point of the demo, not
   // the trigger button, so it shouldn't require a click to see.
@@ -162,17 +181,23 @@ export function ComponentsPage() {
 
   return (
     <div className="h-full flex flex-col bg-[#f9fafb] dark:bg-[#111318]">
-      <div className="px-[24px] pt-[24px] pb-[16px] border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#111318] shrink-0">
+      <div className="px-[24px] pt-[24px] pb-0 border-b border-[#e4e4e7] dark:border-[#2a2f3a] bg-white dark:bg-[#111318] shrink-0">
         <p className="text-[11px] font-medium text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mb-[2px]">Test Page</p>
         <h1 className="text-[20px] font-semibold text-[#18181b] dark:text-[#f4f4f5] leading-[28px]">Components</h1>
-        <p className="mt-[4px] text-[13px] text-[#6b7280] dark:text-[#a1a1aa]">
+        <p className="mt-[4px] mb-4 text-[13px] text-[#6b7280] dark:text-[#a1a1aa]">
           Every design-system primitive, rendered live with real props — not screenshots.
         </p>
+        <UnderlineTabs
+          className="overflow-x-auto"
+          items={CATEGORIES.map((c) => ({ value: c.id, label: c.label }))}
+          active={activeCategory}
+          onChange={handleCategoryChange}
+        />
       </div>
 
       <div className="flex-1 overflow-auto px-[24px] py-6 max-w-[1000px]">
-        <GroupHeading>Actions</GroupHeading>
-
+        {activeCategory === 'actions' && (
+        <>
         <SectionHeading source="design-system/Button.tsx">Button</SectionHeading>
         <Swatch>
           <Button variant="primary">Primary</Button>
@@ -181,7 +206,16 @@ export function ComponentsPage() {
           <Button variant="danger">Danger</Button>
           <Button variant="primary" size="sm">Small</Button>
           <Button variant="primary" disabled>Disabled</Button>
+          <Button>
+            <Plus className="w-4 h-4" />
+            Add New Task
+          </Button>
         </Swatch>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          Icon + label — default (md) size, icon first. Matches the real Add New Task button on the Tasks page
+          (TasksHeader.tsx); don&rsquo;t shrink it to <code className="text-[12px]">size=&quot;sm&quot;</code> just because
+          it sits in a page header.
+        </p>
 
         <SectionHeading source="design-system/BackButton.tsx">Back Button</SectionHeading>
         <Swatch>
@@ -194,7 +228,28 @@ export function ComponentsPage() {
           <TopNavButton>Admin</TopNavButton>
         </Swatch>
 
-        <GroupHeading>Form Fields</GroupHeading>
+        <SectionHeading source="design-system/IconButton.tsx">Icon Button</SectionHeading>
+        <Swatch>
+          <IconButton label="Open in new window">
+            <ExternalLink className="size-3.5" />
+          </IconButton>
+          <IconButton label="Delete file" variant="danger">
+            <Trash2 className="size-3.5" />
+          </IconButton>
+        </Swatch>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          Square, icon-only action button — for a lone icon (close, open-in-new, delete) that needs a bordered
+          hit target rather than a labeled <code className="text-[12px]">Button</code>. Originates from{' '}
+          <code className="text-[12px]">FileRow</code>&rsquo;s Open-in-new/Delete buttons; also used in the
+          file-preview header (<code className="text-[12px]">DocumentPreviewModal</code>,{' '}
+          <code className="text-[12px]">MultiFileUploadPanel</code>, <code className="text-[12px]">ComplianceReviewPage</code>).
+        </p>
+
+        </>
+        )}
+
+        {activeCategory === 'form-fields' && (
+        <>
 
         <SectionHeading source="design-system/Input.tsx">Input</SectionHeading>
         <Swatch>
@@ -249,7 +304,11 @@ export function ComponentsPage() {
           <DateChip value="07/23/2026" highlighted onClick={() => {}} />
         </Swatch>
 
-        <GroupHeading>Selection &amp; Filters</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'selection-filters' && (
+        <>
 
         <SectionHeading source="design-system/FilterChip.tsx">Filter Chip</SectionHeading>
         <Swatch>
@@ -285,7 +344,11 @@ export function ComponentsPage() {
           <YesNoCard value={yesNo} onChange={setYesNo} />
         </Swatch>
 
-        <GroupHeading>Navigation</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'navigation' && (
+        <>
 
         <SectionHeading source="design-system/Breadcrumb.tsx">Breadcrumb</SectionHeading>
         <Swatch>
@@ -337,7 +400,11 @@ export function ComponentsPage() {
           Health Centers), Health Center Admin (detail tabs), and Compliance Review (Tasks / Preview).
         </p>
 
-        <GroupHeading>Status &amp; Progress</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'status-progress' && (
+        <>
 
         <SectionHeading source="design-system/Pill.tsx">Pill</SectionHeading>
         <Swatch>
@@ -364,7 +431,11 @@ export function ComponentsPage() {
           </div>
         </Swatch>
 
-        <GroupHeading>People &amp; Comments</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'people-comments' && (
+        <>
 
         <SectionHeading source="design-system/Avatar.tsx">Avatar</SectionHeading>
         <Swatch>
@@ -412,7 +483,11 @@ export function ComponentsPage() {
           </CommentItem>
         </Swatch>
 
-        <GroupHeading>Layout &amp; Content</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'layout-content' && (
+        <>
 
         <SectionHeading source="design-system/Card.tsx">Card</SectionHeading>
         <Swatch>
@@ -472,7 +547,11 @@ export function ComponentsPage() {
           />
         </Swatch>
 
-        <GroupHeading>Files</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'files' && (
+        <>
 
         <SectionHeading source="design-system/FileRow.tsx">File Row</SectionHeading>
         <Swatch>
@@ -495,7 +574,11 @@ export function ComponentsPage() {
           <FileUploadDropzone onFiles={() => {}} compact className="w-full" />
         </Swatch>
 
-        <GroupHeading>App shell</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'app-shell' && (
+        <>
 
         <SectionHeading source="components/TopNav.tsx">Top Navigation</SectionHeading>
         <div className="border border-[#e4e4e7] rounded-[6px] overflow-x-auto">
@@ -536,7 +619,11 @@ export function ComponentsPage() {
           <SaveIndicator status="saved" />
         </Swatch>
 
-        <GroupHeading>Date selection</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'date-selection' && (
+        <>
 
         <SectionHeading source="components/DueDatePicker.tsx">Due Date Picker</SectionHeading>
         <Swatch>
@@ -584,7 +671,11 @@ export function ComponentsPage() {
           </UIPopover>
         </Swatch>
 
-        <GroupHeading>Dropdown &amp; input primitives (Radix)</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'dropdown-input' && (
+        <>
 
         <SectionHeading source="components/ui/dropdown-menu.tsx">Dropdown Menu</SectionHeading>
         <Swatch>
@@ -642,7 +733,11 @@ export function ComponentsPage() {
           </UICommand>
         </Swatch>
 
-        <GroupHeading>Task table primitives</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'task-table' && (
+        <>
 
         <SectionHeading source="task-table/UserAvatar.tsx">User Avatar (row-level)</SectionHeading>
         <Swatch>
@@ -689,7 +784,11 @@ export function ComponentsPage() {
           <DueDateBadge ruleBroken ruleSummary="7 days after Kickoff" onOpenChange={() => {}} />
         </Swatch>
 
-        <GroupHeading>Task overlay panel</GroupHeading>
+        </>
+        )}
+
+        {activeCategory === 'task-overlay' && (
+        <>
 
         <SectionHeading source="components/MultiFileUploadPanel.tsx">Task Overlay Panel</SectionHeading>
         <div className="px-4 py-3 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1e2129] text-[13px] text-[#6b7280] dark:text-[#a1a1aa]">
@@ -714,6 +813,8 @@ export function ComponentsPage() {
             onDownload={() => {}}
             onOpenInNew={() => {}}
           />
+        )}
+        </>
         )}
 
         <div className="mt-8 mb-4 px-4 py-3 rounded-[6px] bg-[#dbeafe] border border-[#e4e4e7] text-[13px] text-[#1e40af]">

@@ -1,5 +1,7 @@
 import { ExternalLink } from 'lucide-react';
 import { BackButton } from '../design-system/BackButton';
+import { Button } from '../design-system/Button';
+import { IconButton } from '../design-system/IconButton';
 import svgPathsUpload from '../../../imports/svg-cqqadqx4y2';
 import { getFileType } from './helpers';
 import type { UploadedFile } from './types';
@@ -42,20 +44,13 @@ export function DocumentPreviewModal({ file, onClose, onDownload, onOpenInNew }:
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => onDownload(file)}
-              className="bg-white h-[32px] px-3 rounded-[6px] border border-[#e4e4e7] text-[#18181b] font-medium text-[12px] hover:bg-[#f9fafb] transition-colors"
-            >
+            <Button variant="secondary" size="sm" onClick={() => onDownload(file)}>
               Download
-            </button>
+            </Button>
             {onOpenInNew && (
-              <button
-                onClick={() => onOpenInNew(file)}
-                className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
-                title="Open in new window"
-              >
+              <IconButton label="Open in new window" onClick={() => onOpenInNew(file)}>
                 <ExternalLink size={14} strokeWidth={2} />
-              </button>
+              </IconButton>
             )}
           </div>
         </div>

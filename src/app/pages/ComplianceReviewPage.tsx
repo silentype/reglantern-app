@@ -2,10 +2,12 @@ import { useState, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import { format, parse, isValid } from 'date-fns';
-import { Calendar as CalendarIcon, User, AlertCircle, X, ArrowUpRight, FileText, Check, ExternalLink, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, User, AlertCircle, X, ArrowUpRight, FileText, ExternalLink, Download } from 'lucide-react';
 import MultiFileUpload1 from '../components/MultiFileUploadPanel';
 import { type Task } from '../components/TaskTableDynamic';
 import { StatusBadge } from '../components/design-system/StatusBadge';
+import { Button } from '../components/design-system/Button';
+import { IconButton } from '../components/design-system/IconButton';
 import { Pagination } from '../components/design-system/Pagination';
 import { UserAvatar } from '../components/task-table/UserAvatar';
 import { FileRow } from '../components/design-system/FileRow';
@@ -14,10 +16,11 @@ import { Breadcrumb } from '../components/design-system/Breadcrumb';
 import { Textarea } from '../components/design-system/Textarea';
 import { SearchInput } from '../components/design-system/SearchInput';
 import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
+import { FilterChip } from '../components/design-system/FilterChip';
+import { MultiSelectFilterChip } from '../components/design-system/MultiSelectFilterChip';
 import { getFileType } from '../components/multi-file-upload-panel/helpers';
 import type { UploadedFile } from '../components/multi-file-upload-panel/types';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
 import { Calendar } from '../components/ui/calendar';
 import { AVAILABLE_USERS, DATE_FILTER_PRESETS } from '../constants';
 import { parseDueDateFilter, displayDueDateFilter } from '../utils/helpers';
@@ -575,48 +578,39 @@ export function ComplianceReviewPage() {
                 onChange={(v) => setRightTab(v as 'tasks' | 'preview')}
               />
               <div className="ml-auto shrink-0 py-1.5">
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={handleDownloadAll}
                   disabled={allChapterFiles.length === 0}
-                  className="flex items-center gap-1.5 px-3 h-[28px] rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] text-[12px] font-medium text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   title={allChapterFiles.length === 0 ? 'No files in this chapter' : `Download all ${allChapterFiles.length} files`}
                 >
                   <Download className="w-3.5 h-3.5" />
                   Download All Documents
-                </button>
+                </Button>
               </div>
             </div>
             <div className={`px-4 py-3 ${rightTab === 'preview' ? 'hidden' : ''}`}>
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
                   {/* Status pills */}
-                  <button
-                    onClick={() => setStatusFilter(['all'])}
-                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}
-                  >
+                  <FilterChip active={statusFilter.includes('all')} onClick={() => setStatusFilter(['all'])}>
                     All Tasks
-                  </button>
-                  <button
-                    onClick={() => setStatusFilter(['incomplete'])}
-                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('incomplete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}
-                  >
+                  </FilterChip>
+                  <FilterChip active={statusFilter.includes('incomplete')} onClick={() => setStatusFilter(['incomplete'])}>
                     Incomplete
-                  </button>
-                  <button
-                    onClick={() => setStatusFilter(['complete'])}
-                    className={`px-2.5 py-1 rounded-full font-medium transition-colors text-[12px] shrink-0 ${statusFilter.includes('complete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}
-                  >
+                  </FilterChip>
+                  <FilterChip active={statusFilter.includes('complete')} onClick={() => setStatusFilter(['complete'])}>
                     Complete
-                  </button>
+                  </FilterChip>
 
                   <div className="h-5 w-px bg-[#e4e4e7]" />
 
                   {/* Due Date popover */}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${dueDateFilter ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}>
-                        <CalendarIcon className="h-3.5 w-3.5" />
+                      <FilterChip active={!!dueDateFilter} icon={<CalendarIcon className="h-3.5 w-3.5" />}>
                         {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
-                      </button>
+                      </FilterChip>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <div className="flex">
@@ -675,74 +669,33 @@ export function ComplianceReviewPage() {
                   </Popover>
 
                   {/* Assigned To popover */}
-                  <Popover open={assignedToOpen} onOpenChange={setAssignedToOpen}>
-                    <PopoverTrigger asChild>
-                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${!assignedToFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}>
-                        <User className="h-3.5 w-3.5" />
-                        Assigned {!assignedToFilter.includes('all') && `(${assignedToFilter.length})`}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[240px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search users..." />
-                        <CommandList>
-                          <CommandEmpty>No users found.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem value="all" onSelect={() => { toggleAssignedToFilter('all'); setAssignedToOpen(false); }}>
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${assignedToFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                {assignedToFilter.includes('all') && <Check className="h-3 w-3" />}
-                              </div>
-                              All Users
-                            </CommandItem>
-                            {AVAILABLE_USERS.map((user) => (
-                              <CommandItem key={user.name} value={user.name} onSelect={() => toggleAssignedToFilter(user.name)}>
-                                <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${assignedToFilter.includes(user.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                  {assignedToFilter.includes(user.name) && <Check className="h-3 w-3" />}
-                                </div>
-                                {user.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <MultiSelectFilterChip
+                    icon={<User className="h-3.5 w-3.5" />}
+                    label="Assigned"
+                    selected={assignedToFilter}
+                    onToggle={toggleAssignedToFilter}
+                    open={assignedToOpen}
+                    onOpenChange={setAssignedToOpen}
+                    allLabel="All Users"
+                    searchPlaceholder="Search users..."
+                    emptyLabel="No users found."
+                    options={AVAILABLE_USERS.map((user) => ({ value: user.name, label: user.name }))}
+                  />
 
                   {/* Needs Attention popover */}
-                  <Popover open={needsAttentionOpen} onOpenChange={setNeedsAttentionOpen}>
-                    <PopoverTrigger asChild>
-                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors flex items-center gap-1.5 text-[12px] shrink-0 ${!needsAttentionFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'}`}>
-                        <AlertCircle className="h-3.5 w-3.5" />
-                        Needs Attention {!needsAttentionFilter.includes('all') && `(${needsAttentionFilter.length})`}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[240px] p-0" align="start">
-                      <Command>
-                        <CommandList>
-                          <CommandGroup>
-                            <CommandItem value="all" onSelect={() => { toggleNeedsAttentionFilter('all'); setNeedsAttentionOpen(false); }}>
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${needsAttentionFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                {needsAttentionFilter.includes('all') && <Check className="h-3 w-3" />}
-                              </div>
-                              All
-                            </CommandItem>
-                            <CommandItem value="missing" onSelect={() => toggleNeedsAttentionFilter('missing')}>
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${needsAttentionFilter.includes('missing') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                {needsAttentionFilter.includes('missing') && <Check className="h-3 w-3" />}
-                              </div>
-                              Missing Files
-                            </CommandItem>
-                            <CommandItem value="needs" onSelect={() => toggleNeedsAttentionFilter('needs')}>
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${needsAttentionFilter.includes('needs') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                {needsAttentionFilter.includes('needs') && <Check className="h-3 w-3" />}
-                              </div>
-                              Files Need Attention
-                            </CommandItem>
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <MultiSelectFilterChip
+                    icon={<AlertCircle className="h-3.5 w-3.5" />}
+                    label="Needs Attention"
+                    selected={needsAttentionFilter}
+                    onToggle={toggleNeedsAttentionFilter}
+                    open={needsAttentionOpen}
+                    onOpenChange={setNeedsAttentionOpen}
+                    showSearch={false}
+                    options={[
+                      { value: 'missing', label: 'Missing Files' },
+                      { value: 'needs', label: 'Files Need Attention' },
+                    ]}
+                  />
 
                   {/* Clear All */}
                   {hasActiveFilters && (
@@ -861,19 +814,12 @@ export function ComplianceReviewPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={() => {/* download handler */}}
-                      className="bg-white dark:bg-[#1e2129] h-[32px] px-3 rounded-[6px] border border-[#e4e4e7] dark:border-[#2a2f3a] text-[#18181b] dark:text-[#f4f4f5] font-medium text-[12px] hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a] transition-colors"
-                    >
+                    <Button variant="secondary" size="sm" onClick={() => {/* download handler */}}>
                       Download
-                    </button>
-                    <button
-                      onClick={() => {/* open in new window handler */}}
-                      className="bg-white h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-[#e4e4e7] text-[#6b7280] hover:bg-[#f9fafb] hover:text-[#18181b] transition-colors"
-                      title="Open in new window"
-                    >
+                    </Button>
+                    <IconButton label="Open in new window" onClick={() => {/* open in new window handler */}}>
                       <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
+                    </IconButton>
                     {previewTaskId !== null && (
                       <button
                         onClick={() => handleOpenTaskPanel(previewTaskId)}

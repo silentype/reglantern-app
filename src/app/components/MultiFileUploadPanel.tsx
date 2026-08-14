@@ -6,7 +6,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
-import { type LucideIcon, X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight, FileText, FileImage, FileSpreadsheet, File, ExternalLink, ArrowUpRight } from 'lucide-react';
+import { type LucideIcon, X, Calendar as CalendarIcon, User, Users, Copy, UserPlus, Upload, Check, ChevronsUpDown, ChevronRight, FileText, FileImage, FileSpreadsheet, File, ExternalLink, ArrowUpRight, Trash2 } from 'lucide-react';
 
 function fileIcon(name: string): LucideIcon {
   const ext = name.split('.').pop()?.toLowerCase() ?? '';
@@ -26,6 +26,7 @@ import { Button } from './design-system/Button';
 import { BackButton } from './design-system/BackButton';
 import { Avatar } from './design-system/Avatar';
 import { FileRow } from './design-system/FileRow';
+import { IconButton } from './design-system/IconButton';
 import { FilterChip } from './design-system/FilterChip';
 import { UserAvatar } from './task-table/UserAvatar';
 import type { DueDateRule, Task } from './TaskTableDynamic';
@@ -614,19 +615,12 @@ export default function MultiFileUploadPanel({
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => handleDownload(previewFile)}
-              className="bg-card h-[32px] px-3 rounded-[6px] border border-border text-foreground font-medium text-[12px] hover:bg-[var(--app-background)] transition-colors"
-            >
+            <Button variant="secondary" size="sm" onClick={() => handleDownload(previewFile)}>
               Download
-            </button>
-            <button
-              onClick={() => handleOpenInNew(previewFile)}
-              className="bg-card h-[32px] w-[32px] flex items-center justify-center rounded-[6px] border border-border text-muted-foreground hover:bg-[var(--app-background)] hover:text-foreground transition-colors"
-              title="Open in new window"
-            >
+            </Button>
+            <IconButton label="Open in new window" onClick={() => handleOpenInNew(previewFile)}>
               <ExternalLink size={14} strokeWidth={2} />
-            </button>
+            </IconButton>
           </div>
         </div>
 
@@ -858,18 +852,12 @@ export default function MultiFileUploadPanel({
                 Are you sure you want to delete this file? This action cannot be undone.
               </p>
               <div className="flex gap-3 justify-end">
-                <button
-                  onClick={handleCancelDelete}
-                  className="px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-[var(--app-background)] transition-colors"
-                >
+                <Button variant="secondary" onClick={handleCancelDelete}>
                   Cancel
-                </button>
-                <button
-                  onClick={handleConfirmDelete}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#dc2626] rounded-md hover:bg-[#b91c1c] transition-colors"
-                >
+                </Button>
+                <Button variant="danger" onClick={handleConfirmDelete}>
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1118,29 +1106,15 @@ export default function MultiFileUploadPanel({
                         {/* Action Buttons */}
                         {!file.isUploading && (
                           <div className="flex items-center gap-2 z-10">
-                            <button
-                              onClick={() => handlePreviewClick(file)}
-                              className="px-3 py-1.5 text-xs font-medium text-foreground bg-card border border-border rounded hover:bg-[var(--app-background)] transition-colors"
-                            >
+                            <Button variant="secondary" size="sm" onClick={() => handlePreviewClick(file)}>
                               Preview
-                            </button>
-                            <button
-                              onClick={() => handleDownload(file)}
-                              className="px-3 py-1.5 text-xs font-medium text-foreground bg-card border border-border rounded hover:bg-[var(--app-background)] transition-colors"
-                            >
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={() => handleDownload(file)}>
                               Download
-                            </button>
-                            <button
-                              onClick={() => handleDeleteClick(file.id, true)}
-                              className="shrink-0 hover:bg-[#fef2f2] rounded p-1 transition-colors"
-                              title="Delete file"
-                            >
-                              <div className="size-5">
-                                <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16.6667 18.3333">
-                                  <path clipRule="evenodd" d={svgPathsUpload.pc7d1a80} fill="#dc2626" fillRule="evenodd" />
-                                </svg>
-                              </div>
-                            </button>
+                            </Button>
+                            <IconButton label="Delete file" variant="danger" onClick={() => handleDeleteClick(file.id, true)}>
+                              <Trash2 className="size-3.5" />
+                            </IconButton>
                           </div>
                         )}
                       </div>
@@ -1266,29 +1240,15 @@ export default function MultiFileUploadPanel({
                     {/* Action Buttons */}
                     {!file.isUploading && (
                       <div className="flex items-center gap-2 z-10">
-                        <button
-                          onClick={() => handlePreviewClick(file)}
-                          className="px-3 py-1.5 text-xs font-medium text-foreground bg-card border border-border rounded hover:bg-[var(--app-background)] transition-colors"
-                        >
+                        <Button variant="secondary" size="sm" onClick={() => handlePreviewClick(file)}>
                           Preview
-                        </button>
-                        <button
-                          onClick={() => handleDownload(file)}
-                          className="px-3 py-1.5 text-xs font-medium text-foreground bg-card border border-border rounded hover:bg-[var(--app-background)] transition-colors"
-                        >
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={() => handleDownload(file)}>
                           Download
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(file.id, false)}
-                          className="shrink-0 hover:bg-[#fef2f2] rounded p-1 transition-colors"
-                          title="Delete file"
-                        >
-                          <div className="size-5">
-                            <svg className="block size-full" fill="none" preserveAspectRatio="none" viewBox="0 0 16.6667 18.3333">
-                              <path clipRule="evenodd" d={svgPathsUpload.pc7d1a80} fill="#dc2626" fillRule="evenodd" />
-                            </svg>
-                          </div>
-                        </button>
+                        </Button>
+                        <IconButton label="Delete file" variant="danger" onClick={() => handleDeleteClick(file.id, false)}>
+                          <Trash2 className="size-3.5" />
+                        </IconButton>
                       </div>
                     )}
                   </div>
@@ -1573,18 +1533,12 @@ export default function MultiFileUploadPanel({
               Are you sure you want to delete this file? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
-              <button
-                onClick={handleCancelDelete}
-                className="px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-md hover:bg-[var(--app-background)] transition-colors"
-              >
+              <Button variant="secondary" onClick={handleCancelDelete}>
                 Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 text-sm font-medium text-white bg-[#dc2626] rounded-md hover:bg-[#b91c1c] transition-colors"
-              >
+              </Button>
+              <Button variant="danger" onClick={handleConfirmDelete}>
                 Delete
-              </button>
+              </Button>
             </div>
           </div>
         </div>

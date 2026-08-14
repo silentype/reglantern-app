@@ -217,6 +217,7 @@ Before writing any UI element, scan `src/app/components/design-system/` and the 
 | User avatar + name | `<UserAvatar user={…}>` from `task-table/UserAvatar` | Always `size="sm"` (24px) avatar + `text-[13px]` name. Never custom sizes. |
 | Page title + description + actions | `<PageHeader>` from `design-system/PageHeader` | Use `eyebrow` slot for `<BackButton>`. |
 | Action buttons | `<Button variant="…">` from `design-system/Button` | Variants: `primary` (yellow), `secondary` (outlined), `ghost`, `danger`. Never custom colors or shadows via `className`. |
+| Icon-only action button | `<IconButton label="…">` from `design-system/IconButton` | Square, bordered, size-8. `variant="danger"` for delete. Never a raw `<button>` with manual size-8/border classes — that's this component. |
 | Dismissible filter toggles | `<FilterChip>` from `design-system/FilterChip` | |
 | File attachment rows | `<FileRow>` from `design-system/FileRow` | Use `onPreview`, `onDownload`, `onOpenInNew`, `onDelete` props. |
 | User avatar | `<Avatar>` / `<AvatarStack>` from `design-system/Avatar` | |
@@ -340,5 +341,6 @@ Before closing a task, verify behavior in the browser:
 |---|---|
 | 2026-05-06 | Imported Figma Make prototype v1 as the starting codebase; added this CLAUDE.md |
 | 2026-05-13 | Refresh — App.tsx is no longer monolithic (660 lines, was ~4,400); pages/ directory exists; URL-driven routing via react-router; lazy-loaded pages + side panel; Storybook + ESLint + Prettier wired up; MUI / motion / recharts removed; TaskTableDynamic split into `task-table/` + `task-table/cells/`; TasksPage dead-code purge (-1,000 lines); MultiFileUploadPanel leaf extractions |
+| 2026-08-14 | Design-system consistency pass: added `IconButton` (extracted from FileRow's icon actions, now also used by the 3 duplicated file-preview headers and MultiFileUploadPanel's per-file rows); retrofitted raw filter-pill `<button>`s on Tasks/Home/Compliance Review/Health Center Admin to `FilterChip`/`MultiSelectFilterChip`; converted several raw Cancel/Delete/Sign-in buttons to `Button`; Components page reorganized into `UnderlineTabs` categories |
 
 > Append a row when you make significant changes.

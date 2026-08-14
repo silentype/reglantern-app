@@ -10,6 +10,7 @@ import { Toaster, toast } from 'sonner';
 
 import { SideNavigation } from './components/SideNavigation';
 import { TopNav } from './components/TopNav';
+import { Button } from './components/design-system/Button';
 import { type Task } from './components/TaskTableDynamic';
 
 import { INITIAL_TASKS } from './data/initialTasks';
@@ -145,12 +146,9 @@ function LoginScreen({ onAuth }: { onAuth: () => void }) {
           }`}
         />
         {error && <p className="text-xs text-[#dc2626] -mt-2">Incorrect password. Try again.</p>}
-        <button
-          onClick={submit}
-          className="w-full bg-[#fc6] hover:bg-[#eab308] active:bg-[#ca8a04] text-[#18181b] font-semibold text-sm py-2.5 rounded-[6px] transition-colors"
-        >
+        <Button onClick={submit} className="w-full">
           Sign in
-        </button>
+        </Button>
       </div>
       <style>{`
         @keyframes shake {

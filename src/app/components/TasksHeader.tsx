@@ -19,7 +19,7 @@ export const TasksHeader = memo(function TasksHeader({ tableSaveStatus, onAddTas
       </div>
       <div className="flex items-center gap-3 shrink-0">
         <SaveIndicator status={tableSaveStatus} />
-        <Button size="sm" onClick={onAddTask}>
+        <Button onClick={onAddTask}>
           <Plus className="w-4 h-4" />
           Add New Task
         </Button>

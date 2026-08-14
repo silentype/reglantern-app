@@ -48,6 +48,7 @@ import {
 import { Button } from '../components/design-system/Button';
 import { BackButton } from '../components/design-system/BackButton';
 import { SearchInput } from '../components/design-system/SearchInput';
+import { FilterChip } from '../components/design-system/FilterChip';
 import { Select } from '../components/design-system/Select';
 import { Textarea } from '../components/design-system/Textarea';
 import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
@@ -124,12 +125,6 @@ function getCellValue(center: HealthCenter, key: ColKey): string {
 // ── Filter chip helpers ────────────────────────────────────────────────────
 
 type CenterTypeFilter = 'all' | 'regPathway' | 'ryanWhite' | 'ftca';
-
-function chip(active: boolean, extra?: string) {
-  return `px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${extra ?? ''} ${
-    active ? 'bg-[#fc6] text-foreground' : 'bg-[#f4f4f5] text-muted-foreground hover:bg-[#e4e4e7]'
-  }`;
-}
 
 // ── Shared field primitives (detail view) ─────────────────────────────────
 
@@ -245,17 +240,9 @@ function SpPopulationsField({ value, onChange }: { value: string[]; onChange: (v
   return (
     <div className="flex flex-wrap gap-2">
       {SP_POPULATION_OPTIONS.map((opt) => (
-        <button
-          key={opt}
-          onClick={() => toggle(opt)}
-          className={`h-[28px] px-3 rounded-full text-[12px] font-medium border transition-colors ${
-            value.includes(opt)
-              ? 'bg-[#fc6] border-[#fc6] text-foreground'
-              : 'bg-card border-border text-[#6b7280] hover:border-[#cdd7e1]'
-          }`}
-        >
+        <FilterChip key={opt} active={value.includes(opt)} onClick={() => toggle(opt)}>
           {opt}
-        </button>
+        </FilterChip>
       ))}
     </div>
   );
@@ -865,13 +852,13 @@ export function HealthCenterAdminPage({
               { key: 'ftca', label: 'FTCA' },
             ] as { key: CenterTypeFilter; label: string }[]
           ).map(({ key, label }) => (
-            <button
+            <FilterChip
               key={key}
+              active={centerTypeFilter === key}
               onClick={() => { setCenterTypeFilter(key); setPage(1); }}
-              className={chip(centerTypeFilter === key)}
             >
               {label}
-            </button>
+            </FilterChip>
           ))}
 
           <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
@@ -879,10 +866,9 @@ export function HealthCenterAdminPage({
           {/* State dropdown chip */}
           <Popover open={stateOpen} onOpenChange={setStateOpen}>
             <PopoverTrigger asChild>
-              <button className={chip(!!stateFilter, 'flex items-center gap-1.5')}>
-                <Building2 className="h-3.5 w-3.5" />
+              <FilterChip active={!!stateFilter} icon={<Building2 className="h-3.5 w-3.5" />}>
                 {stateFilter ? stateFilter : 'State'}
-              </button>
+              </FilterChip>
             </PopoverTrigger>
             <PopoverContent className="w-[200px] p-0" align="start">
               <Command>
@@ -913,9 +899,9 @@ export function HealthCenterAdminPage({
           {/* Ultra Opt-In chip */}
           <Popover open={ultraOptInOpen} onOpenChange={setUltraOptInOpen}>
             <PopoverTrigger asChild>
-              <button className={chip(!!ultraOptInFilter, 'flex items-center gap-1.5')}>
+              <FilterChip active={!!ultraOptInFilter}>
                 Ultra Opt-In{ultraOptInFilter ? ` (${ultraOptInFilter})` : ''}
-              </button>
+              </FilterChip>
             </PopoverTrigger>
             <PopoverContent className="w-[140px] p-1" align="start">
               {(['', 'Yes', 'No'] as const).map((v) => (
@@ -931,22 +917,21 @@ export function HealthCenterAdminPage({
           </Popover>
 
           {/* Test HC toggle chip */}
-          <button
+          <FilterChip
+            active={testHcFilter === true}
             onClick={() => { setTestHcFilter((prev) => prev === true ? null : true); setPage(1); }}
-            className={chip(testHcFilter === true)}
           >
             Test HC
-          </button>
+          </FilterChip>
 
           <div className="h-5 w-px bg-[#e4e4e7] shrink-0" />
 
           {/* View Columns */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className={chip(false, 'flex items-center gap-1.5')}>
-                <Columns3 className="h-3.5 w-3.5" />
+              <FilterChip icon={<Columns3 className="h-3.5 w-3.5" />}>
                 Columns
-              </button>
+              </FilterChip>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               {PROFILE_COLS.map((col) => (

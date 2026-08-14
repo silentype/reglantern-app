@@ -2,18 +2,15 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { parse, isBefore, isAfter, startOfDay, format } from 'date-fns';
 import {
-  Building2, Check, LayoutGrid, List, X,
+  Building2, LayoutGrid, List, X,
   ChevronUp, ChevronDown, ChevronsUpDown, FolderOpen,
 } from 'lucide-react';
 import { Pill, type PillColor } from '../components/design-system/Pill';
 import { Button } from '../components/design-system/Button';
 import { ProgressBar } from '../components/design-system/ProgressBar';
 import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
-
-import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import {
-  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
-} from '../components/ui/command';
+import { FilterChip } from '../components/design-system/FilterChip';
+import { MultiSelectFilterChip } from '../components/design-system/MultiSelectFilterChip';
 
 import { type Task } from '../components/TaskTableDynamic';
 import { SearchInput } from '../components/design-system/SearchInput';
@@ -388,6 +385,14 @@ function AdminDashboard({
     return sortProjects(scoped, projectSort, projectSortDir);
   }, [projects, projectSort, projectSortDir, projectSearch, projectHCFilter, projectNameFilter, projectStatusFilter]);
 
+  // Project names repeat across health centers (each gets its own instance of
+  // e.g. "HIPAA Security Risk Assessment") — dedupe before offering as filter options.
+  const projectNameOptions = useMemo(() => {
+    const set = new Set<string>();
+    projects.forEach((p) => set.add(p.name));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [projects]);
+
   // Clicking a list-view column header sorts by it; clicking the active column
   // toggles direction. New columns default to ascending.
   const handleProjectHeaderSort = useCallback((col: ProjectSort) => {
@@ -552,91 +557,40 @@ function AdminDashboard({
                   <div className="h-5 w-px bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
                   {/* Status chips */}
                   {(['all', 'in_progress', 'completed'] as const).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setProjectStatusFilter(s)}
-                      className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 text-[12px] ${
-                        projectStatusFilter === s
-                          ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]'
-                          : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'
-                      }`}
-                    >
+                    <FilterChip key={s} active={projectStatusFilter === s} onClick={() => setProjectStatusFilter(s)}>
                       {s === 'in_progress' ? 'In Progress' : s === 'completed' ? 'Complete' : 'All'}
-                    </button>
+                    </FilterChip>
                   ))}
                   <div className="h-5 w-px bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0" />
 
                   {/* Project */}
-                  <Popover open={projectNameOpen} onOpenChange={setProjectNameOpen}>
-                    <PopoverTrigger asChild>
-                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                        !projectNameFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'
-                      }`}>
-                        <FolderOpen className="h-3.5 w-3.5" />
-                        Project {!projectNameFilter.includes('all') && `(${projectNameFilter.length})`}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[280px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search projects..." />
-                        <CommandList>
-                          <CommandEmpty>No projects found.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem value="all" onSelect={() => { toggleProjectNameFilter('all'); setProjectNameOpen(false); }}>
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${projectNameFilter.includes('all') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                {projectNameFilter.includes('all') && <Check className="h-3 w-3" />}
-                              </div>
-                              All Projects
-                            </CommandItem>
-                            {projects.map(p => (
-                              <CommandItem key={p.id} value={p.name} onSelect={() => toggleProjectNameFilter(p.name)}>
-                                <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${projectNameFilter.includes(p.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                  {projectNameFilter.includes(p.name) && <Check className="h-3 w-3" />}
-                                </div>
-                                {p.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <MultiSelectFilterChip
+                    icon={<FolderOpen className="h-3.5 w-3.5" />}
+                    label="Project"
+                    selected={projectNameFilter}
+                    onToggle={toggleProjectNameFilter}
+                    open={projectNameOpen}
+                    onOpenChange={setProjectNameOpen}
+                    allLabel="All Projects"
+                    searchPlaceholder="Search projects..."
+                    emptyLabel="No projects found."
+                    options={projectNameOptions.map((name) => ({ value: name, label: name }))}
+                  />
 
                   {/* Health Center */}
-                  <Popover open={projectHCOpen} onOpenChange={setProjectHCOpen}>
-                    <PopoverTrigger asChild>
-                      <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 text-[12px] ${
-                        !projectHCFilter.includes('All Health Centers') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]'
-                      }`}>
-                        <Building2 className="h-3.5 w-3.5" />
-                        Health Center {!projectHCFilter.includes('All Health Centers') && `(${projectHCFilter.length})`}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[280px] p-0" align="start">
-                      <Command>
-                        <CommandInput placeholder="Search health centers..." />
-                        <CommandList>
-                          <CommandEmpty>No health centers found.</CommandEmpty>
-                          <CommandGroup>
-                            <CommandItem value="all" onSelect={() => { toggleProjectHCFilter('All Health Centers'); setProjectHCOpen(false); }}>
-                              <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${projectHCFilter.includes('All Health Centers') ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                {projectHCFilter.includes('All Health Centers') && <Check className="h-3 w-3" />}
-                              </div>
-                              All Health Centers
-                            </CommandItem>
-                            {healthCenters.map(hc => (
-                              <CommandItem key={hc.name} value={hc.name} onSelect={() => toggleProjectHCFilter(hc.name)}>
-                                <div className={`mr-2 h-4 w-4 border rounded flex items-center justify-center ${projectHCFilter.includes(hc.name) ? 'bg-[#fc6] border-[#fc6]' : 'border-[#e4e4e7]'}`}>
-                                  {projectHCFilter.includes(hc.name) && <Check className="h-3 w-3" />}
-                                </div>
-                                {hc.name}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+                  <MultiSelectFilterChip
+                    icon={<Building2 className="h-3.5 w-3.5" />}
+                    label="Health Center"
+                    selected={projectHCFilter}
+                    onToggle={toggleProjectHCFilter}
+                    open={projectHCOpen}
+                    onOpenChange={setProjectHCOpen}
+                    allValue="All Health Centers"
+                    allLabel="All Health Centers"
+                    searchPlaceholder="Search health centers..."
+                    emptyLabel="No health centers found."
+                    options={healthCenters.map((hc) => ({ value: hc.name, label: hc.name }))}
+                  />
 
                   {/* Clear All — visible when any filter is non-default */}
                   {(projectStatusFilter !== 'in_progress' || projectSearch || !projectNameFilter.includes('all') || !projectHCFilter.includes('All Health Centers')) && (

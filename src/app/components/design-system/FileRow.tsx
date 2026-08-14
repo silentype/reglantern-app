@@ -10,6 +10,7 @@ function fileIcon(name: string): LucideIcon {
   return File;
 }
 import { Button } from './Button';
+import { IconButton } from './IconButton';
 
 export interface FileRowProps {
   name: string;
@@ -71,25 +72,14 @@ export function FileRow({
           <Button variant="secondary" size="sm" onClick={onDownload}>Download</Button>
         )}
         {onOpenInNew && (
-          <button
-            type="button"
-            onClick={onOpenInNew}
-            aria-label={`Open ${name} in new window`}
-            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] dark:border-[#2a2f3a] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#f9fafb] dark:hover:bg-[#111318] hover:text-[#18181b] dark:hover:text-[#f4f4f5] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
-            title="Open in new window"
-          >
+          <IconButton label={`Open ${name} in new window`} onClick={onOpenInNew}>
             <ExternalLink className="size-3.5" />
-          </button>
+          </IconButton>
         )}
         {onDelete && (
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label={`Delete ${name}`}
-            className="size-8 inline-flex items-center justify-center rounded border border-[#e4e4e7] dark:border-[#2a2f3a] text-[#dc2626] hover:bg-[#fee2e2] dark:hover:bg-[#2d1010] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#fc6]"
-          >
+          <IconButton label={`Delete ${name}`} variant="danger" onClick={onDelete}>
             <Trash2 className="size-3.5" />
-          </button>
+          </IconButton>
         )}
       </div>
     </div>

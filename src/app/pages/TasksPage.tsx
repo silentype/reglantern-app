@@ -36,6 +36,7 @@ import { Calendar } from '../components/ui/calendar';
 import TaskTableDynamic, { type Task } from '../components/TaskTableDynamic';
 import { TasksHeader } from '../components/TasksHeader';
 import { SearchInput } from '../components/design-system/SearchInput';
+import { FilterChip } from '../components/design-system/FilterChip';
 import { MultiSelectFilterChip } from '../components/design-system/MultiSelectFilterChip';
 
 import {
@@ -437,22 +438,15 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               <div className="h-5 w-px bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0"></div>
 
               {/* Status Chips */}
-              <button
-                onClick={() => toggleStatusFilter('all')}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('all') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
-              >
+              <FilterChip active={statusFilter.includes('all')} onClick={() => toggleStatusFilter('all')}>
                 All Tasks
-              </button>
-              <button
-                onClick={() => toggleStatusFilter('incomplete')}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('incomplete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
-              >Incomplete</button>
-              <button
-                onClick={() => toggleStatusFilter('complete')}
-                className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 ${ statusFilter.includes('complete') ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}
-              >
+              </FilterChip>
+              <FilterChip active={statusFilter.includes('incomplete')} onClick={() => toggleStatusFilter('incomplete')}>
+                Incomplete
+              </FilterChip>
+              <FilterChip active={statusFilter.includes('complete')} onClick={() => toggleStatusFilter('complete')}>
                 Complete
-              </button>
+              </FilterChip>
 
               {/* Divider */}
               <div className="h-5 w-px bg-[#e4e4e7] dark:bg-[#2a2f3a] shrink-0"></div>
@@ -460,10 +454,9 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Date Filter Chip */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className={`px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 ${ dueDateFilter ? 'border border-[#fc6] bg-[#fc6] text-[#18181b]' : 'border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a]' } text-[12px]`}>
-                    <CalendarIcon className="h-3.5 w-3.5" />
+                  <FilterChip active={!!dueDateFilter} icon={<CalendarIcon className="h-3.5 w-3.5" />}>
                     {dueDateFilter ? displayDueDateFilter(dueDateFilter) : 'Due Date'}
-                  </button>
+                  </FilterChip>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <div className="flex">
@@ -629,12 +622,16 @@ export function TasksPage({ onTaskClick, onToggleSideNav: _onToggleSideNav, side
               {/* Columns Button */}
               <Popover open={columnVisibilityOpenFilterBar} onOpenChange={setColumnVisibilityOpenFilterBar}>
                 <PopoverTrigger asChild>
-                  <button className="px-2.5 py-1 rounded-full font-medium transition-colors shrink-0 flex items-center gap-1.5 border border-[#e4e4e7] dark:border-[#2a2f3a] bg-[#f4f4f5] dark:bg-[#1c1f26] text-[#6b7280] dark:text-[#a1a1aa] hover:bg-[#e4e4e7] dark:hover:bg-[#2a2f3a] text-[12px] ml-auto">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
-                      <path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
+                  <FilterChip
+                    className="ml-auto"
+                    icon={
+                      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="h-3.5 w-3.5">
+                        <path d="M3 5H13M3 8H13M3 11H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    }
+                  >
                     Columns
-                  </button>
+                  </FilterChip>
                 </PopoverTrigger>
                 <PopoverContent className="w-[280px] p-0" align="end">
                   <Command>

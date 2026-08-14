@@ -580,13 +580,10 @@ export function AdminPage({
                 <Button variant="secondary" onClick={() => setConfirmDeleteProjectOpen(false)}>
                   Cancel
                 </Button>
-                <button
-                  onClick={handleConfirmDeleteProject}
-                  className="h-[40px] px-[16px] py-[8px] rounded-[6px] bg-[#dc2626] text-white text-[14px] font-medium hover:bg-[#b91c1c] transition-colors inline-flex items-center gap-2"
-                >
+                <Button variant="danger" onClick={handleConfirmDeleteProject}>
                   <Trash2 className="w-4 h-4" />
                   Delete project
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -650,21 +647,18 @@ export function AdminPage({
                 ))}
               </ul>
               <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setPendingDelete(null)}
-                  className="px-4 py-2 text-sm font-medium text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-md hover:bg-[#f9fafb] dark:hover:bg-[#2a2f3a] transition-colors"
-                >
+                <Button variant="secondary" onClick={() => setPendingDelete(null)}>
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="danger"
                   onClick={() => {
                     performDeleteProjectTask(pendingDelete.task.id, pendingDelete.dependents.map((d) => d.id));
                     setPendingDelete(null);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#dc2626] rounded-md hover:bg-[#b91c1c] transition-colors"
                 >
                   Delete and clear rules
-                </button>
+                </Button>
               </div>
             </div>
           </div>
