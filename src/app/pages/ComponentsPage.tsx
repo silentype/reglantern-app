@@ -13,8 +13,9 @@
  * long scroll — active tab is mirrored to the `tab` URL search param.
  */
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { parse } from 'date-fns';
 import { Star, Inbox, Settings, User, LogOut, Plus, ExternalLink, Trash2 } from 'lucide-react';
 
 import { Button } from '../components/design-system/Button';
@@ -56,7 +57,7 @@ import { DocumentPreviewModal } from '../components/multi-file-upload-panel/Docu
 import { TopNav } from '../components/TopNav';
 import { TasksHeader } from '../components/TasksHeader';
 import { SaveIndicator } from '../components/SaveIndicator';
-import { DueDatePicker } from '../components/DueDatePicker';
+import { DueDatePickerContent } from '../components/DueDatePicker';
 import { RelativeDuePicker } from '../components/RelativeDuePicker';
 
 import { UserAvatar } from '../components/task-table/UserAvatar';
@@ -173,17 +174,6 @@ export function ComponentsPage() {
     params.set('tab', id);
     setSearchParams(params);
   };
-  // Force the Due Date Picker swatch open on load — its popover content
-  // (Quick Select / Custom Date / Calendar) is the point of the demo, not
-  // the trigger button, so it shouldn't require a click to see.
-  useEffect(() => {
-    if (searchParams.get('dueDateDemo') !== 'open') {
-      const params = new URLSearchParams(searchParams);
-      params.set('dueDateDemo', 'open');
-      setSearchParams(params, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   const [msfOpen, setMsfOpen] = useState(false);
   const [msfSelected, setMsfSelected] = useState<string[]>(['all']);
   const [inputValue, setInputValue] = useState('340B Pharmacy Compliance Audit');
@@ -746,14 +736,13 @@ export function ComponentsPage() {
         {activeCategory === 'all' && <GroupHeading>Date selection</GroupHeading>}
 
         <SectionHeading source="components/DueDatePicker.tsx">Due Date Picker</SectionHeading>
-        <Swatch>
-          <DueDatePicker
-            value={dueDateValue}
+        <div className="border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] overflow-hidden inline-block bg-white dark:bg-[#1e2129]">
+          <DueDatePickerContent
+            selectedDate={parse(dueDateValue, 'MM/dd/yyyy', new Date())}
             onSelect={setDueDateValue}
-            triggerClassName="flex items-center gap-1 px-3 py-1.5 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] text-[13px] text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1c1f26]"
-            urlParam="dueDateDemo"
+            showToast={false}
           />
-        </Swatch>
+        </div>
 
         <SectionHeading source="components/RelativeDuePicker.tsx">Relative Due Picker</SectionHeading>
         <Swatch>

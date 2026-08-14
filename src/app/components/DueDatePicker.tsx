@@ -9,6 +9,106 @@ import { Tab, TabStrip } from './design-system/Tab';
 import { RelativeDuePicker } from './RelativeDuePicker';
 import type { DueDateRule, Task } from './TaskTableDynamic';
 
+export interface DueDatePickerContentProps {
+  /** Currently-selected date, parsed, for calendar highlighting. */
+  selectedDate?: Date;
+  onSelect: (date: string) => void;
+  showToast?: boolean;
+  /** Called after a selection is made (e.g. to close the enclosing popover). Omit for an inline, non-popover usage. */
+  onAfterSelect?: () => void;
+}
+
+/**
+ * The Quick Select / Custom Date / Calendar body of DueDatePicker, without
+ * the Popover wrapper — so it can be shown as a plain inline box (e.g. on
+ * the Components catalog page) as well as inside the real floating popover.
+ */
+export function DueDatePickerContent({ selectedDate, onSelect, showToast = true, onAfterSelect }: DueDatePickerContentProps) {
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const presets: { label: string; code: string; compute: () => Date }[] = [
+    { label: 'Within 7 days', code: '7d', compute: () => addDays(new Date(), 7) },
+    { label: 'Within 14 days', code: '14d', compute: () => addDays(new Date(), 14) },
+    { label: 'Within 1 month', code: '1m', compute: () => addMonths(new Date(), 1) },
+    { label: 'Within 3 months', code: '3m', compute: () => addMonths(new Date(), 3) },
+    { label: 'Within 6 months', code: '6m', compute: () => addMonths(new Date(), 6) },
+    { label: 'Within 1 year', code: '1y', compute: () => addYears(new Date(), 1) },
+  ];
+
+  return (
+    <div className="flex">
+      {/* Left Side - Quick Select */}
+      <div className="p-3 border-r border-[#e4e4e7] dark:border-[#2a2f3a] w-[180px]">
+        <div className="text-xs font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Quick Select</div>
+        <div className="flex flex-col gap-1">
+          {presets.map((preset) => (
+            <button
+              key={preset.code}
+              className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
+              onClick={() => {
+                const newDate = format(preset.compute(), 'MM/dd/yyyy');
+                onSelect(preset.code);
+                if (showToast) toast.success(`Set to ${newDate} (${preset.label})`);
+                onAfterSelect?.();
+              }}
+            >
+              {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Right Side - Type Date & Calendar */}
+      <div className="flex flex-col">
+        {/* Manual Input */}
+        <div className="p-3 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
+          <div className="text-xs font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Custom Date</div>
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
+                if (inputValue && dateRegex.test(inputValue)) {
+                  const parsedDate = parse(inputValue, 'MM/dd/yyyy', new Date());
+                  if (isValid(parsedDate)) {
+                    onSelect(inputValue);
+                    if (showToast) toast.success(`Set to ${inputValue}`);
+                    setInputValue('');
+                    onAfterSelect?.();
+                  }
+                }
+              }
+            }}
+            placeholder="mm/dd/yyyy"
+            maxLength={10}
+            className="w-full px-3 py-2 text-sm text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded focus:outline-none focus:border-[#fc6]"
+          />
+        </div>
+
+        {/* Calendar */}
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={(date) => {
+            if (date) {
+              const formattedDate = format(date, 'MM/dd/yyyy');
+              onSelect(formattedDate);
+              setInputValue('');
+              if (showToast) toast.success(`Set to ${formattedDate}`);
+              onAfterSelect?.();
+            }
+          }}
+          initialFocus
+        />
+      </div>
+    </div>
+  );
+}
+
 interface DueDatePickerProps {
   value?: string; // Current date value in MM/dd/yyyy format or relative format like '7d', '1m'
   onSelect: (date: string) => void; // Callback when date is selected
@@ -53,11 +153,9 @@ export function DueDatePicker({
   relative,
   urlParam,
 }: DueDatePickerProps) {
-  const [inputValue, setInputValue] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
   const urlOpen = urlParam ? searchParams.get(urlParam) === 'open' : false;
   const [calendarOpen, setCalendarOpenLocal] = useState(urlOpen);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // When urlParam is provided, mirror open state in the URL so screengrabs
   // captured at the URL level reflect the popover-open view.
@@ -130,130 +228,12 @@ export function DueDatePicker({
             }}
           />
         ) : (
-        <div className="flex">
-          {/* Left Side - Quick Select */}
-          <div className="p-3 border-r border-[#e4e4e7] dark:border-[#2a2f3a] w-[180px]">
-            <div className="text-xs font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Quick Select</div>
-            <div className="flex flex-col gap-1">
-              <button
-                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
-                onClick={() => {
-                  const newDate = format(addDays(new Date(), 7), 'MM/dd/yyyy');
-                  onSelect('7d');
-                  if (showToast) toast.success(`Set to ${newDate} (Within 7 days)`);
-                  setCalendarOpen(false);
-                }}
-              >
-                Within 7 days
-              </button>
-              <button
-                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
-                onClick={() => {
-                  const newDate = format(addDays(new Date(), 14), 'MM/dd/yyyy');
-                  onSelect('14d');
-                  if (showToast) toast.success(`Set to ${newDate} (Within 14 days)`);
-                  setCalendarOpen(false);
-                }}
-              >
-                Within 14 days
-              </button>
-              <button
-                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
-                onClick={() => {
-                  const newDate = format(addMonths(new Date(), 1), 'MM/dd/yyyy');
-                  onSelect('1m');
-                  if (showToast) toast.success(`Set to ${newDate} (Within 1 month)`);
-                  setCalendarOpen(false);
-                }}
-              >
-                Within 1 month
-              </button>
-              <button
-                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
-                onClick={() => {
-                  const newDate = format(addMonths(new Date(), 3), 'MM/dd/yyyy');
-                  onSelect('3m');
-                  if (showToast) toast.success(`Set to ${newDate} (Within 3 months)`);
-                  setCalendarOpen(false);
-                }}
-              >
-                Within 3 months
-              </button>
-              <button
-                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
-                onClick={() => {
-                  const newDate = format(addMonths(new Date(), 6), 'MM/dd/yyyy');
-                  onSelect('6m');
-                  if (showToast) toast.success(`Set to ${newDate} (Within 6 months)`);
-                  setCalendarOpen(false);
-                }}
-              >
-                Within 6 months
-              </button>
-              <button
-                className="w-full text-left px-3 py-2 text-xs text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] hover:bg-[#f4f4f5] dark:hover:bg-[#2a2f3a] rounded transition-colors"
-                onClick={() => {
-                  const newDate = format(addYears(new Date(), 1), 'MM/dd/yyyy');
-                  onSelect('1y');
-                  if (showToast) toast.success(`Set to ${newDate} (Within 1 year)`);
-                  setCalendarOpen(false);
-                }}
-              >
-                Within 1 year
-              </button>
-            </div>
-          </div>
-
-          {/* Right Side - Type Date & Calendar */}
-          <div className="flex flex-col">
-            {/* Manual Input */}
-            <div className="p-3 border-b border-[#e4e4e7] dark:border-[#2a2f3a]">
-              <div className="text-xs font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-2">Custom Date</div>
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setInputValue(newValue);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const dateRegex = /^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$/;
-                    if (inputValue && dateRegex.test(inputValue)) {
-                      const parsedDate = parse(inputValue, 'MM/dd/yyyy', new Date());
-                      if (isValid(parsedDate)) {
-                        onSelect(inputValue);
-                        if (showToast) toast.success(`Set to ${inputValue}`);
-                        setInputValue('');
-                        setCalendarOpen(false);
-                      }
-                    }
-                  }
-                }}
-                placeholder="mm/dd/yyyy"
-                maxLength={10}
-                className="w-full px-3 py-2 text-sm text-[#18181b] dark:text-[#f4f4f5] bg-white dark:bg-[#1e2129] border border-[#e4e4e7] dark:border-[#2a2f3a] rounded focus:outline-none focus:border-[#fc6]"
-              />
-            </div>
-
-            {/* Calendar */}
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => {
-                if (date) {
-                  const formattedDate = format(date, 'MM/dd/yyyy');
-                  onSelect(formattedDate);
-                  setInputValue('');
-                  if (showToast) toast.success(`Set to ${formattedDate}`);
-                  setCalendarOpen(false);
-                }
-              }}
-              initialFocus
-            />
-          </div>
-        </div>
+          <DueDatePickerContent
+            selectedDate={selectedDate}
+            onSelect={onSelect}
+            showToast={showToast}
+            onAfterSelect={() => setCalendarOpen(false)}
+          />
         )}
       </PopoverContent>
     </Popover>
