@@ -113,6 +113,15 @@ function SectionHeading({ children, source }: { children: ReactNode; source: str
   );
 }
 
+function StatePreview({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      {children}
+      <span className="text-[11px] text-[#9ca3af]">{label}</span>
+    </div>
+  );
+}
+
 function Swatch({ children, dark }: { children: ReactNode; dark?: boolean }) {
   return (
     <div
@@ -227,6 +236,27 @@ export function ComponentsPage() {
           it sits in a page header.
         </p>
 
+        <SectionHeading source="design-system/Button.tsx">Button — hover &amp; active states</SectionHeading>
+        <Swatch>
+          <StatePreview label="Default"><Button variant="primary">Primary</Button></StatePreview>
+          <StatePreview label="Hover"><Button variant="primary" className="!bg-[#eab308]">Primary</Button></StatePreview>
+          <StatePreview label="Active"><Button variant="primary" className="!bg-[#ca8a04]">Primary</Button></StatePreview>
+          <StatePreview label="Default"><Button variant="secondary">Secondary</Button></StatePreview>
+          <StatePreview label="Hover"><Button variant="secondary" className="!bg-muted">Secondary</Button></StatePreview>
+          <StatePreview label="Active"><Button variant="secondary" className="!bg-border">Secondary</Button></StatePreview>
+          <StatePreview label="Default"><Button variant="ghost">Ghost</Button></StatePreview>
+          <StatePreview label="Hover"><Button variant="ghost" className="!bg-border">Ghost</Button></StatePreview>
+          <StatePreview label="Active"><Button variant="ghost" className="!bg-border/80">Ghost</Button></StatePreview>
+          <StatePreview label="Default"><Button variant="danger">Danger</Button></StatePreview>
+          <StatePreview label="Hover"><Button variant="danger" className="!bg-[#b91c1c]">Danger</Button></StatePreview>
+          <StatePreview label="Active"><Button variant="danger" className="!bg-[#991b1b]">Danger</Button></StatePreview>
+        </Swatch>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          Static previews of each pseudo-state — the real hover/active colors, forced on with{' '}
+          <code className="text-[12px]">!important</code> overrides so they&rsquo;re visible without moving the
+          mouse. The live buttons above still respond to real hover/click too.
+        </p>
+
         <SectionHeading source="design-system/BackButton.tsx">Back Button</SectionHeading>
         <Swatch>
           <BackButton onClick={() => {}}>Project Builder</BackButton>
@@ -240,12 +270,26 @@ export function ComponentsPage() {
 
         <SectionHeading source="design-system/IconButton.tsx">Icon Button</SectionHeading>
         <Swatch>
-          <IconButton label="Open in new window">
-            <ExternalLink className="size-3.5" />
-          </IconButton>
-          <IconButton label="Delete file" variant="danger">
-            <Trash2 className="size-3.5" />
-          </IconButton>
+          <StatePreview label="Default">
+            <IconButton label="Open in new window">
+              <ExternalLink className="size-3.5" />
+            </IconButton>
+          </StatePreview>
+          <StatePreview label="Hover">
+            <IconButton label="Open in new window" className="!bg-[#f9fafb] !text-[#18181b]">
+              <ExternalLink className="size-3.5" />
+            </IconButton>
+          </StatePreview>
+          <StatePreview label="Default">
+            <IconButton label="Delete file" variant="danger">
+              <Trash2 className="size-3.5" />
+            </IconButton>
+          </StatePreview>
+          <StatePreview label="Hover">
+            <IconButton label="Delete file" variant="danger" className="!bg-[#fee2e2]">
+              <Trash2 className="size-3.5" />
+            </IconButton>
+          </StatePreview>
         </Swatch>
         <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
           Square, icon-only action button — for a lone icon (close, open-in-new, delete) that needs a bordered
@@ -275,6 +319,13 @@ export function ComponentsPage() {
             />
             <Input label="Locked field" value="Read-only value" disabled containerClassName="w-[220px]" />
             <Input label="Project name" required error="Project name is required" value="" readOnly containerClassName="w-[220px]" />
+            <Input
+              label="Focused field"
+              value="Focused example"
+              readOnly
+              className="!border-[#fc6]"
+              containerClassName="w-[220px]"
+            />
           </div>
         </Swatch>
 
@@ -287,32 +338,82 @@ export function ComponentsPage() {
             placeholder="Add a description"
             containerClassName="w-full max-w-[320px]"
           />
+          <Textarea
+            label="Focused field"
+            value="Focused example"
+            readOnly
+            className="!border-[#fc6]"
+            containerClassName="w-full max-w-[320px]"
+          />
         </Swatch>
 
         <SectionHeading source="design-system/Select.tsx">Select</SectionHeading>
         <Swatch>
-          <Select value={selectValue} onChange={(e) => setSelectValue(e.target.value)} className="w-[200px]">
-            <option value="clinical">Clinical</option>
-            <option value="fiscal">Fiscal</option>
-            <option value="governance">Governance</option>
-          </Select>
+          <StatePreview label="Default">
+            <Select value={selectValue} onChange={(e) => setSelectValue(e.target.value)} className="w-[200px]">
+              <option value="clinical">Clinical</option>
+              <option value="fiscal">Fiscal</option>
+              <option value="governance">Governance</option>
+            </Select>
+          </StatePreview>
+          <StatePreview label="Hover">
+            <Select
+              value={selectValue}
+              onChange={() => {}}
+              className="w-[200px] [&>select]:!border-[#cdd7e1] dark:[&>select]:!border-[#3a4455]"
+            >
+              <option value="clinical">Clinical</option>
+              <option value="fiscal">Fiscal</option>
+              <option value="governance">Governance</option>
+            </Select>
+          </StatePreview>
+          <StatePreview label="Focus">
+            <Select
+              value={selectValue}
+              onChange={() => {}}
+              className="w-[200px] [&>select]:!border-[#fc6] [&>select]:!ring-2 [&>select]:!ring-[#fc6]/30"
+            >
+              <option value="clinical">Clinical</option>
+              <option value="fiscal">Fiscal</option>
+              <option value="governance">Governance</option>
+            </Select>
+          </StatePreview>
         </Swatch>
 
         <SectionHeading source="design-system/SearchInput.tsx">Search Input</SectionHeading>
         <Swatch>
-          <SearchInput
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onClear={() => setSearch('')}
-            placeholder="Search tasks…"
-          />
+          <StatePreview label="Default">
+            <SearchInput
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClear={() => setSearch('')}
+              placeholder="Search tasks…"
+            />
+          </StatePreview>
+          <StatePreview label="Focus">
+            <SearchInput
+              value="due date"
+              onChange={() => {}}
+              placeholder="Search tasks…"
+              className="[&>input]:!border-[#fc6] [&>input]:!ring-2 [&>input]:!ring-[#fc6] [&>input]:!ring-offset-1"
+            />
+          </StatePreview>
         </Swatch>
 
         <SectionHeading source="design-system/DateChip.tsx">Date Chip</SectionHeading>
         <Swatch>
-          <DateChip value="07/23/2026" onClick={() => {}} />
-          <DateChip placeholder="Select Date" onClick={() => {}} />
-          <DateChip value="07/23/2026" highlighted onClick={() => {}} />
+          <StatePreview label="Default">
+            <DateChip value="07/23/2026" onClick={() => {}} />
+          </StatePreview>
+          <StatePreview label="Hover">
+            <DateChip value="07/23/2026" onClick={() => {}} className="!border-[#cdd7e1] dark:!border-[#3a4455]" />
+          </StatePreview>
+          <StatePreview label="Empty">
+            <DateChip placeholder="Select Date" onClick={() => {}} />
+          </StatePreview>
+          <StatePreview label="Selected">
+            <DateChip value="07/23/2026" highlighted onClick={() => {}} />
+          </StatePreview>
         </Swatch>
 
         </>
@@ -667,14 +768,7 @@ export function ComponentsPage() {
 
         <SectionHeading source="components/ui/calendar.tsx">Calendar (Radix / react-day-picker)</SectionHeading>
         <Swatch>
-          <UIPopover>
-            <UIPopoverTrigger asChild>
-              <Button variant="secondary" size="sm">Open calendar</Button>
-            </UIPopoverTrigger>
-            <UIPopoverContent className="w-auto p-0" align="start">
-              <UICalendar mode="single" className="bg-white dark:bg-[#1c1f26]" />
-            </UIPopoverContent>
-          </UIPopover>
+          <UICalendar mode="single" className="bg-white dark:bg-[#1c1f26]" />
         </Swatch>
 
         <SectionHeading source="components/ui/popover.tsx">Popover (Radix)</SectionHeading>
