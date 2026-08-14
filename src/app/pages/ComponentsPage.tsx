@@ -96,6 +96,14 @@ import {
   CommandItem as UICommandItem,
 } from '../components/ui/command';
 
+function GroupHeading({ children }: { children: ReactNode }) {
+  return (
+    <h2 className="text-[13px] font-semibold text-[#6b7280] dark:text-[#a1a1aa] uppercase tracking-wide mt-10 mb-3 first:mt-0">
+      {children}
+    </h2>
+  );
+}
+
 function SectionHeading({ children, source }: { children: ReactNode; source: string }) {
   return (
     <div className="mt-8 mb-3 flex items-baseline justify-between gap-3">
@@ -119,6 +127,7 @@ const PILL_COLORS: PillColor[] = ['neutral', 'yellow', 'green', 'blue', 'red', '
 const STATUSES: TaskStatus[] = ['In Progress', 'Complete', 'Blocked', 'Not Started'];
 
 const CATEGORIES = [
+  { id: 'all', label: 'All' },
   { id: 'actions', label: 'Actions' },
   { id: 'form-fields', label: 'Form Fields' },
   { id: 'selection-filters', label: 'Selection & Filters' },
@@ -196,8 +205,9 @@ export function ComponentsPage() {
       </div>
 
       <div className="flex-1 overflow-auto px-[24px] py-6 max-w-[1000px]">
-        {activeCategory === 'actions' && (
+        {(activeCategory === 'all' || activeCategory === 'actions') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Actions</GroupHeading>}
         <SectionHeading source="design-system/Button.tsx">Button</SectionHeading>
         <Swatch>
           <Button variant="primary">Primary</Button>
@@ -248,8 +258,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'form-fields' && (
+        {(activeCategory === 'all' || activeCategory === 'form-fields') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Form Fields</GroupHeading>}
 
         <SectionHeading source="design-system/Input.tsx">Input</SectionHeading>
         <Swatch>
@@ -307,8 +318,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'selection-filters' && (
+        {(activeCategory === 'all' || activeCategory === 'selection-filters') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Selection &amp; Filters</GroupHeading>}
 
         <SectionHeading source="design-system/FilterChip.tsx">Filter Chip</SectionHeading>
         <Swatch>
@@ -347,8 +359,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'navigation' && (
+        {(activeCategory === 'all' || activeCategory === 'navigation') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Navigation</GroupHeading>}
 
         <SectionHeading source="design-system/Breadcrumb.tsx">Breadcrumb</SectionHeading>
         <Swatch>
@@ -403,8 +416,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'status-progress' && (
+        {(activeCategory === 'all' || activeCategory === 'status-progress') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Status &amp; Progress</GroupHeading>}
 
         <SectionHeading source="design-system/Pill.tsx">Pill</SectionHeading>
         <Swatch>
@@ -434,8 +448,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'people-comments' && (
+        {(activeCategory === 'all' || activeCategory === 'people-comments') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>People &amp; Comments</GroupHeading>}
 
         <SectionHeading source="design-system/Avatar.tsx">Avatar</SectionHeading>
         <Swatch>
@@ -486,8 +501,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'layout-content' && (
+        {(activeCategory === 'all' || activeCategory === 'layout-content') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Layout &amp; Content</GroupHeading>}
 
         <SectionHeading source="design-system/Card.tsx">Card</SectionHeading>
         <Swatch>
@@ -550,8 +566,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'files' && (
+        {(activeCategory === 'all' || activeCategory === 'files') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Files</GroupHeading>}
 
         <SectionHeading source="design-system/FileRow.tsx">File Row</SectionHeading>
         <Swatch>
@@ -577,8 +594,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'app-shell' && (
+        {(activeCategory === 'all' || activeCategory === 'app-shell') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>App shell</GroupHeading>}
 
         <SectionHeading source="components/TopNav.tsx">Top Navigation</SectionHeading>
         <div className="border border-[#e4e4e7] rounded-[6px] overflow-x-auto">
@@ -622,8 +640,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'date-selection' && (
+        {(activeCategory === 'all' || activeCategory === 'date-selection') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Date selection</GroupHeading>}
 
         <SectionHeading source="components/DueDatePicker.tsx">Due Date Picker</SectionHeading>
         <Swatch>
@@ -674,8 +693,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'dropdown-input' && (
+        {(activeCategory === 'all' || activeCategory === 'dropdown-input') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Dropdown &amp; input primitives (Radix)</GroupHeading>}
 
         <SectionHeading source="components/ui/dropdown-menu.tsx">Dropdown Menu</SectionHeading>
         <Swatch>
@@ -736,8 +756,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'task-table' && (
+        {(activeCategory === 'all' || activeCategory === 'task-table') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Task table primitives</GroupHeading>}
 
         <SectionHeading source="task-table/UserAvatar.tsx">User Avatar (row-level)</SectionHeading>
         <Swatch>
@@ -787,8 +808,9 @@ export function ComponentsPage() {
         </>
         )}
 
-        {activeCategory === 'task-overlay' && (
+        {(activeCategory === 'all' || activeCategory === 'task-overlay') && (
         <>
+        {activeCategory === 'all' && <GroupHeading>Task overlay panel</GroupHeading>}
 
         <SectionHeading source="components/MultiFileUploadPanel.tsx">Task Overlay Panel</SectionHeading>
         <div className="px-4 py-3 border border-[#e4e4e7] dark:border-[#2a2f3a] rounded-[6px] bg-white dark:bg-[#1e2129] text-[13px] text-[#6b7280] dark:text-[#a1a1aa]">
