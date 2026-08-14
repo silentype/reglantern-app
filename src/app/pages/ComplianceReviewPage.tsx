@@ -18,6 +18,9 @@ import { SearchInput } from '../components/design-system/SearchInput';
 import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
 import { FilterChip } from '../components/design-system/FilterChip';
 import { MultiSelectFilterChip } from '../components/design-system/MultiSelectFilterChip';
+import { YesNoCard } from '../components/design-system/YesNoCard';
+import { ProgressRingStepper } from '../components/design-system/ProgressRingStepper';
+import { PillStepper } from '../components/design-system/PillStepper';
 import { getFileType } from '../components/multi-file-upload-panel/helpers';
 import type { UploadedFile } from '../components/multi-file-upload-panel/types';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
@@ -395,57 +398,23 @@ export function ComplianceReviewPage() {
       <div className="flex-1 flex overflow-hidden">
 
         {/* Chapter Sidebar */}
-        <div className="w-14 flex-none flex flex-col items-center py-3 gap-2 border-r border-[#e4e4e7] dark:border-[#2a2f3a] overflow-y-auto bg-[#f9fafb] dark:bg-[#111318]">
-          {chapters.map((chapter) => {
+        <ProgressRingStepper
+          className="w-14 flex-none py-3 border-r border-[#e4e4e7] dark:border-[#2a2f3a] overflow-y-auto bg-[#f9fafb] dark:bg-[#111318]"
+          active={selectedChapter}
+          onChange={(id) => handleChapterChange(Number(id))}
+          items={chapters.map((chapter) => {
             const { completed, total } = getChapterCompletion(chapter, answers);
-            const isActive = selectedChapter === chapter.id;
             const isComplete = completed === total && total > 0;
             const hasNo = getChapterHasNo(chapter, answers);
-            const pct = total > 0 ? completed / total : 0;
-            // SVG ring: r=17 → circumference ≈ 106.8
-            const r = 17;
-            const circ = 2 * Math.PI * r;
-            const dash = pct * circ;
-            const ringColor = isComplete && !hasNo ? '#16a34a' : hasNo ? '#7c3aed' : '#fc6';
-            return (
-              <button
-                key={chapter.id}
-                onClick={() => handleChapterChange(chapter.id)}
-                title={`${chapter.name} · ${completed}/${total} answered`}
-                className="relative w-10 h-10 flex items-center justify-center flex-none group"
-              >
-                <svg width="40" height="40" className="absolute inset-0 -rotate-90">
-                  {/* Track */}
-                  <circle
-                    cx="20" cy="20" r={r}
-                    fill="none"
-                    stroke={isActive ? '#cdd7e1' : '#e4e4e7'}
-                    strokeWidth="2.5"
-                  />
-                  {/* Progress arc */}
-                  {pct > 0 && (
-                    <circle
-                      cx="20" cy="20" r={r}
-                      fill="none"
-                      stroke={ringColor}
-                      strokeWidth="2.5"
-                      strokeDasharray={`${dash} ${circ}`}
-                      strokeLinecap="round"
-                      style={{ transition: 'stroke-dasharray 0.3s ease' }}
-                    />
-                  )}
-                </svg>
-                {/* Active fill */}
-                {isActive && (
-                  <span className="absolute inset-[4px] rounded-full bg-[#cdd7e1]" />
-                )}
-                <span className={`relative text-[13px] font-semibold ${isActive ? 'text-[#18181b] dark:text-[#f4f4f5]' : completed > 0 ? 'text-[#18181b] dark:text-[#f4f4f5]' : 'text-[#6b7280] dark:text-[#a1a1aa]'} group-hover:text-[#18181b] dark:group-hover:text-[#f4f4f5] transition-colors`}>
-                  {chapter.id}
-                </span>
-              </button>
-            );
+            return {
+              id: chapter.id,
+              label: chapter.id,
+              progress: total > 0 ? completed / total : 0,
+              color: isComplete && !hasNo ? '#16a34a' : hasNo ? '#7c3aed' : undefined,
+              title: `${chapter.name} · ${completed}/${total} answered`,
+            };
           })}
-        </div>
+        />
 
         {/* Question Panel */}
         <div className="w-[44%] overflow-y-auto border-r border-[#e4e4e7] dark:border-[#2a2f3a] p-6">
@@ -461,47 +430,12 @@ export function ComplianceReviewPage() {
               <h2 className="text-[22px] font-semibold text-[#18181b] dark:text-[#f4f4f5] mb-4">{currentQuestion.text}</h2>
 
               {/* Yes / No */}
-              <div className="flex gap-3 mb-4">
-                <button
-                  onClick={() => handleAnswerChange('yes')}
-                  className={`flex items-center gap-3 px-5 py-3 rounded-lg border-2 transition-all ${
-                    currentAnswer?.answer === 'yes'
-                      ? 'border-[#16a34a] bg-[#dcfce7] dark:bg-[#2a3a2a]'
-                      : 'border-[#e4e4e7] dark:border-[#2a2f3a] hover:border-[#d4d4d8] dark:hover:border-[#3f4756]'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      currentAnswer?.answer === 'yes' ? 'border-[#16a34a]' : 'border-[#6b7280]'
-                    }`}
-                  >
-                    {currentAnswer?.answer === 'yes' && (
-                      <div className="w-3 h-3 rounded-full bg-[#16a34a]" />
-                    )}
-                  </div>
-                  <span className="font-medium text-[#18181b] dark:text-[#f4f4f5]">Yes</span>
-                </button>
-
-                <button
-                  onClick={() => handleAnswerChange('no')}
-                  className={`flex items-center gap-3 px-5 py-3 rounded-lg border-2 transition-all ${
-                    currentAnswer?.answer === 'no'
-                      ? 'border-[#dc2626] bg-[#fef2f2] dark:bg-[#2d1010]'
-                      : 'border-[#e4e4e7] dark:border-[#2a2f3a] hover:border-[#d4d4d8] dark:hover:border-[#3f4756]'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                      currentAnswer?.answer === 'no' ? 'border-[#dc2626]' : 'border-[#6b7280]'
-                    }`}
-                  >
-                    {currentAnswer?.answer === 'no' && (
-                      <div className="w-3 h-3 rounded-full bg-[#dc2626]" />
-                    )}
-                  </div>
-                  <span className="font-medium text-[#18181b] dark:text-[#f4f4f5]">No</span>
-                </button>
-              </div>
+              <YesNoCard
+                className="mb-4"
+                variant="semantic"
+                value={currentAnswer?.answer ?? null}
+                onChange={(next) => next && handleAnswerChange(next)}
+              />
 
               {/* Explanation */}
               <Textarea
@@ -525,27 +459,22 @@ export function ComplianceReviewPage() {
                       {answeredCount} of {totalQuestions} answered
                     </span>
                   </div>
-                  <div className="flex items-center gap-1 h-[10px]">
-                    {(currentChapter?.questions ?? []).map((q, i) => {
+                  <PillStepper
+                    current={currentQuestionIndex}
+                    onChange={(i) => setCurrentQuestionIndex(Number(i))}
+                    items={(currentChapter?.questions ?? []).map((q, i) => {
                       const ans = answers[q.id]?.answer;
-                      const isCurrent = i === currentQuestionIndex;
-                      return (
-                        <button
-                          key={q.id}
-                          onClick={() => setCurrentQuestionIndex(i)}
-                          title={`Question ${i + 1}${ans === 'yes' ? ' · Yes' : ans === 'no' ? ' · No' : ''}`}
-                          className={`flex-1 rounded-full transition-all duration-200 ${
-                            isCurrent ? 'h-[10px]' : 'h-[6px]'
-                          } ${
-                            ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#16a34a]' :
-                            ans === 'no'  ? 'bg-[#dc2626] hover:bg-[#b91c1c]' :
-                            isCurrent     ? 'bg-[#a1a1aa] hover:bg-[#6b7280]' :
-                                            'bg-[#e4e4e7] hover:bg-[#d4d4d8]'
-                          }`}
-                        />
-                      );
+                      return {
+                        id: i,
+                        colorClassName:
+                          ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#16a34a]' :
+                          ans === 'no'  ? 'bg-[#dc2626] hover:bg-[#b91c1c]' :
+                          i === currentQuestionIndex ? 'bg-[#a1a1aa] hover:bg-[#6b7280]' :
+                                          'bg-[#e4e4e7] hover:bg-[#d4d4d8]',
+                        title: `Question ${i + 1}${ans === 'yes' ? ' · Yes' : ans === 'no' ? ' · No' : ''}`,
+                      };
                     })}
-                  </div>
+                  />
                 </div>
                 <Pagination
                   current={currentQuestionIndex + 1}

@@ -37,6 +37,8 @@ import { Breadcrumb } from '../components/design-system/Breadcrumb';
 import { Pagination } from '../components/design-system/Pagination';
 import { Tab, TabStrip } from '../components/design-system/Tab';
 import { UnderlineTabs } from '../components/design-system/UnderlineTabs';
+import { ProgressRingStepper } from '../components/design-system/ProgressRingStepper';
+import { PillStepper } from '../components/design-system/PillStepper';
 
 import { Pill, type PillColor } from '../components/design-system/Pill';
 import { StatusBadge, type TaskStatus } from '../components/design-system/StatusBadge';
@@ -135,6 +137,7 @@ function Swatch({ children, dark }: { children: ReactNode; dark?: boolean }) {
 
 const PILL_COLORS: PillColor[] = ['neutral', 'yellow', 'green', 'blue', 'red', 'purple'];
 const STATUSES: TaskStatus[] = ['In Progress', 'Complete', 'Blocked', 'Not Started'];
+const PILL_STEPPER_ANSWERS: ('yes' | 'no' | null)[] = ['yes', 'yes', 'no', null, null, 'yes', null, null];
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -159,6 +162,7 @@ export function ComponentsPage() {
   const [selectValue, setSelectValue] = useState('clinical');
   const [activeTab, setActiveTab] = useState('details');
   const [yesNo, setYesNo] = useState<YesNoValue>('yes');
+  const [yesNoSemantic, setYesNoSemantic] = useState<YesNoValue>('yes');
   const [page, setPage] = useState(2);
   const [filterActive, setFilterActive] = useState(true);
   const [uiSelectValue, setUiSelectValue] = useState('clinical');
@@ -179,6 +183,8 @@ export function ComponentsPage() {
   const [inputValue, setInputValue] = useState('340B Pharmacy Compliance Audit');
   const [textareaValue, setTextareaValue] = useState('');
   const [underlineTab, setUnderlineTab] = useState('projects');
+  const [ringActive, setRingActive] = useState(2);
+  const [pillActive, setPillActive] = useState(3);
   const toggleMsf = (value: string) => {
     if (value === 'all') return setMsfSelected(['all']);
     setMsfSelected((prev) => {
@@ -444,8 +450,21 @@ export function ComponentsPage() {
 
         <SectionHeading source="design-system/YesNoCard.tsx">Yes / No Card</SectionHeading>
         <Swatch>
-          <YesNoCard value={yesNo} onChange={setYesNo} />
+          <div className="flex flex-col gap-3 w-full">
+            <div>
+              <p className="text-[11px] text-[#9ca3af] mb-1.5">neutral (default) — no "right" answer</p>
+              <YesNoCard value={yesNo} onChange={setYesNo} />
+            </div>
+            <div>
+              <p className="text-[11px] text-[#9ca3af] mb-1.5">semantic — Yes is green, No is red</p>
+              <YesNoCard value={yesNoSemantic} onChange={setYesNoSemantic} variant="semantic" />
+            </div>
+          </div>
         </Swatch>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          <code className="text-[12px]">variant=&quot;semantic&quot;</code> is what Compliance Review uses — Yes/No
+          carries a compliant/non-compliant meaning there, so the accent color should say so.
+        </p>
 
         </>
         )}
@@ -502,6 +521,48 @@ export function ComponentsPage() {
         <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
           Bottom-border style — distinct from the segmented-control Tab/TabStrip above. Used on Home (Projects /
           Health Centers), Health Center Admin (detail tabs), and Compliance Review (Tasks / Preview).
+        </p>
+
+        <SectionHeading source="design-system/ProgressRingStepper.tsx">Progress Ring Stepper</SectionHeading>
+        <Swatch dark>
+          <ProgressRingStepper
+            items={[
+              { id: 1, label: 1, progress: 1, color: '#16a34a', title: 'Chapter 1 · 6/6 answered' },
+              { id: 2, label: 2, progress: 0.6, title: 'Chapter 2 · 3/5 answered' },
+              { id: 3, label: 3, progress: 1, color: '#7c3aed', title: 'Chapter 3 · 4/4 answered, 1 flagged' },
+              { id: 4, label: 4, progress: 0, title: 'Chapter 4 · 0/3 answered' },
+            ]}
+            active={ringActive}
+            onChange={(id) => setRingActive(Number(id))}
+          />
+        </Swatch>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          The chapter navigator on Compliance Review — an SVG progress ring per item. Ring color is caller-supplied
+          so it can carry meaning: green when a chapter is fully answered, purple when it has a flagged (&quot;No&quot;)
+          answer, brand yellow while in progress.
+        </p>
+
+        <SectionHeading source="design-system/PillStepper.tsx">Pill Stepper</SectionHeading>
+        <Swatch>
+          <div className="w-full max-w-[360px]">
+            <PillStepper
+              current={pillActive}
+              onChange={(id) => setPillActive(Number(id))}
+              items={PILL_STEPPER_ANSWERS.map((ans, i) => ({
+                id: i,
+                colorClassName:
+                  ans === 'yes' ? 'bg-[#16a34a] hover:bg-[#16a34a]' :
+                  ans === 'no'  ? 'bg-[#dc2626] hover:bg-[#b91c1c]' :
+                  i === pillActive ? 'bg-[#a1a1aa] hover:bg-[#6b7280]' :
+                                  'bg-[#e4e4e7] hover:bg-[#d4d4d8]',
+                title: `Question ${i + 1}${ans ? ` · ${ans === 'yes' ? 'Yes' : 'No'}` : ''}`,
+              }))}
+            />
+          </div>
+        </Swatch>
+        <p className="mt-1.5 mb-3 text-[12px] text-[#9ca3af]">
+          The per-question progress indicator under Compliance Review&rsquo;s question counter — one pill per
+          question, taller when current. Each pill&rsquo;s color is caller-supplied.
         </p>
 
         </>

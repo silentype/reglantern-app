@@ -224,6 +224,9 @@ Before writing any UI element, scan `src/app/components/design-system/` and the 
 | Task status label | `<StatusBadge>` from `design-system/StatusBadge` | |
 | Card container | `<Card>` from `design-system/Card` | |
 | Empty state | `<EmptyState>` from `design-system/EmptyState` | |
+| Yes/No question | `<YesNoCard variant="…">` from `design-system/YesNoCard` | `variant="neutral"` (default) for either/or questions with no right answer; `variant="semantic"` (green Yes / red No) where one answer is the compliant/good one, e.g. Compliance Review. |
+| Numbered progress-ring navigator | `<ProgressRingStepper>` from `design-system/ProgressRingStepper` | The Compliance Review chapter sidebar pattern. Ring `color` is caller-supplied per item so it can carry meaning (e.g. green = fully answered, purple = flagged). |
+| Segmented per-step progress pills | `<PillStepper>` from `design-system/PillStepper` | The Compliance Review per-question progress strip. `colorClassName` is caller-supplied per item. |
 
 **Adding a new recurring pattern:** extract it into `design-system/`, add a `.stories.tsx`, add a row here, then use it everywhere — including retrofitting any existing instances.
 
@@ -342,5 +345,6 @@ Before closing a task, verify behavior in the browser:
 | 2026-05-06 | Imported Figma Make prototype v1 as the starting codebase; added this CLAUDE.md |
 | 2026-05-13 | Refresh — App.tsx is no longer monolithic (660 lines, was ~4,400); pages/ directory exists; URL-driven routing via react-router; lazy-loaded pages + side panel; Storybook + ESLint + Prettier wired up; MUI / motion / recharts removed; TaskTableDynamic split into `task-table/` + `task-table/cells/`; TasksPage dead-code purge (-1,000 lines); MultiFileUploadPanel leaf extractions |
 | 2026-08-14 | Design-system consistency pass: added `IconButton` (extracted from FileRow's icon actions, now also used by the 3 duplicated file-preview headers and MultiFileUploadPanel's per-file rows); retrofitted raw filter-pill `<button>`s on Tasks/Home/Compliance Review/Health Center Admin to `FilterChip`/`MultiSelectFilterChip`; converted several raw Cancel/Delete/Sign-in buttons to `Button`; Components page reorganized into `UnderlineTabs` categories |
+| 2026-08-14 | Extracted `ProgressRingStepper` and `PillStepper` from Compliance Review's hand-rolled chapter navigator and per-question progress strip; gave `YesNoCard` a `variant` prop (`neutral` default vs `semantic` green/red) and made Compliance Review its first real consumer, replacing its own hand-rolled Yes/No buttons; `DueDatePicker`'s popover body extracted into `DueDatePickerContent` so the Components page can show it inline instead of behind a forced-open popover |
 
 > Append a row when you make significant changes.
